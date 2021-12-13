@@ -46,11 +46,11 @@
 
 {# The content of the CP Section#}
 {% set content %}
-    {{ craft.attendees.register('/src/js/attendees.ts', false, scriptTagOptions) }}
+    {{ craft.typesense.register('/src/js/typesense.ts', false, scriptTagOptions) }}
     
     <h2>{{ "Index CP Section body goes here"|t('typesense') }}</h2>
 
-    <div class="bg-teal-800 text-white hover:bg-sky-300 hover:text-black transition-all ease-in-out duration-200 text-4xl">
+    <div class="bg-teal-800 text-white hover:bg-sky-300 hover:text-black transition-all ease-in-out duration-200 text-4xl p-20">
         Tailwind + Vue test
     </div>
 

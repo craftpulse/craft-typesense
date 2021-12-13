@@ -96,6 +96,7 @@ class Typesense extends Plugin
     {
         $config['components'] = [
             'typesense' => Typesense::class,
+            // Register the vite service
             'vite' => [
                 'class' => VitePluginService::class,
                 'assetClass' => TypesenseAsset::class,

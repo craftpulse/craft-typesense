@@ -10,12 +10,13 @@
 
 namespace percipiolondon\typesense\variables;
 
+use Craft;
+
 use nystudio107\pluginvite\variables\ViteVariableInterface;
 use nystudio107\pluginvite\variables\ViteVariableTrait;
 
 use percipiolondon\typesense\Typesense;
 
-use Craft;
 
 /**
  * Typesense Variable

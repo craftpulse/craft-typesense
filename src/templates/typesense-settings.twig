@@ -13,9 +13,15 @@
  */
 #}
 
-{% import "_includes/forms" as forms %}
+{% set scriptTagOptions = {
+    'depends': [
+        'percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset'
+    ],
+} %}
 
-{% do view.registerAssetBundle("percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset") %}
+{{ craft.typesense.register('/src/js/typesense.ts', false, scriptTagOptions) }}
+
+{% import "_includes/forms" as forms %}
 
 {{ forms.textField({
     label: 'Some Field',
