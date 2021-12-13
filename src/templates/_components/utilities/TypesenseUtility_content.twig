@@ -1,0 +1,24 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * Typesense plugin for Craft CMS
+ *
+ * TypesenseUtility Utility Content
+ *
+ * @author    percipiolondon
+ * @copyright Copyright (c) 2021 percipiolondon
+ * @link      https://percipio.london
+ * @package   Typesense
+ * @since     1.0.0
+ */
+#}
+
+<h1>TypesenseUtility</h1>
+
+{% set iconUrl = view.getAssetManager().getPublishedUrl('@percipiolondon/typesense/assetbundles/typesenseutility/dist', true) ~ '/img/TypesenseUtility-icon.svg' %}
+
+<img src="{{ iconUrl }}" height="64" width="64" />
+
+<p>Your Utility content goes here</p>
+
+<p>{{ someVar }}</p>

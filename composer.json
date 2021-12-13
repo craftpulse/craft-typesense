@@ -1,0 +1,57 @@
+{
+    "name": "percipiolondon/craft-typesense",
+    "description": "Craft Plugin that synchronises with Typesense",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": [
+        "craft",
+        "cms",
+        "craftcms",
+        "craft-plugin",
+        "typesense"
+    ],
+    "support": {
+        "email": "support@percipio.london",
+        "docs": "https://github.com/percipioglobal/craft-typesense/blob/master/README.md",
+        "issues": "https://github.com/percipioglobal/craft-typesense/issues",
+        "source": "https://github.com/percipioglobal/craft-typesense"
+    },
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "percipiolondon",
+            "homepage": "https://percipio.london"
+        }
+    ],
+    "require": {
+        "craftcms/cms": "^3.3.0",
+        "nystudio107/craft-plugin-vite": "^1.0.0"
+    },
+    "require-dev": {
+        "codeception/codeception": "^3.0",
+        "vlucas/phpdotenv": "^3.0"
+    },
+    "repositories": [
+        {
+            "type": "composer",
+            "url": "https://asset-packagist.org"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "percipiolondon\\typesense\\": "src/"
+        }
+    },
+    "extra": {
+        "name": "Typesense",
+        "handle": "typesense",
+        "developer": "percipiolondon",
+        "developerUrl": "https://percipio.london",
+        "documentationUrl": "https://github.com/percipioglobal/craft-typesense/blob/master/README.md",
+        "changelogUrl": "https://raw.githubusercontent.com/percipioglobal/craft-typesense/master/CHANGELOG.md",
+        "components": {
+            "typesenseService": "percipiolondon\\typesense\\services\\TypesenseService"
+        },
+        "class": "percipiolondon\\typesense\\Typesense"
+    }
+}
