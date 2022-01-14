@@ -1,0 +1,23 @@
+{%- requirePermission "typesense:collections" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+
+{%- set content -%}
+
+    <h2>{{ "Index CP Section body goes here"|t('typesense') }}</h2>
+
+    <div class="text-base grid grid-cols-3 gap-4">
+        {%- for section in sections -%}
+            <div class="font-bold">
+                {{- section.name|e -}}
+            </div>
+            <div class="font-bold">
+                {{- section.type|title|e -}}
+            </div>
+            <div class="text-gray-600 text-sm">
+                {{- url('settings/sections/' ~ section.id) -}}
+            </div>
+        {%- endfor -%}
+    </div>
+
+{%- endset -%}

@@ -1,0 +1,67 @@
+{# @var craft \craft\web\twig\variables\CraftVariable #}
+{#
+/**
+ * Typesense plugin for Craft CMS 3.x
+ *
+ * Typesense typesense-settings.twig
+ *
+ * @author    percipio.london
+ * @copyright Copyright (c) 2022 Percipio Global Ltd.
+ * @link      https://percipio.london
+ * @package   Typesense
+ * @since     1.0.0
+ */
+#}
+
+{%- requirePermission 'typesense:plugin-settings' -%}
+
+{%- extends "_layouts/cp" -%}
+
+{%- import '_includes/forms' as forms -%}
+
+{%- do view.registerAssetBundle('percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset') -%}
+
+{%- block content -%}
+
+    <input type="hidden" name="action" value="typesense/settings/save-plugin-settings">
+    <input type="hidden" name="pluginHandle" value="typesense">
+
+    {{- redirectInput('typesense/plugin') -}}
+
+    {{ forms.autosuggestField({
+        label: 'Typesense host address',
+        instructions: "The Typesense server address."|t('typesense'),
+        suggestEnvVars: true,
+        id: 'server',
+        name: 'server',
+        value: settings.server,
+    }) }}
+
+    {{ forms.autosuggestField({
+        label: 'Typesense port ( default is 8108 )',
+        instructions: "Port on which Typesense API service listens."|t('typesense'),
+        suggestEnvVars: true,
+        id: 'port',
+        name: 'port',
+        value: settings.port,
+    }) }}
+
+    {{ forms.autosuggestField({
+        label: 'API Key',
+        instructions: "The admin API key that allows all operations."|t('typesense'),
+        suggestEnvVars: true,
+        id: 'apiKey',
+        name: 'apiKey',
+        value: settings.apiKey,
+    }) }}
+
+    {{ forms.autosuggestField({
+        label: 'Search only API Key',
+        instructions: "The search only API key that can fetch the search results only."|t('typesense'),
+        suggestEnvVars: true,
+        id: 'searchOnlyApiKey',
+        name: 'searchOnlyApiKey',
+        value: settings.searchOnlyApiKey,
+    }) }}
+
+{%- endblock -%}
