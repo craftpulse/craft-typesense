@@ -24,8 +24,11 @@
         }
     ],
     "require": {
-        "craftcms/cms": "^3.3.0",
-        "nystudio107/craft-plugin-vite": "^1.0.0"
+        "craftcms/cms": "^3.6.0",
+        "illuminate/collections": "^8.55",
+        "nystudio107/craft-plugin-vite": "^1.0.0",
+        "typesense/typesense-php": "^4.7.0",
+        "php-http/guzzle7-adapter": "^1.0.0"
     },
     "require-dev": {
         "codeception/codeception": "^3.0",
