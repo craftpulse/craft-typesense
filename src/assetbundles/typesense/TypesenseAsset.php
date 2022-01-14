@@ -47,11 +47,5 @@ class TypesenseAsset extends AssetBundle
         // define the path that your publishable resources live
         $this->sourcePath = "@percipiolondon/typesense/web/assets/dist";
 
-        // define the dependencies
-        $this->depends = [
-            CpAsset::class,
-        ];
-
-        
     }
 }
