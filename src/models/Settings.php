@@ -72,14 +72,24 @@ class Settings extends Model
     public function rules()
     {
         return [
-            ['pluginName', 'string'],
+            [[ 'pluginName', 'server', 'port', 'apiKey', 'searchOnlyApiKey'] , 'string'],
+            [['apiKey'] , 'required'],
             ['pluginName', 'default', 'value' => 'Typesense'],
-            ['server', 'string'],
             ['server', 'default', 'value' => '0.0.0.0'],
-            ['port', 'string'],
             ['port', 'default', 'value' => '8108'],
-            ['apiKey', 'string'],
-            ['searchOnlyApiKey', 'string'],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors(): array
+    {
+        return [
+            'parser' => [
+                'class' => EnvAttributeParserBehavior::class,
+                'attributes' => ['server', 'port', 'apiKey', 'searchOnlyApiKey'],
+            ]
         ];
     }
 }

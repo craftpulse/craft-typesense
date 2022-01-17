@@ -58,7 +58,7 @@ class DefaultController extends Controller
     {
         $result = 'something';
 
-        echo "Welcome to the console DefaultController actionIndex() method\n";
+        echo "Welcome to the console CollectionController actionIndex() method\n";
 
         return $result;
     }
@@ -75,7 +75,7 @@ class DefaultController extends Controller
     {
         $result = 'something';
 
-        echo "Welcome to the console DefaultController actionDoSomething() method\n";
+        echo "Welcome to the console CollectionController actionDoSomething() method\n";
 
         return $result;
     }
