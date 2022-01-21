@@ -42,10 +42,9 @@ class TypesenseAsset extends AssetBundle
      */
     public function init()
     {
-        parent::init();
-
         // define the path that your publishable resources live
         $this->sourcePath = "@percipiolondon/typesense/web/assets/dist";
 
+        parent::init();
     }
 }
