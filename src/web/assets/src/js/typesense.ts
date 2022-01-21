@@ -1,8 +1,6 @@
 // Import our CSS
-import '@/css/app.pcss';
+import '@/css/app.pcss'
 
-const main = async () => {
-};
+const main = async () => {};
 
-main().then( (root) => {
-});
+main().then( (root) => {});
