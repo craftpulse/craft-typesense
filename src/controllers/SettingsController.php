@@ -10,6 +10,7 @@
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
+use craft\elements\Entry;
 use craft\helpers\UrlHelper;
 use craft\models\Sites;
 use craft\web\Controller;
@@ -46,6 +47,10 @@ class SettingsController extends Controller
     public function actionCollections(string $siteHandle = null): Response
     {
         $variables = [];
+        $entriesCount = [
+            'entries' => [],
+        ];
+        $sections = Craft::$app->getSections()->getAllSections();
 
         $pluginName = Typesense::$settings->pluginName;
         $templateTitle = Craft::t('typesense', 'Collections');
@@ -54,8 +59,17 @@ class SettingsController extends Controller
         $variables['pluginName'] = Typesense::$settings->pluginName;
         $variables['title'] = $templateTitle;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
-        $variables['sections'] = Craft::$app->getSections()->getAllSections();
         $variables['selectedSubnavItem'] = 'collections';
+
+        foreach ( $sections as $section ) {
+            $variables['sections'][] = [
+                'id' => $section->id,
+                'name' => $section->name,
+                'handle' => $section->handle,
+                'type' => $section->type,
+                'entryCount' => Entry::find()->section($section->handle)->count(),
+            ];
+        }
 
         // Render the template
         return $this->renderTemplate('typesense/collections/index', $variables);
