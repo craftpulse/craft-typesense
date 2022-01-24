@@ -56,6 +56,15 @@ class CollectionController extends Controller
     // Public Methods
     // =========================================================================
 
+    public function actionSyncCollection() {
+        $this->requirePostRequest();
+
+        // @TODO: check if collection already exists in db and typesense
+        $collectionsService = Typesense::getCollections();
+
+        $collection->
+    }
+
     public function actionCreateCollection()
     {
         $schema = [
