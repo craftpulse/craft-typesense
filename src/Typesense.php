@@ -158,17 +158,8 @@ class Typesense extends Plugin
         // Install our event listeners
         $this->installEventListeners();
 
-        // Register our site routes
-        /*Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['siteActionTrigger1'] = 'typesense/default';
-            }
-        );
-
         // Register our utilities
-        Event::on(
+        /*Event::on(
             Utilities::class,
             Utilities::EVENT_REGISTER_UTILITY_TYPES,
             function (RegisterComponentTypesEvent $event) {
@@ -361,6 +352,7 @@ class Typesense extends Plugin
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/collections' => 'typesense/settings/collections',
             'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/sync-collection' => 'typesense/collections/sync-collection',
         ];
     }
 
@@ -377,6 +369,9 @@ class Typesense extends Plugin
             ],
             'typesense:collections' => [
                 'label' => Craft::t('typesense', 'Collections'),
+            ],
+            'typesense:manage-collections' => [
+                'label' => Craft::t('typesense', 'Manage Collections'),
             ],
             'typesense:plugin-settings' => [
                 'label' => Craft::t('typesense', 'Edit Plugin Settings'),
