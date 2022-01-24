@@ -16,6 +16,9 @@ use Craft;
 use craft\web\Controller;
 use craft\helpers\Json;
 
+use percipiolondon\typesense\models\CollectionsModel as Collection;
+use percipiolondon\typesense\helpers\CollectionHelper;
+
 use Typesense\Client as TypesenseClient;
 
 use yii\web\Response;
@@ -40,7 +43,7 @@ use yii\web\Response;
  * @package   Typesense
  * @since     1.0.0
  */
-class CollectionController extends Controller
+class CollectionsController extends Controller
 {
 
     // Protected Properties
@@ -56,13 +59,21 @@ class CollectionController extends Controller
     // Public Methods
     // =========================================================================
 
+    public function init()
+    {
+        parent::init();
+
+        $this->requirePermission('typesense:manage-collections');
+    }
+
     public function actionSyncCollection() {
         $this->requirePostRequest();
 
-        // @TODO: check if collection already exists in db and typesense
-        $collectionsService = Typesense::getCollections();
+        $request = Craft::$app->getRequest();
+        $collection = CollectionHelper::collectionToSync($request);
 
-        $collection->
+        $collection->dateCreated = DateTimeHelper::toDateTime($dateCreated) ?: null;
+        $collection->dateSynced = DateTimeHelper::toDateTime($dateSynced) ?: null;
     }
 
     public function actionCreateCollection()
