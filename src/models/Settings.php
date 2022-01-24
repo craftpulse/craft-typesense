@@ -72,7 +72,7 @@ class Settings extends Model
     public function rules()
     {
         return [
-            [[ 'pluginName', 'server', 'port', 'apiKey', 'searchOnlyApiKey'] , 'string'],
+            [['pluginName', 'server', 'port', 'apiKey', 'searchOnlyApiKey'] , 'string'],
             [['apiKey'] , 'required'],
             ['pluginName', 'default', 'value' => 'Typesense'],
             ['server', 'default', 'value' => '0.0.0.0'],
