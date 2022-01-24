@@ -71,6 +71,11 @@ class SettingsController extends Controller
             ];
         }
 
+        $variables['csrf'] = [
+            'name' => Craft::$app->getConfig()->getGeneral()->csrfTokenName,
+            'value' => Craft::$app->getRequest()->getCsrfToken(),
+        ];
+
         // Render the template
         return $this->renderTemplate('typesense/collections/index', $variables);
     }
