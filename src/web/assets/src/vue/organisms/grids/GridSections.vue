@@ -1,6 +1,7 @@
 <script lang="ts">
 
     import { defineComponent } from 'vue'
+    import { configureApi, executeApi } from '@/js/api/api'
     import ListItemSection from '@/vue/molecules/listitems/ListItemSection.vue'
 
     export default defineComponent({
@@ -13,8 +14,35 @@
             sections: {
                 type: Object,
                 required: true,
+            },
+
+            apiConfig: {
+                type: Object,
+                required: true,
             }
         },
+
+        data: () => ({
+            api: null,
+        }),
+
+        methods: {
+
+            createApi(): Object {
+                const api = {
+                    client: axios.create(configureApi(this.apiConfig.baseUrl)),
+                    csrf: this.apiConfig.csrf,
+                    action: this.apiConfig.action,
+                }
+
+                this.api = api;
+            }
+
+        },
+
+        async created() {
+            await this.createApi()
+        }
 
     })
 
@@ -53,13 +81,22 @@
                 v-for="section in sections"
                 :section="section"
                 :key="section.id"
+                :api="api"
             />
 
         </div>
     </section>
 
-    <div class="bg-sky-200 py-8 px-4">
+    <div class="bg-emerald-200 py-8 px-4 max-w-xl">
+
+    </div>
+
+    <div class="bg-sky-200 py-8 px-4 max-w-xl">
         {{ sections }}
+    </div>
+
+    <div class="bg-rose-200 my-8 py-8 px-4 max-w-xl">
+        {{ apiConfig }}
     </div>
 
 </template>
