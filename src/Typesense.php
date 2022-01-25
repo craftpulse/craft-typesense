@@ -19,6 +19,7 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\UrlHelper;
 use craft\services\Plugins;
+use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\UrlManager;
@@ -27,8 +28,11 @@ use craft\web\twig\variables\CraftVariable;
 use nystudio107\pluginvite\services\VitePluginService;
 
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
-use percipiolondon\typesense\services\TypesenseService;
+use percipiolondon\typesense\helpers\ProjectConfigData;
 use percipiolondon\typesense\models\Settings;
+use percipiolondon\typesense\services\CollectionService;
+use percipiolondon\typesense\services\TypesenseService;
+use percipiolondon\typesense\typesense\Services as TypesenseServices;
 use percipiolondon\typesense\utilities\TypesenseUtility;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
@@ -49,6 +53,7 @@ use yii\base\Event;
  * @since     1.0.0
  *
  * @property  TypesenseService $typesenseService
+ * @property  CollectionService $collectionService
  * @property  Settings $settings
  * @method    Settings getSettings()
  */
@@ -99,6 +104,8 @@ class Typesense extends Plugin
      */
     public $hasCpSettings = true;
 
+    use TypesenseServices;
+
     // Static Methods
     // =========================================================================
     /**
@@ -109,6 +116,7 @@ class Typesense extends Plugin
     {
         $config['components'] = [
             'typesense' => Typesense::class,
+            'collections' => CollectionService::class,
             // Register the vite service
             'vite' => [
                 'class' => VitePluginService::class,
@@ -290,6 +298,7 @@ class Typesense extends Plugin
         if ($request->getIsCpRequest() && !$request->getIsConsoleRequest()) {
             $this->installCpEventListeners();
         }
+        $this->_registerProjectConfigEventListeners();
     }
 
     /**
@@ -352,6 +361,7 @@ class Typesense extends Plugin
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/collections' => 'typesense/settings/collections',
             'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
         ];
     }
@@ -377,6 +387,23 @@ class Typesense extends Plugin
                 'label' => Craft::t('typesense', 'Edit Plugin Settings'),
             ]
         ];
+    }
+
+    /**
+     * Register Typesense’s project config event listeners
+     */
+    private function _registerProjectConfigEventListeners() {
+        $projectConfigService = Craft::$app->getProjectConfig();
+
+        $collectionService = $this->getCollections();
+        $projectConfigService
+            ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+            ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+            ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
+
+        Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
+            $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
+        });
     }
 
 }
