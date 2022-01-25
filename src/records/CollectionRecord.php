@@ -8,7 +8,7 @@ use percipiolondon\typesense\db\Table;
 use yii\db\ActiveRecord;
 use yii\validators\Validator;
 
-class Typesense extends ActiveRecord
+class TypesenseRecord extends ActiveRecord
 {
 
     /**
