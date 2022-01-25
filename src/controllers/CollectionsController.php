@@ -14,10 +14,12 @@ use percipiolondon\typesense\Typesense;
 
 use Craft;
 use craft\web\Controller;
+use craft\helpers\DateTimeHelper;
 use craft\helpers\Json;
 
-use percipiolondon\typesense\models\CollectionsModel as Collection;
 use percipiolondon\typesense\helpers\CollectionHelper;
+use percipiolondon\typesense\models\CollectionModel as Collection;
+use percipiolondon\typesense\services\CollectionService;
 
 use Typesense\Client as TypesenseClient;
 
@@ -66,14 +68,26 @@ class CollectionsController extends Controller
         $this->requirePermission('typesense:manage-collections');
     }
 
-    public function actionSyncCollection() {
+    public function actionSaveCollection(): Response {
         $this->requirePostRequest();
 
         $request = Craft::$app->getRequest();
         $collection = CollectionHelper::collectionToSync($request);
 
-        $collection->dateCreated = DateTimeHelper::toDateTime($dateCreated) ?: null;
-        $collection->dateSynced = DateTimeHelper::toDateTime($dateSynced) ?: null;
+        // Always update the sync data ( after all the data has synced before re-writing in the database )
+        $collection->dateSynced = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
+
+        // Save the collection
+        if (!Typesense::$plugin->collections->saveCollection($collection)) {
+            // Response error
+            //$this->setFailFlash(Craft::t('typesense', 'Couldn’t save collection.'));
+
+            return $this->asJson([
+                'error' => Craft::t('typesense', 'Couldn’t save collection.'),
+            ]);
+        }
+
+        return $this->asJson($collection);
     }
 
     public function actionCreateCollection()
