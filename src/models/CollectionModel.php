@@ -8,7 +8,7 @@ use craft\validators\DateTimeValidator;
 use craft\validators\HandleValidator;
 use craft\validators\UniqueValidator;
 
-class CollectionsModel extends Model
+class CollectionModel extends Model
 {
     // Public Properties
     // =========================================================================
@@ -24,17 +24,17 @@ class CollectionsModel extends Model
     public $sectionId;
 
     /**
-     * @var datetime|null Collection's UID
+     * @var datetime|null Collection's creation date
      */
     public $dateCreated;
 
     /**
-     * @var datetime|null Collection's UID
+     * @var datetime|null Collection's sync date
      */
     public $dateSynced;
 
     /**
-     * @var string|null Collection's UID
+     * @var string|null Section's handle
      */
     public $handle;
 
@@ -45,6 +45,13 @@ class CollectionsModel extends Model
 
     // Public Methods
     // =========================================================================
+
+    public function datetimeAttributes(): array
+    {
+        $attributes = parent::datetimeAttributes();
+        $attributes[] = 'dateSynced';
+        return $attributes;
+    }
 
     /**
      * Returns the validation rules for attributes.
@@ -67,6 +74,15 @@ class CollectionsModel extends Model
             [['dateCreated', 'dateSynced'] , DateTimeValidator::class],
             [['id', 'uid', 'sectionId', 'dateCreated'] , 'required'],
         ];
+    }
+
+    public function getConfig(): array
+    {
+        $config = [
+            'handle' => $this->handle,
+        ];
+
+        return $config;
     }
 
 }
