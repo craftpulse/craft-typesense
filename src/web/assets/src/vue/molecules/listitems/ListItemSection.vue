@@ -23,6 +23,7 @@ export default defineComponent({
 
             let variables = {
                 ...this.section,
+                sectionId: this.section.id,
                 [this.api.csrf.name]: this.api.csrf.value,
             }
 
