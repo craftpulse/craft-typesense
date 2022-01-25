@@ -4,11 +4,14 @@ namepsace percipiolondon\typesense\records;
 
 use Craft;
 
-use percipiolondon\typesense\db\Table;
-use yii\db\ActiveRecord;
-use yii\validators\Validator;
+use craft\db\ActiveRecord;
+use craft\records\FieldLayout;
 
-class TypesenseRecord extends ActiveRecord
+use percipiolondon\typesense\db\Table;
+u
+use yii\db\ActiveQueryInterface;
+
+class CollectionRecord extends ActiveRecord
 {
 
     /**
@@ -17,6 +20,14 @@ class TypesenseRecord extends ActiveRecord
      */
     public static function tableName(): string
     {
-        return Table::TYPESENSE;
+        return Table::COLLECTIONS;
+    }
+
+    /**
+     * @return ActiveQueryInterface
+     */
+    public function getFieldLayout(): ActiveQueryInterface
+    {
+        return $this->hasOne(FieldLayout::class, ['id' => 'fieldLayoutId']);
     }
 }
