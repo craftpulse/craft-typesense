@@ -5,8 +5,10 @@ namespace percipiolondon\typesense\helpers;
 use Craft;
 
 use craft\web\Request;
+use craft\helpers\DateTimeHelper;
+use craft\helpers\StringHelper;
 
-use percipiolondon\typesense\models\CollectionsModel as Collection;
+use percipiolondon\typesense\models\CollectionModel as Collection;
 use percipiolondon\typesense\Typesense;
 
 class CollectionHelper
@@ -19,7 +21,7 @@ class CollectionHelper
      * @throws NotFoundHttpException
      * @since 1.0.0
      */
-    public static function collectionToSync(Request $request = null): CollectionsModel
+    public static function collectionToSync(Request $request = null): Collection
     {
 
         if ($request === null) {
@@ -28,26 +30,19 @@ class CollectionHelper
 
         $collectionId = $request->getBodyParam('collectionId');
 
-        Craft::dd($request->getBodyParam('handle'));
-
         if ($collectionId) {
             $collection = Typesense::getCollections()->getCollectionById($collectionId);
 
             if (!$collection) {
-               throw new NotFoundHttpException(Craft::t('typesense', 'No collection with the ID “{id}”', ['id' => $collectionId]));
+                throw new NotFoundHttpException(Craft::t('typesense', 'No collection with the ID “{id}”', ['id' => $collectionId]));
             }
         } else {
             $collection = new Collection();
+            $collection->dateCreated = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
             $collection->handle = $request->getBodyParam('handle');
             $collection->sectionId = $request->getBodyParam('sectionId');
+            $collection->uid = StringHelper::UUID();
         }
-
-        // 'id' => $this->primaryKey(),
-        // 'sectionId' => $this->integer()->notNull(),
-        // 'dateCreated' => $this->dateTime()->notNull(),
-        // 'dateSynced' => $this->dateTime(),
-        // 'handle' => $this->string()->notNull(),
-        // 'uid' => $this->uid()->notNull(),
 
         return $collection;
     }
