@@ -2,7 +2,7 @@
 
 namespace percipiolondon\typesense\db;
 
-abstract  class Table
+abstract class Table
 {
-    const TYPESENSE = "{{%typesense}}";
+    const COLLECTIONS = "{{%typesense_collections}}";
 }
