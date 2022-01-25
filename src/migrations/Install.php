@@ -3,8 +3,12 @@
 namespace percipiolondon\typesense\migrations;
 
 use Craft;
+use craft\db\ActiveRecord;
 use craft\db\Migration;
+use craft\db\Query;
 use craft\helpers\MigrationHelper;
+
+use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\db\Table;
 
 
@@ -23,11 +27,15 @@ class Install extends Migration
     public function safeUp()
     {
         $this->createTables();
+
+        return true;
     }
 
     public function safeDown()
     {
-        return false;
+        $this->dropTables();
+
+        return true;
     }
 
     /**
@@ -35,14 +43,32 @@ class Install extends Migration
      */
     public function createTables()
     {
-        $this->createTable(Table::TYPESENSE, [
+        $this->createTable(Table::COLLECTIONS, [
             'id' => $this->primaryKey(),
+            'fieldLayoutId' => $this->integer(),
+            'name' => $this->string()->notNull(),
+            'handle' => $this->string()->notNull(),
             'sectionId' => $this->integer()->notNull(),
             'dateCreated' => $this->dateTime()->notNull(),
             'dateSynced' => $this->dateTime(),
-            'handle' => $this->string()->notNull(),
-            'uid' => $this->uid()->notNull(),
+            'uid' => $this->uid(),
         ]);
+    }
+
+    /**
+     * Drop the tables
+     */
+    public function dropTables()
+    {
+        $this->dropTableIfExists(Table::COLLECTIONS);
+    }
+
+    /**
+     * Deletes the project config entry.
+     */
+    public function dropProjectConfig()
+    {
+        Craft::$app->projectConfig->remove('typesense');
     }
 
 }
