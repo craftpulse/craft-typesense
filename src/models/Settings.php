@@ -14,16 +14,13 @@ use percipiolondon\typesense\Typesense;
 
 use Craft;
 use craft\base\Model;
+use craft\behaviors\EnvAttributeParserBehavior;
+use craft\validators\ArrayValidator;
+
+use yii\behaviors\AttributeTypecastBehavior;
 
 /**
  * Typesense Settings Model
- *
- * This is a model used to define the plugin's settings.
- *
- * Models are containers for data. Just about every time information is passed
- * between services, controllers, and templates in Craft, it’s passed via a model.
- *
- * https://craftcms.com/docs/plugins/models
  *
  * @author    percipiolondon
  * @package   Typesense
@@ -35,11 +32,29 @@ class Settings extends Model
     // =========================================================================
 
     /**
-     * Some field model attribute
-     *
-     * @var string
+     * @var string The public-facing name of the plugin
      */
-    public $someAttribute = 'Some Default';
+    public $pluginName = 'Typesense';
+
+    /**
+     * @var string The API endpoint where Typesense connects to.
+     */
+    public $server = '0.0.0.0';
+
+    /**
+     * @var string The API port which Typesense listens to.
+     */
+    public $port = '8108';
+
+    /**
+     * @var string The Admin API key.
+     */
+    public $apiKey = '';
+
+    /**
+     * @var string The search-only API key.
+     */
+    public $searchOnlyApiKey = '';
 
     // Public Methods
     // =========================================================================
@@ -57,8 +72,24 @@ class Settings extends Model
     public function rules()
     {
         return [
-            ['someAttribute', 'string'],
-            ['someAttribute', 'default', 'value' => 'Some Default'],
+            [['pluginName', 'server', 'port', 'apiKey', 'searchOnlyApiKey'] , 'string'],
+            [['apiKey'] , 'required'],
+            ['pluginName', 'default', 'value' => 'Typesense'],
+            ['server', 'default', 'value' => '0.0.0.0'],
+            ['port', 'default', 'value' => '8108'],
+        ];
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function behaviors(): array
+    {
+        return [
+            'parser' => [
+                'class' => EnvAttributeParserBehavior::class,
+                'attributes' => ['server', 'port', 'apiKey', 'searchOnlyApiKey'],
+            ]
         ];
     }
 }

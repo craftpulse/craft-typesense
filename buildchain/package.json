@@ -7,6 +7,7 @@
         "url": "https://percipio.london"
     },
     "dependencies": {
+        "axios":"^0.25.0",
         "vue": "^3.2.0"
     },
     "devDependencies": {

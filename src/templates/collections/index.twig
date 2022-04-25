@@ -1,0 +1,27 @@
+{%- requirePermission "typesense:collections" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+{%- set tagOptions = {
+    'depends': [
+        'percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset'
+    ]
+} -%}
+
+{%- set content -%}
+
+    {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
+
+    <div class="-m-6" id="typesense-collections">
+
+        <grid-sections
+            :sections="{{- sections|json_encode -}}"
+            :api-config="{
+                csrf: {{- csrf|json_encode -}},
+                baseUrl: '/admin/',
+                action: 'typesense/save-collection'
+            }"
+        />
+
+    </div>
+
+{%- endset -%}

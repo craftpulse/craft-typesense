@@ -12,20 +12,27 @@ namespace percipiolondon\typesense;
 
 use Craft;
 use craft\base\Plugin;
-use craft\services\Plugins;
-use craft\events\PluginEvent;
 use craft\console\Application as ConsoleApplication;
-use craft\web\UrlManager;
-use craft\services\Utilities;
-use craft\web\twig\variables\CraftVariable;
+use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
+use craft\events\RegisterUserPermissionsEvent;
+use craft\helpers\UrlHelper;
+use craft\services\Plugins;
+use craft\services\ProjectConfig;
+use craft\services\UserPermissions;
+use craft\services\Utilities;
+use craft\web\UrlManager;
+use craft\web\twig\variables\CraftVariable;
 
 use nystudio107\pluginvite\services\VitePluginService;
 
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
-use percipiolondon\typesense\services\TypesenseService;
+use percipiolondon\typesense\helpers\ProjectConfigData;
 use percipiolondon\typesense\models\Settings;
+use percipiolondon\typesense\services\CollectionService;
+use percipiolondon\typesense\services\TypesenseService;
+use percipiolondon\typesense\typesense\Services as TypesenseServices;
 use percipiolondon\typesense\utilities\TypesenseUtility;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
@@ -46,6 +53,7 @@ use yii\base\Event;
  * @since     1.0.0
  *
  * @property  TypesenseService $typesenseService
+ * @property  CollectionService $collectionService
  * @property  Settings $settings
  * @method    Settings getSettings()
  */
@@ -62,6 +70,16 @@ class Typesense extends Plugin
      */
     public static $plugin;
 
+    /**
+     * @var Settings
+     */
+    public static $settings;
+
+    /**
+     * @var View
+     */
+    public static $view;
+
     // Public Properties
     // =========================================================================
 
@@ -73,18 +91,20 @@ class Typesense extends Plugin
     public $schemaVersion = '1.0.0';
 
     /**
+     * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
+     *
+     * @var bool
+     */
+    public $hasCpSection = true;
+
+    /**
      * Set to `true` if the plugin should have a settings view in the control panel.
      *
      * @var bool
      */
     public $hasCpSettings = true;
 
-    /**
-     * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
-     *
-     * @var bool
-     */
-    public $hasCpSection = true;
+    use TypesenseServices;
 
     // Static Methods
     // =========================================================================
@@ -96,6 +116,7 @@ class Typesense extends Plugin
     {
         $config['components'] = [
             'typesense' => Typesense::class,
+            'collections' => CollectionService::class,
             // Register the vite service
             'vite' => [
                 'class' => VitePluginService::class,
@@ -136,32 +157,23 @@ class Typesense extends Plugin
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
         }
 
-        // Register our site routes
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['siteActionTrigger1'] = 'typesense/default';
-            }
-        );
+        // Initialize properties
+        self::$settings = self::$plugin->getSettings();
+        self::$view = Craft::$app->getView();
 
-        // Register our CP routes
-        Event::on(
-            UrlManager::class,
-            UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
-                $event->rules['cpActionTrigger1'] = 'typesense/default/do-something';
-            }
-        );
+        $this->name = self::$settings->pluginName;
+
+        // Install our event listeners
+        $this->installEventListeners();
 
         // Register our utilities
-        Event::on(
+        /*Event::on(
             Utilities::class,
             Utilities::EVENT_REGISTER_UTILITY_TYPES,
             function (RegisterComponentTypesEvent $event) {
                 $event->types[] = TypesenseUtility::class;
             }
-        );
+        ); */
 
         // Register our variables
         Event::on(
@@ -178,7 +190,7 @@ class Typesense extends Plugin
         );
 
         // Do something after we're installed
-        Event::on(
+        /*Event::on(
             Plugins::class,
             Plugins::EVENT_AFTER_INSTALL_PLUGIN,
             function (PluginEvent $event) {
@@ -186,7 +198,7 @@ class Typesense extends Plugin
                     // We were just installed
                 }
             }
-        );
+        );*/
 
 /**
  * Logging in Craft involves using one of the following methods:
@@ -216,8 +228,116 @@ class Typesense extends Plugin
         );
     }
 
+    /**
+     * @inheritdoc
+     */
+    public function getSettings()
+    {
+        return parent::getSettings();;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getSettingsResponse()
+    {
+        // redirect to plugin settings page
+        Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/plugin'));
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getCpNavItem(){
+        $subNavs = [];
+        $navItem = parent::getCpNavItem();
+        /** @var User $currentUser */
+        $request = Craft::$app->getRequest();
+        $currentUser = Craft::$app->getUser()->getIdentity();
+        // Only show sub navigation the user has permission to view
+        if ($currentUser->can('typesense:dashboard')) {
+            $subNavs['dashboard'] = [
+                'label' => Craft::t('typesense', 'Dashboard'),
+                'url' => 'typesense/dashboard'
+            ];
+        }
+        if ($currentUser->can('typesense:collections')) {
+            $subNavs['collections'] = [
+                'label' => Craft::t('typesense', 'Collections'),
+                'url' => 'typesense/collections'
+            ];
+        }
+
+        $editableSettings = true;
+        // Check against allowAdminChanges
+        if ( !Craft::$app->getConfig()->getGeneral()->allowAdminChanges ) {
+            $editableSettings = false;
+        }
+
+        if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
+            $subNavs['plugin'] = [
+                'label' => Craft::t('typesense', 'Plugin settings'),
+                'url' => 'typesense/plugin',
+            ];
+        }
+
+        $navItem = array_merge($navItem, [
+            'subnav' => $subNavs,
+        ]);
+
+        return $navItem;
+    }
+
     // Protected Methods
     // =========================================================================
+
+    protected function installEventListeners()
+    {
+        $request = Craft::$app->getRequest();
+        // Install our event listeners
+        if ($request->getIsCpRequest() && !$request->getIsConsoleRequest()) {
+            $this->installCpEventListeners();
+        }
+        $this->_registerProjectConfigEventListeners();
+    }
+
+    /**
+     * Install site event listeners for Control Panel requests only
+     */
+    protected function installCpEventListeners()
+    {
+
+        // Handler: UrlManager::EVENT_REGISTER_CP_URL_RULES
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_CP_URL_RULES,
+            function (RegisterUrlRulesEvent $event) {
+                Craft::debug(
+                    'UrlManager::EVENT_REGISTER_CP_URL_RULES',
+                    __METHOD__
+                );
+                // Register our Control Panel routes
+                $event->rules = array_merge(
+                    $event->rules,
+                    $this->customAdminCpRoutes()
+                );
+            }
+        );
+
+        // Handler: UserPermissions::EVENT_REGISTER_PERMISSIONS
+        Event::on(
+            UserPermissions::class,
+            UserPermissions::EVENT_REGISTER_PERMISSIONS,
+            function (RegisterUserPermissionsEvent $event) {
+                Craft::debug(
+                    'UserPermissions::EVENT_REGISTER_PERMISSIONS',
+                    __METHOD__
+                );
+                // Register our custom permissions
+                $event->permissions[Craft::t('typesense', 'Typesense')] = $this->customAdminCpPermissions();
+            }
+        );
+    }
 
     /**
      * Creates and returns the model used to store the plugin’s settings.
@@ -230,18 +350,60 @@ class Typesense extends Plugin
     }
 
     /**
-     * Returns the rendered settings HTML, which will be inserted into the content
-     * block on the settings page.
+     * Return the custom Control Panel routes
      *
-     * @return string The rendered settings HTML
+     * @return array
      */
-    protected function settingsHtml(): string
+    protected function customAdminCpRoutes(): array
     {
-        return Craft::$app->view->renderTemplate(
-            'typesense/typesense-settings',
-            [
-                'settings' => $this->getSettings()
-            ]
-        );
+        return [
+            'typesense' => 'typesense/settings/dashboard',
+            'typesense/dashboard' => 'typesense/settings/dashboard',
+            'typesense/collections' => 'typesense/settings/collections',
+            'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/save-collection' => 'typesense/collections/save-collection',
+            'typesense/sync-collection' => 'typesense/collections/sync-collection',
+        ];
     }
+
+    /**
+     * Return the custom Control Panel user permissions.
+     *
+     * @return array
+     */
+    protected function customAdminCpPermissions(): array
+    {
+        return [
+            'typesense:dashboard' => [
+                'label' => Craft::t('typesense', 'Dashboard'),
+            ],
+            'typesense:collections' => [
+                'label' => Craft::t('typesense', 'Collections'),
+            ],
+            'typesense:manage-collections' => [
+                'label' => Craft::t('typesense', 'Manage Collections'),
+            ],
+            'typesense:plugin-settings' => [
+                'label' => Craft::t('typesense', 'Edit Plugin Settings'),
+            ]
+        ];
+    }
+
+    /**
+     * Register Typesense’s project config event listeners
+     */
+    private function _registerProjectConfigEventListeners() {
+        $projectConfigService = Craft::$app->getProjectConfig();
+
+        $collectionService = $this->getCollections();
+        $projectConfigService
+            ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+            ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+            ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
+
+        Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
+            $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
+        });
+    }
+
 }

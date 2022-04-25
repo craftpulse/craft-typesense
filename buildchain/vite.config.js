@@ -13,6 +13,7 @@ export default ({ command }) => ({
         rollupOptions: {
             input: {
                 typesense: '/src/js/typesense.ts',
+                'typesense-collections': '/src/js/typesense-collections.ts',
             },
             output: {
                 sourcemap: true

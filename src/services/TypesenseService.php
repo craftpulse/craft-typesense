@@ -10,10 +10,11 @@
 
 namespace percipiolondon\typesense\services;
 
-use percipiolondon\typesense\Typesense;
-
 use Craft;
 use craft\base\Component;
+use craft\helpers\StringHelper;
+
+use percipiolondon\typesense\Typesense;
 
 /**
  * TypesenseService Service
