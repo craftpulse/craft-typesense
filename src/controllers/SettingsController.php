@@ -15,6 +15,7 @@ use craft\helpers\UrlHelper;
 use craft\models\Sites;
 use craft\web\Controller;
 
+use Typesense\Client as TypesenseClient;
 use yii\base\InvalidConfigException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -142,15 +143,23 @@ class SettingsController extends Controller
      * @throws \craft\errors\MissingComponentException
      */
 
-    public function actionSavePluginSettings() {
+    public function actionSavePluginSettings()
+    {
         $this->requirePostRequest();
         $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
-        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
+//        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
         $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
         if ( $plugin === null ) {
             throw new NotFoundHttpException('Plugin not found');
         }
+
+        $settings = [
+            'apiKey' => Craft::$app->getRequest()->getBodyParam('apiKey'),
+            'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
+            'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiportKey'),
+            'server' => Craft::$app->getRequest()->getBodyParam('server'),
+        ];
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {
             Craft::$app->getSession()->setError(Craft::t('app', "Couldn't save plugin settings."));

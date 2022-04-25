@@ -92,6 +92,7 @@ class CollectionsController extends Controller
 
     public function actionCreateCollection()
     {
+
         $schema = [
             'name'      => 'news',
             'fields'    => [
@@ -113,8 +114,8 @@ class CollectionsController extends Controller
             'default_sorting_field' => 'dateCreated' // can only be an integer
         ];
 
-        if ( !$this->createClient()->collections['news'] ) {
-            $this->createClient()->collections->create($schema);
+        if ( !Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
+            Craft::$container->get(TypesenseClient::class)->collections->create($schema);
             return 'index successfully created';
         } else {
             return 'this index already exists';
@@ -124,7 +125,6 @@ class CollectionsController extends Controller
 
     public function actionIndexDocuments()
     {
-
         $documents = [
             [
                 'id' => '1',
@@ -188,9 +188,10 @@ class CollectionsController extends Controller
             ],
         ];
 
-        if ( $this->createClient()->collections['news'] ) {
+
+        if ( Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
             foreach ( $documents as $document) {
-                $this->createClient()->collections['news']->documents->upsert($document);
+                Craft::$container->get(TypesenseClient::class)->collections['news']->documents->upsert($document);
             }
             return 'All elements added to the index';
         } else {
@@ -201,8 +202,8 @@ class CollectionsController extends Controller
     public function actionListDocuments(): Response
     {
 
-        if ( $this->createClient()->collections['news'] ) {
-            return $this->asJson($this->createClient()->collections['news']->documents->export());
+        if ( Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
+            return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections['news']->documents->export());
         } else {
             return 'this index doesn\'t exist';
         }
@@ -211,8 +212,8 @@ class CollectionsController extends Controller
     public function actionDeleteDocuments()
     {
 
-        if ( $this->createClient()->collections['news'] ) {
-            $this->createClient()->collections['news']->documents->delete(['filter_by' => 'title: Typesense']);
+        if ( Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
+            Craft::$container->get(TypesenseClient::class)->collections['news']->documents->delete(['filter_by' => 'title: Typesense']);
         } else {
             return 'this index doesn\'t exist';
         }
@@ -222,8 +223,8 @@ class CollectionsController extends Controller
     public function actionDropCollection()
     {
 
-        if ( $this->createClient()->collections['news'] ) {
-            $this->createClient()->collections['news']->delete();
+        if ( Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
+            Craft::$container->get(TypesenseClient::class)->collections['news']->delete();
             return 'index successfully deleted';
         } else {
             return 'this index doesn\'t exist';
@@ -232,12 +233,12 @@ class CollectionsController extends Controller
 
     public function actionListCollections(): Response
     {
-       return $this->asJson($this->createClient()->collections->retrieve());
+       return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections->retrieve());
     }
 
     public function actionRetrieveCollection()
     {
-        return $this->asJson($this->createClient()->collections['news']->retrieve());
+        return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections['news']->retrieve());
     }
 
     private function createClient()

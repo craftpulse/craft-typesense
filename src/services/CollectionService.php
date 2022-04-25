@@ -63,8 +63,6 @@ class CollectionService extends Component
     {
         if ($this->_collections === null) {
             $collections = [];
-
-
         }
 
         return $this->_collections;
