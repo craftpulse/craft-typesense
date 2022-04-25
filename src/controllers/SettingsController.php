@@ -145,7 +145,7 @@ class SettingsController extends Controller
     public function actionSavePluginSettings() {
         $this->requirePostRequest();
         $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
-        $settings = Craft::$app->getRequest()->getBodyParem('settings', []);
+        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
         $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
         if ( $plugin === null ) {
