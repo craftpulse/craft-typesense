@@ -56,6 +56,11 @@ class Settings extends Model
      */
     public $searchOnlyApiKey = '';
 
+    /**
+     * @var array Provide an array of collections that needs to be added.
+     */
+    public $collections = [];
+
     // Public Methods
     // =========================================================================
 

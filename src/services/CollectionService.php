@@ -9,7 +9,9 @@ namespace percipiolondon\typesense\services;
 use Craft;
 
 use craft\base\MemoizableArray;
+use craft\db\Query;
 use craft\helpers\ArrayHelper;
+use craft\helpers\DateTimeHelper;
 use craft\helpers\Db;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
@@ -18,6 +20,8 @@ use percipiolondon\typesense\db\Table;
 use percipiolondon\typesense\events\CollectionEvent;
 use percipiolondon\typesense\models\CollectionModel as Collection;
 
+use percipiolondon\typesense\Typesense;
+use Typesense\Client as TypesenseClient;
 use yii\base\Component;
 use yii\base\Exception;
 
@@ -59,7 +63,7 @@ class CollectionService extends Component
      *
      * @return MemoizableArray<Collection>
      */
-    private function _collections(): MemoizableArray
+    private function _collections(): ?MemoizableArray
     {
         if ($this->_collections === null) {
             $collections = [];
@@ -85,7 +89,7 @@ class CollectionService extends Component
                 $this->_memoizeCollection(new Collection($result));
             }
 
-            $this->fetchedAllCollections = true;
+            $this->_fetchedAllCollections = true;
         }
 
         return $this->_collectionsById ?: [];
@@ -144,6 +148,48 @@ class CollectionService extends Component
     }
 
     /**
+     * Returns a collection by its ID.
+     *
+     * ---
+     *
+     * ```php
+     * $section = Typesense::$app->collections->getCollectionById(1);
+     * ```
+     *
+     * @param string $indexName
+     * @return Collection|null
+     */
+    public function getCollectionByHandle(string $indexName): ?Collection
+    {
+        return $this->_collections()?->firstWhere('handle', $indexName);
+    }
+
+    public function getCollectionByCollectionRetrieve(string $indexName): ?array
+    {
+        $collections = Craft::$container->get(TypesenseClient::class)->collections->retrieve();
+        $retrievedCollection = [];
+
+        foreach($collections as $collection) {
+            if($collection['name'] === $indexName) {
+                $retrievedCollection = $collection;
+            }
+        }
+
+        return $retrievedCollection;
+    }
+
+    public function saveCollections(): void
+    {
+        $indexes = Typesense::$plugin->getSettings()->collections;
+
+        foreach ($indexes as $index) {
+            if(!$this->getCollectionByCollectionRetrieve($index->indexName)) {
+               Craft::$container->get(TypesenseClient::class)->collections->create($index->schema);
+            }
+        }
+    }
+
+    /**
      * Saves a collection.
      *
      * ---
@@ -159,7 +205,6 @@ class CollectionService extends Component
      * @throws CollectionNotFoundException if $collection->id is invalid
      * @throws \Throwable if reasons
      */
-
     public function saveCollection(Collection $collection): bool
     {
         $isNewCollection = !$collection->id;

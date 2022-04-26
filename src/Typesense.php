@@ -166,26 +166,6 @@ class Typesense extends Plugin
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
         }
 
-        // Create a reusable Typesense Client
-        if(App::parseEnv($this::$settings->apiKey)) {
-            Craft::$container->setSingleton(TypesenseClient::class, function() {
-                return new TypesenseClient(
-                    [
-                        'api_key' => App::parseEnv($this::$settings->apiKey),
-                        'nodes' => [
-                            [
-                                'host' => 'typesense',
-                                'port' => '8108',
-                                'protocol' => 'http',
-                            ],
-                        ],
-                        'connection_timeout_seconds' => 2,
-                    ]
-                );
-            });
-        } else {
-            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
-        }
 
         // Install our event listeners
         $this->installEventListeners();
@@ -223,6 +203,30 @@ class Typesense extends Plugin
                 }
             }
         );*/
+
+        // Create a reusable Typesense Client
+        if(App::parseEnv($this::$settings->apiKey)) {
+            Craft::$container->setSingleton(TypesenseClient::class, function() {
+                return new TypesenseClient(
+                    [
+                        'api_key' => App::parseEnv($this::$settings->apiKey),
+                        'nodes' => [
+                            [
+                                'host' => App::parseEnv($this::$settings->server),
+                                'port' => App::parseEnv($this::$settings->port),
+                                'protocol' => 'http',
+                            ],
+                        ],
+                        'connection_timeout_seconds' => 2,
+                    ]
+                );
+            });
+        } else {
+            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
+        }
+
+        // Save Typesense collections out of the config
+        Typesense::$plugin->collections->saveCollections();
 
         Craft::info(
             Craft::t(
@@ -365,8 +369,8 @@ class Typesense extends Plugin
         return [
             'typesense' => 'typesense/settings/dashboard',
             'typesense/dashboard' => 'typesense/settings/dashboard',
-            'typesense/collections' => 'typesense/settings/collections',
             'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/collections' => 'typesense/collections/collections',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
         ];
