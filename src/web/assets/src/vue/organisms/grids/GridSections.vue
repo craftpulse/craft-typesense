@@ -51,7 +51,7 @@
 <template>
 
     <section class="mb-16 rounded-tr-sm rounded-tl-sm">
-        <div class="grid grid-cols-6 rounded-tr-md rounded-tl-md bg-gray-100 mb-4">
+        <div class="grid grid-cols-5 rounded-tr-md rounded-tl-md bg-gray-100 mb-4">
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Index
@@ -69,9 +69,9 @@
                 Total Entries
             </div>
 
-            <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <!--div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
-            </div>
+            </div-->
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Sync
@@ -79,7 +79,7 @@
 
         </div>
 
-        <div class="grid grid-cols-6">
+        <div class="grid grid-cols-5">
 
             <list-item-section
                 v-for="section in sections"
