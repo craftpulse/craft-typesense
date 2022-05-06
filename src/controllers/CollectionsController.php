@@ -133,11 +133,19 @@ class CollectionsController extends Controller
 
                 $entries = $index->criteria->all();
 
+//                Craft::$container->get(TypesenseClient::class)->collections['blog']->documents->delete();
+
                 foreach ($entries as $entry) {
-                    Craft::dd($index->schema['resolver']($entry));
+
+                    if ( Craft::$container->get(TypesenseClient::class)->collections[$indexToSync] ) {
+                        Craft::$container->get(TypesenseClient::class)->collections[$indexToSync]->documents->upsert($index->schema['resolver']($entry));
+                    }
+
                 }
             }
         }
+
+        Craft::dd(Craft::$container->get(TypesenseClient::class)->collections['blog']->documents->export());
     }
 
     public function actionSaveCollection(): Response {

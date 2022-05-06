@@ -182,6 +182,10 @@ class CollectionService extends Component
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
 
+        //TEST FOR DELETION
+//        Craft::$container->get(TypesenseClient::class)->collections['blog']->delete();
+//        Craft::dd(Craft::$container->get(TypesenseClient::class)->collections->retrieve());
+
         foreach ($indexes as $index) {
             if(!$this->getCollectionByCollectionRetrieve($index->indexName)) {
                Craft::$container->get(TypesenseClient::class)->collections->create($index->schema);
