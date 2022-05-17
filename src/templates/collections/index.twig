@@ -17,8 +17,7 @@
             :sections="{{- sections|json_encode -}}"
             :api-config="{
                 csrf: {{- csrf|json_encode -}},
-                baseUrl: '/admin/',
-                action: 'typesense/sync-collection'
+                baseUrl: '{{- cpUrl() -}}'
             }"
         />
 

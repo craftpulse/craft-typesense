@@ -27,9 +27,19 @@ export default defineComponent({
                 [this.api.csrf.name]: this.api.csrf.value,
             }
 
-            console.log(this.api)
+            await executeApi(this.api.client, 'typesense/sync-collection', variables, (response) => {
+                console.table(response)
+            })
+        },
+        async flushCollection() {
 
-            await executeApi(this.api.client, this.api.action, variables, (response) => {
+            let variables = {
+                ...this.section,
+                sectionId: this.section.id,
+                [this.api.csrf.name]: this.api.csrf.value,
+            }
+
+            await executeApi(this.api.client, 'typesense/flush-collection', variables, (response) => {
                 console.table(response)
             })
         }
@@ -63,13 +73,20 @@ export default defineComponent({
         </span>
     </div-->
 
-    <div class="px-6 py-2 border-b border-gray-100">
+    <div class="px-6 py-2 border-b border-gray-100 space-x-2">
         <button
             type="button"
-            class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-emerald-600 hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500"
+            class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-900"
             @click="syncCollection()"
         >
             Sync
+        </button>
+        <button
+            type="button"
+            class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-indigo-700 border border-solid border-indigo-700 hover:text-white hover:bg-indigo-900"
+            @click="flushCollection()"
+        >
+            Flush
         </button>
     </div>
 
