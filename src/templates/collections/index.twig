@@ -12,14 +12,19 @@
     {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
 
     <div class="-m-6" id="typesense-collections">
+        {%- if sections ?? null -%}
+            <grid-sections
+                :sections="{{- sections|json_encode -}}"
+                :api-config="{
+                    csrf: {{- csrf|json_encode -}},
+                    baseUrl: '{{- cpUrl() -}}'
+                }"
+            />
+        {%- else -%}
 
-        <grid-sections
-            :sections="{{- sections|json_encode -}}"
-            :api-config="{
-                csrf: {{- csrf|json_encode -}},
-                baseUrl: '{{- cpUrl() -}}'
-            }"
-        />
+            <p class="pt-4 pl-4">There are currently no collections defined or no collections with entries. Please provide the collections in config/typesense.php</p>
+
+        {%- endif -%}
 
     </div>
 
