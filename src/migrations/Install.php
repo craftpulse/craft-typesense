@@ -43,16 +43,19 @@ class Install extends Migration
      */
     public function createTables()
     {
-        $this->createTable(Table::COLLECTIONS, [
-            'id' => $this->primaryKey(),
-            'fieldLayoutId' => $this->integer(),
-            'name' => $this->string()->notNull(),
-            'handle' => $this->string()->notNull(),
-            'sectionId' => $this->integer()->notNull(),
-            'dateCreated' => $this->dateTime()->notNull(),
-            'dateSynced' => $this->dateTime(),
-            'uid' => $this->uid(),
-        ]);
+        $tableSchema = Craft::$app->db->schema->getTableSchema(Table::COLLECTIONS);
+        if ($tableSchema === null) {
+            $this->createTable(Table::COLLECTIONS, [
+                'id' => $this->primaryKey(),
+                'fieldLayoutId' => $this->integer(),
+                'name' => $this->string()->notNull(),
+                'handle' => $this->string()->notNull(),
+                'sectionId' => $this->integer()->notNull(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateSynced' => $this->dateTime(),
+                'uid' => $this->uid(),
+            ]);
+        }
     }
 
     /**
