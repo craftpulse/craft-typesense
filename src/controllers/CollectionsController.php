@@ -89,7 +89,6 @@ class CollectionsController extends Controller
         $entriesCount = [
             'entries' => [],
         ];
-        $sections = Craft::$app->getSections()->getAllSections();
 
         $pluginName = Typesense::$settings->pluginName;
         $templateTitle = Craft::t('typesense', 'Collections');
@@ -103,16 +102,18 @@ class CollectionsController extends Controller
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
-            $section = $index->criteria->one()->section;
+            $section = $index->criteria->one()->section ?? null;
 
-            $variables['sections'][] = [
-                'id' => $section->id,
-                'name' => $section->name,
-                'handle' => $section->handle,
-                'type' => $section->type,
-                'entryCount' => Entry::find()->section($section->handle)->count(),
-                'index' => $index->indexName
-            ];
+            if($section) {
+                $variables['sections'][] = [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'handle' => $section->handle,
+                    'type' => $section->type,
+                    'entryCount' => Entry::find()->section($section->handle)->count(),
+                    'index' => $index->indexName
+                ];
+            }
         }
 
         $variables['csrf'] = [
