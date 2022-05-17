@@ -11,14 +11,18 @@
 namespace percipiolondon\typesense;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\events\ElementEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\App;
+use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
+use craft\services\Elements;
 use craft\services\Plugins;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
@@ -29,6 +33,7 @@ use craft\web\twig\variables\CraftVariable;
 use nystudio107\pluginvite\services\VitePluginService;
 
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
+use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\ProjectConfigData;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
@@ -170,6 +175,10 @@ class Typesense extends Plugin
         // Install our event listeners
         $this->installEventListeners();
 
+        $this->_registerEventHandlers();
+
+        $this->_createTypesenseClient();
+
         // Register our utilities
         /*Event::on(
             Utilities::class,
@@ -203,30 +212,6 @@ class Typesense extends Plugin
                 }
             }
         );*/
-
-        // Create a reusable Typesense Client
-        if(App::parseEnv($this::$settings->apiKey)) {
-            Craft::$container->setSingleton(TypesenseClient::class, function() {
-                return new TypesenseClient(
-                    [
-                        'api_key' => App::parseEnv($this::$settings->apiKey),
-                        'nodes' => [
-                            [
-                                'host' => App::parseEnv($this::$settings->server),
-                                'port' => App::parseEnv($this::$settings->port),
-                                'protocol' => 'http',
-                            ],
-                        ],
-                        'connection_timeout_seconds' => 2,
-                    ]
-                );
-            });
-        } else {
-            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
-        }
-
-        // Save Typesense collections out of the config
-        Typesense::$plugin->collections->saveCollections();
 
         Craft::info(
             Craft::t(
@@ -301,6 +286,9 @@ class Typesense extends Plugin
     // Protected Methods
     // =========================================================================
 
+    /**
+     *
+     */
     protected function installEventListeners()
     {
         $request = Craft::$app->getRequest();
@@ -373,6 +361,7 @@ class Typesense extends Plugin
             'typesense/collections' => 'typesense/collections/collections',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
+            'typesense/flush-collection' => 'typesense/collections/flush-collection',
         ];
     }
 
@@ -414,6 +403,94 @@ class Typesense extends Plugin
         Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
             $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
         });
+    }
+
+    /**
+     * Set all the after events to upsert/delete the documents
+     */
+    private function _registerEventHandlers(): void
+    {
+        $events = [
+            [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
+            [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
+            [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
+        ];
+
+        foreach ($events as $event) {
+            Event::on(
+                $event[0],
+                $event[1],
+                function (ElementEvent $event) {
+                    $entry = $event->element;
+                    $section = $entry->section->handle;
+
+                    if (ElementHelper::isDraftOrRevision($entry)) {
+                        // don’t do anything with drafts or revisions
+                        return;
+                    }
+
+                    $collection = CollectionHelper::getCollection($section);
+
+                    if($collection) {
+                        Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->upsert($collection->schema['resolver']($entry));
+                    }
+
+//                    Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
+                }
+            );
+        }
+
+        Event::on(
+            Elements::class,
+            Elements::EVENT_AFTER_DELETE_ELEMENT,
+            function (ElementEvent $event) {
+                $entry = $event->element;
+                $section = $entry->section->handle;
+                $id = $entry->id;
+
+                if (ElementHelper::isDraftOrRevision($entry)) {
+                    // don’t do anything with drafts or revisions
+                    return;
+                }
+
+                $collection = CollectionHelper::getCollection($section);
+
+                if($collection) {
+                    Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->delete(['filter_by' => 'id: '.$id]);
+                }
+
+//                Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
+            }
+        );
+    }
+
+    /**
+     * @throws \craft\errors\MissingComponentException
+     */
+    private function _createTypesenseClient() {
+        // Create a reusable Typesense Client
+        if(App::parseEnv($this::$settings->apiKey)) {
+            Craft::$container->setSingleton(TypesenseClient::class, function() {
+                return new TypesenseClient(
+                    [
+                        'api_key' => App::parseEnv($this::$settings->apiKey),
+                        'nodes' => [
+                            [
+                                'host' => App::parseEnv($this::$settings->server),
+                                'port' => App::parseEnv($this::$settings->port),
+                                'protocol' => 'http',
+                            ],
+                        ],
+                        'connection_timeout_seconds' => 2,
+                    ]
+                );
+            });
+        } else {
+            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
+        }
+
+        // Save Typesense collections out of the config
+        Typesense::$plugin->collections->saveCollections();
     }
 
 }
