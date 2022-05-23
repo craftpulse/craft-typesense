@@ -11,13 +11,18 @@
 namespace percipiolondon\typesense;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\events\ElementEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\helpers\App;
+use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
+use craft\services\Elements;
 use craft\services\Plugins;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
@@ -28,6 +33,7 @@ use craft\web\twig\variables\CraftVariable;
 use nystudio107\pluginvite\services\VitePluginService;
 
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
+use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\ProjectConfigData;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
@@ -35,6 +41,8 @@ use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\typesense\Services as TypesenseServices;
 use percipiolondon\typesense\utilities\TypesenseUtility;
 use percipiolondon\typesense\variables\TypesenseVariable;
+
+use Typesense\Client as TypesenseClient;
 
 use yii\base\Event;
 
@@ -152,19 +160,24 @@ class Typesense extends Plugin
         parent::init();
         self::$plugin = $this;
 
-        // Add in our console commands
-        if (Craft::$app instanceof ConsoleApplication) {
-            $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
-        }
-
         // Initialize properties
         self::$settings = self::$plugin->getSettings();
         self::$view = Craft::$app->getView();
 
         $this->name = self::$settings->pluginName;
 
+        // Add in our console commands
+        if (Craft::$app instanceof ConsoleApplication) {
+            $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
+        }
+
+
         // Install our event listeners
         $this->installEventListeners();
+
+        $this->_registerEventHandlers();
+
+        $this->_createTypesenseClient();
 
         // Register our utilities
         /*Event::on(
@@ -200,24 +213,6 @@ class Typesense extends Plugin
             }
         );*/
 
-/**
- * Logging in Craft involves using one of the following methods:
- *
- * Craft::trace(): record a message to trace how a piece of code runs. This is mainly for development use.
- * Craft::info(): record a message that conveys some useful information.
- * Craft::warning(): record a warning message that indicates something unexpected has happened.
- * Craft::error(): record a fatal error that should be investigated as soon as possible.
- *
- * Unless `devMode` is on, only Craft::warning() & Craft::error() will log to `craft/storage/logs/web.log`
- *
- * It's recommended that you pass in the magic constant `__METHOD__` as the second parameter, which sets
- * the category to the method (prefixed with the fully qualified class name) where the constant appears.
- *
- * To enable the Yii debug toolbar, go to your user account in the AdminCP and check the
- * [] Show the debug toolbar on the front end & [] Show the debug toolbar on the Control Panel
- *
- * http://www.yiiframework.com/doc-2.0/guide-runtime-logging.html
- */
         Craft::info(
             Craft::t(
                 'typesense',
@@ -291,6 +286,9 @@ class Typesense extends Plugin
     // Protected Methods
     // =========================================================================
 
+    /**
+     *
+     */
     protected function installEventListeners()
     {
         $request = Craft::$app->getRequest();
@@ -359,10 +357,11 @@ class Typesense extends Plugin
         return [
             'typesense' => 'typesense/settings/dashboard',
             'typesense/dashboard' => 'typesense/settings/dashboard',
-            'typesense/collections' => 'typesense/settings/collections',
             'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/collections' => 'typesense/collections/collections',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
+            'typesense/flush-collection' => 'typesense/collections/flush-collection',
         ];
     }
 
@@ -404,6 +403,94 @@ class Typesense extends Plugin
         Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
             $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
         });
+    }
+
+    /**
+     * Set all the after events to upsert/delete the documents
+     */
+    private function _registerEventHandlers(): void
+    {
+        $events = [
+            [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
+            [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
+            [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
+        ];
+
+        foreach ($events as $event) {
+            Event::on(
+                $event[0],
+                $event[1],
+                function (ElementEvent $event) {
+                    $entry = $event->element;
+                    $section = $entry->section->handle;
+
+                    if (ElementHelper::isDraftOrRevision($entry)) {
+                        // don’t do anything with drafts or revisions
+                        return;
+                    }
+
+                    $collection = CollectionHelper::getCollection($section);
+
+                    if($collection) {
+                        Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->upsert($collection->schema['resolver']($entry));
+                    }
+
+//                    Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
+                }
+            );
+        }
+
+        Event::on(
+            Elements::class,
+            Elements::EVENT_AFTER_DELETE_ELEMENT,
+            function (ElementEvent $event) {
+                $entry = $event->element;
+                $section = $entry->section->handle;
+                $id = $entry->id;
+
+                if (ElementHelper::isDraftOrRevision($entry)) {
+                    // don’t do anything with drafts or revisions
+                    return;
+                }
+
+                $collection = CollectionHelper::getCollection($section);
+
+                if($collection) {
+                    Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->delete(['filter_by' => 'id: '.$id]);
+                }
+
+//                Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
+            }
+        );
+    }
+
+    /**
+     * @throws \craft\errors\MissingComponentException
+     */
+    private function _createTypesenseClient() {
+        // Create a reusable Typesense Client
+        if(App::parseEnv($this::$settings->apiKey)) {
+            Craft::$container->setSingleton(TypesenseClient::class, function() {
+                return new TypesenseClient(
+                    [
+                        'api_key' => App::parseEnv($this::$settings->apiKey),
+                        'nodes' => [
+                            [
+                                'host' => App::parseEnv($this::$settings->server),
+                                'port' => App::parseEnv($this::$settings->port),
+                                'protocol' => 'http',
+                            ],
+                        ],
+                        'connection_timeout_seconds' => 2,
+                    ]
+                );
+            });
+        } else {
+            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
+        }
+
+        // Save Typesense collections out of the config
+        Typesense::$plugin->collections->saveCollections();
     }
 
 }

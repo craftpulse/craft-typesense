@@ -1,0 +1,21 @@
+{
+  "src/js/typesense.ts": {
+    "file": "assets/typesense.0573d6a3.js",
+    "src": "src/js/typesense.ts",
+    "isEntry": true,
+    "css": [
+      "assets/typesense.120d962b.css"
+    ]
+  },
+  "src/js/typesense-collections.ts": {
+    "file": "assets/typesense-collections.316f53b9.js",
+    "src": "src/js/typesense-collections.ts",
+    "isEntry": true,
+    "imports": [
+      "_vendor.978221e7.js"
+    ]
+  },
+  "_vendor.978221e7.js": {
+    "file": "assets/vendor.978221e7.js"
+  }
+}

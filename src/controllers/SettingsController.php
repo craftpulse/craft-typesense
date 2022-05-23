@@ -15,6 +15,7 @@ use craft\helpers\UrlHelper;
 use craft\models\Sites;
 use craft\web\Controller;
 
+use Typesense\Client as TypesenseClient;
 use yii\base\InvalidConfigException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -34,51 +35,6 @@ class SettingsController extends Controller
 
     // Public Methods
     // =========================================================================
-
-    /**
-     * Collections display
-     *
-     * @param string|null $siteHandle
-     *
-     * @return Response The rendered result
-     * @throws NotFoundHttpException
-     * @throws \yii\web\ForbiddenHttpException
-     */
-    public function actionCollections(string $siteHandle = null): Response
-    {
-        $variables = [];
-        $entriesCount = [
-            'entries' => [],
-        ];
-        $sections = Craft::$app->getSections()->getAllSections();
-
-        $pluginName = Typesense::$settings->pluginName;
-        $templateTitle = Craft::t('typesense', 'Collections');
-
-        $variables['controllerHandle'] = 'collections';
-        $variables['pluginName'] = Typesense::$settings->pluginName;
-        $variables['title'] = $templateTitle;
-        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
-        $variables['selectedSubnavItem'] = 'collections';
-
-        foreach ( $sections as $section ) {
-            $variables['sections'][] = [
-                'id' => $section->id,
-                'name' => $section->name,
-                'handle' => $section->handle,
-                'type' => $section->type,
-                'entryCount' => Entry::find()->section($section->handle)->count(),
-            ];
-        }
-
-        $variables['csrf'] = [
-            'name' => Craft::$app->getConfig()->getGeneral()->csrfTokenName,
-            'value' => Craft::$app->getRequest()->getCsrfToken(),
-        ];
-
-        // Render the template
-        return $this->renderTemplate('typesense/collections/index', $variables);
-    }
 
     /**
      * Dashboard display
@@ -142,15 +98,23 @@ class SettingsController extends Controller
      * @throws \craft\errors\MissingComponentException
      */
 
-    public function actionSavePluginSettings() {
+    public function actionSavePluginSettings()
+    {
         $this->requirePostRequest();
         $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
-        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
+//        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
         $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
         if ( $plugin === null ) {
             throw new NotFoundHttpException('Plugin not found');
         }
+
+        $settings = [
+            'apiKey' => Craft::$app->getRequest()->getBodyParam('apiKey'),
+            'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
+            'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiportKey'),
+            'server' => Craft::$app->getRequest()->getBodyParam('server'),
+        ];
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {
             Craft::$app->getSession()->setError(Craft::t('app', "Couldn't save plugin settings."));

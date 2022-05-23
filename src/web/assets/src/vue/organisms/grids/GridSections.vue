@@ -32,7 +32,6 @@
                 const api = {
                     client: axios.create(configureApi(this.apiConfig.baseUrl)),
                     csrf: this.apiConfig.csrf,
-                    action: this.apiConfig.action,
                 }
 
                 this.api = api;
@@ -50,8 +49,12 @@
 
 <template>
 
-    <section class="mb-16 rounded-tr-sm rounded-tl-sm">
-        <div class="grid grid-cols-5 rounded-tr-md rounded-tl-md bg-gray-100 mb-4">
+    <section class="rounded-tr-sm rounded-tl-sm">
+        <div class="grid grid-cols-5 rounded-tr-md rounded-tl-md bg-gray-100">
+
+            <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Index
+            </div>
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Section
@@ -65,9 +68,9 @@
                 Total Entries
             </div>
 
-            <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <!--div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Status
-            </div>
+            </div-->
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Sync
@@ -86,17 +89,4 @@
 
         </div>
     </section>
-
-    <div class="bg-emerald-200 py-8 px-4 max-w-xl">
-
-    </div>
-
-    <div class="bg-sky-200 py-8 px-4 max-w-xl">
-        {{ sections }}
-    </div>
-
-    <div class="bg-rose-200 my-8 py-8 px-4 max-w-xl">
-        {{ apiConfig }}
-    </div>
-
 </template>
