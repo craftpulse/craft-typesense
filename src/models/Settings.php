@@ -81,6 +81,11 @@ class Settings extends Model
     public ?string $port = '8108';
 
     /**
+     * @var string|null The API port which Typesense listens to.
+     */
+    public ?string $protocol = 'http';
+
+    /**
      * @var string The Admin API key.
      */
     public string $apiKey = '';
@@ -106,7 +111,7 @@ class Settings extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['apiKey', 'cluster', 'clusterPort', 'port', 'searchOnlyApiKey', 'server'],
+                'attributes' => ['apiKey', 'cluster', 'clusterPort', 'port', 'protocol', 'searchOnlyApiKey', 'server'],
             ],
         ];
     }
@@ -117,7 +122,7 @@ class Settings extends Model
     public function defineRules(): array
     {
         return [
-            [['apiKey', 'cluster', 'clusterPort', 'pluginName', 'port', 'searchOnlyApiKey', 'server'] , 'string'],
+            [['apiKey', 'cluster', 'clusterPort', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'] , 'string'],
             [['apiKey', 'serverType'] , 'required'],
             [['serverType'], 'in', 'range' => [
                 self::TYPESENSE_SERVER,

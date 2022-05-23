@@ -10,6 +10,7 @@
 
 namespace percipiolondon\typesense\controllers;
 
+use Http\Client\Exception;
 use percipiolondon\typesense\Typesense;
 
 use Craft;
@@ -24,6 +25,11 @@ use percipiolondon\typesense\services\CollectionService;
 
 use Typesense\Client as TypesenseClient;
 
+use Typesense\Exceptions\TypesenseClientError;
+use yii\base\InvalidConfigException;
+use yii\di\NotInstantiableException;
+use yii\web\BadRequestHttpException;
+use yii\web\ForbiddenHttpException;
 use yii\web\Response;
 
 /**
@@ -63,8 +69,8 @@ class CollectionsController extends Controller
     // =========================================================================
 
     /**
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\web\ForbiddenHttpException
+     * @throws InvalidConfigException
+     * @throws ForbiddenHttpException
      */
     public function init()
     {
@@ -81,7 +87,7 @@ class CollectionsController extends Controller
      *
      * @return Response The rendered result
      * @throws NotFoundHttpException
-     * @throws \yii\web\ForbiddenHttpException
+     * @throws ForbiddenHttpException
      */
     public function actionCollections(string $siteHandle = null): Response
     {
@@ -164,11 +170,11 @@ class CollectionsController extends Controller
 
     /**
      * @return Response
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
-     * @throws \yii\web\BadRequestHttpException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
+     * @throws BadRequestHttpException
      */
     public function actionSyncCollection(): Response {
         $this->requirePostRequest();
@@ -207,7 +213,7 @@ class CollectionsController extends Controller
 
     /**
      * @return Response
-     * @throws \yii\web\BadRequestHttpException
+     * @throws BadRequestHttpException
      */
 //    public function actionSaveCollection(): Response {
 //        $this->requirePostRequest();
@@ -342,10 +348,10 @@ class CollectionsController extends Controller
 
     /**
      * @return Response
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function actionListDocuments(): Response
     {
@@ -360,10 +366,10 @@ class CollectionsController extends Controller
 
     /**
      * @return string
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function actionDeleteDocuments()
     {
@@ -379,10 +385,10 @@ class CollectionsController extends Controller
 
     /**
      * @return string
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function actionDropCollection()
     {
@@ -398,10 +404,10 @@ class CollectionsController extends Controller
 
     /**
      * @return Response
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function actionListCollections(): Response
     {
@@ -410,10 +416,10 @@ class CollectionsController extends Controller
 
     /**
      * @return Response
-     * @throws \Http\Client\Exception
-     * @throws \Typesense\Exceptions\TypesenseClientError
-     * @throws \yii\base\InvalidConfigException
-     * @throws \yii\di\NotInstantiableException
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
      */
     public function actionRetrieveCollection()
     {

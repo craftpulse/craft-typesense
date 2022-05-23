@@ -6,6 +6,7 @@ use Craft;
 
 use craft\web\Request;
 use craft\helpers\DateTimeHelper;
+use craft\helpers\Json;
 use craft\helpers\StringHelper;
 
 use percipiolondon\typesense\models\CollectionModel as Collection;
@@ -72,7 +73,7 @@ class CollectionHelper
     }
 
     /**
-     * @param string $documents
+     * @param string $index
      * @return array
      */
     public static function convertDocumentsToArray(string $index): array
@@ -82,7 +83,7 @@ class CollectionHelper
         $documents = [];
 
         foreach($jsonDocs as $document) {
-            $documents[] = json_decode($document);
+            $documents[] = Json::decode($document);
         }
 
         return $documents;
