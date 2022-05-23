@@ -28,8 +28,6 @@
 
     {{- redirectInput('typesense/plugin') -}}
 
-    {{ dump(settings) }}
-
     {{ forms.selectField({
         label: 'Typesense Server Type'|t('blitz'),
         instructions: 'The server type for connecting to the Typesense API.'|t('typesense'),
@@ -84,10 +82,6 @@
             value: settings.clusterPort,
         }) }}
     </div>
-
-    {% set info %}
-        <span class="info">The API key and search only API key from your Typesense environment.</span>
-    {% endset %}
 
     {{ forms.autosuggestField({
         label: 'API Key',
