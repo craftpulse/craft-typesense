@@ -117,7 +117,7 @@ class SettingsController extends Controller
             'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
             'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
             'server' => Craft::$app->getRequest()->getBodyParam('server'),
-            'typesenseServer' => Craft::$app->getRequest()->getBodyParam('typesenseServer'),
+            'serverType' => 'cluster', //Craft::$app->getRequest()->getBodyParam('serverType'),
         ];
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {

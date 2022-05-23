@@ -28,22 +28,24 @@
 
     {{- redirectInput('typesense/plugin') -}}
 
+    {{ dump(settings) }}
+
     {{ forms.selectField({
         label: 'Typesense Server Type'|t('blitz'),
         instructions: 'The server type for connecting to the Typesense API.'|t('typesense'),
         suggestEnvVars: true,
         name: 'serverType',
-        value: settings.typesenseServer,
+        value: settings.serverType,
         options: {
-            typesenseServer: "Single Server"|t('typesense'),
-            typesenseCluster: "Cluster"|t('typesense'),
-            typesenseCloud: "Typesense Cloud"|t('typesense')
+            'server': "Single Server"|t('typesense'),
+            'cluster': "Cluster"|t('typesense'),
+            'cloud': "Typesense Cloud"|t('typesense')
         },
         toggle: true,
         required: true,
     }) }}
 
-    <div id="typesenseServer" class="hidden">
+    <div id="server" class="hidden">
         {{ forms.autosuggestField({
             label: 'Typesense host address',
             instructions: 'The Typesense server address.'|t('typesense'),
@@ -63,7 +65,7 @@
         }) }}
     </div>
 
-    <div id="typesenseCluster" class="hidden">
+    <div id="cluster" class="hidden">
         {{ forms.autosuggestField({
             label: 'Typesense cluster servers',
             instructions: 'The Typesense cluster server addresses divided by `;`.'|t('typesense'),

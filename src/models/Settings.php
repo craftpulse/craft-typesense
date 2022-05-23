@@ -34,17 +34,17 @@ class Settings extends Model
     /**
      * @const int
      */
-    public const TYPESENSE_SERVER = 0;
+    public const TYPESENSE_SERVER = 'server';
 
     /**
      * @const int
      */
-    public const TYPESENSE_CLUSTER = 1;
+    public const TYPESENSE_CLUSTER = 'cluster';
 
     /**
      * @const int
      */
-    public const TYPESENSE_CLOUD = 2;
+    public const TYPESENSE_CLOUD = 'cloud';
 
     /**
      * @var string The public-facing name of the plugin
@@ -52,13 +52,13 @@ class Settings extends Model
     public string $pluginName = 'Typesense';
 
     /**
-     * @var int which type of Typesense connection needs to be used.
+     * @var string which type of Typesense connection needs to be used.
      *
      * - `self::TYPESENSE_SERVER`: Use a single server connection
      * - `self::TYPESENSE_CLUSTER`: Use a cluster server connection
      * - `self::TYPESENSE_CLOUD`: Use the Typesense cloud connection
      */
-    public int $typesenseServer = self::TYPESENSE_SERVER;
+    public string $serverType = self::TYPESENSE_SERVER;
 
     /**
      * @var string|null The API cluster endpoint where Typesense connects to.
@@ -86,9 +86,9 @@ class Settings extends Model
     public string $apiKey = '';
 
     /**
-     * @var string The search-only API key.
+     * @var string|null The search-only API key.
      */
-    public string $searchOnlyApiKey = '';
+    public ?string $searchOnlyApiKey;
 
     /**
      * @var array Provide an array of collections that needs to be added.
@@ -118,17 +118,17 @@ class Settings extends Model
     {
         return [
             [['apiKey', 'cluster', 'clusterPort', 'pluginName', 'port', 'searchOnlyApiKey', 'server'] , 'string'],
-            [['apiKey', 'typesenseServer'] , 'required'],
-            [['typesenseServer'], 'in', 'range' => [
+            [['apiKey', 'serverType'] , 'required'],
+            [['serverType'], 'in', 'range' => [
                 self::TYPESENSE_SERVER,
                 self::TYPESENSE_CLUSTER,
                 self::TYPESENSE_CLOUD,
             ]],
             [['cluster', 'clusterPort'], 'required', 'when' => function($model) {
-                return $model->typesenseServer = self::TYPESENSE_CLUSTER;
+                return $model->serverType === self::TYPESENSE_CLUSTER;
             }],
             [['port', 'server'], 'required', 'when' => function($model) {
-                return $model->typesenseServer = self::TYPESENSE_SERVER;
+                return $model->serverType === self::TYPESENSE_SERVER;
             }],
         ];
     }
