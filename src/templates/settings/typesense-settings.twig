@@ -28,27 +28,68 @@
 
     {{- redirectInput('typesense/plugin') -}}
 
-    {{ forms.autosuggestField({
-        label: 'Typesense host address',
-        instructions: "The Typesense server address."|t('typesense'),
+    {{ forms.selectField({
+        label: 'Typesense Server Type'|t('blitz'),
+        instructions: 'The server type for connecting to the Typesense API.'|t('typesense'),
         suggestEnvVars: true,
-        id: 'server',
-        name: 'server',
-        value: settings.server,
+        name: 'serverType',
+        value: settings.typesenseServer,
+        options: {
+            typesenseServer: "Single Server"|t('typesense'),
+            typesenseCluster: "Cluster"|t('typesense'),
+            typesenseCloud: "Typesense Cloud"|t('typesense')
+        },
+        toggle: true,
+        required: true,
     }) }}
 
-    {{ forms.autosuggestField({
-        label: 'Typesense port ( default is 8108 )',
-        instructions: "Port on which Typesense API service listens."|t('typesense'),
-        suggestEnvVars: true,
-        id: 'port',
-        name: 'port',
-        value: settings.port,
-    }) }}
+    <div id="typesenseServer" class="hidden">
+        {{ forms.autosuggestField({
+            label: 'Typesense host address',
+            instructions: 'The Typesense server address.'|t('typesense'),
+            suggestEnvVars: true,
+            id: 'server',
+            name: 'server',
+            value: settings.server,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Typesense port ( default is 8108 )',
+            instructions: 'Port on which Typesense API service listens.'|t('typesense'),
+            suggestEnvVars: true,
+            id: 'port',
+            name: 'port',
+            value: settings.port,
+        }) }}
+    </div>
+
+    <div id="typesenseCluster" class="hidden">
+        {{ forms.autosuggestField({
+            label: 'Typesense cluster servers',
+            instructions: 'The Typesense cluster server addresses divided by `;`.'|t('typesense'),
+            suggestEnvVars: true,
+            id: 'cluster',
+            name: 'cluster',
+            value: settings.cluster,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Typesense cluster port ( default is 8108 )',
+            instructions: 'Port on which the Typesense API service listens.'|t('typesense'),
+            suggestEnvVars: true,
+            id: 'clusterPort',
+            name: 'clusterPort',
+            value: settings.clusterPort,
+        }) }}
+    </div>
+
+    {% set info %}
+        <span class="info">The API key and search only API key from your Typesense environment.</span>
+    {% endset %}
 
     {{ forms.autosuggestField({
         label: 'API Key',
-        instructions: "The admin API key that allows all operations."|t('typesense'),
+        instructions: 'The admin API key that allows all operations.'|t('typesense'),
         suggestEnvVars: true,
         required: true,
         id: 'apiKey',
@@ -58,7 +99,7 @@
 
     {{ forms.autosuggestField({
         label: 'Search only API Key',
-        instructions: "The search only API key that can fetch the search results only."|t('typesense'),
+        instructions: 'The search only API key that can fetch the search results only.'|t('typesense'),
         suggestEnvVars: true,
         id: 'searchOnlyApiKey',
         name: 'searchOnlyApiKey',
