@@ -12,8 +12,10 @@ namespace percipiolondon\typesense;
 
 use Craft;
 use craft\base\Element;
+use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\errors\MissingComponentException;
 use craft\events\ElementEvent;
 use craft\events\PluginEvent;
 use craft\events\RegisterComponentTypesEvent;
@@ -340,7 +342,7 @@ class Typesense extends Plugin
     /**
      * Creates and returns the model used to store the plugin’s settings.
      *
-     * @return \craft\base\Model|null
+     * @return Model|null
      */
     protected function createSettingsModel()
     {
@@ -465,32 +467,56 @@ class Typesense extends Plugin
     }
 
     /**
-     * @throws \craft\errors\MissingComponentException
+     * @throws MissingComponentException
      */
-    private function _createTypesenseClient() {
-        // Create a reusable Typesense Client
-        if(App::parseEnv($this::$settings->apiKey)) {
+    private function _createTypesenseClient(): void
+    {
+
+        if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
             Craft::$container->setSingleton(TypesenseClient::class, function() {
-                return new TypesenseClient(
-                    [
-                        'api_key' => App::parseEnv($this::$settings->apiKey),
-                        'nodes' => [
-                            [
-                                'host' => App::parseEnv($this::$settings->server),
-                                'port' => App::parseEnv($this::$settings->port),
-                                'protocol' => 'http',
-                            ],
+                return new TypesenseClient([
+                    'api_key' => App::parseEnv($this::$settings->apiKey),
+                    'nodes' => [
+                        [
+                            'host' => App::parseEnv($this::$settings->server),
+                            'port' => App::parseEnv($this::$settings->port),
+                            'protocol' => App::parseEnv($this::$settings->protocol),
                         ],
-                        'connection_timeout_seconds' => 2,
-                    ]
-                );
+                    ],
+                    'connection_timeout_seconds' => 2,
+                ]);
             });
+        } else if ($this::$settings->serverType === 'cluster' && App::parseEnv($this::$settings->apiKey)) {
+            Craft::$container->setSingleton(TypesenseClient::class, function() {
+                return new TypesenseClient([
+                    'api_key' => App::parseEnv($this::$settings->apiKey),
+                    'nodes' => $this->_createNodes($this::$settings),
+                    'connection_timeout_seconds' => 2,
+                ]);
+            });
+        } else if ($this::$settings->serverType === 'cloud' && App::parseEnv($this::$settings->apiKey)) {
+            // Currently nothing!
         } else {
             Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
         }
 
         // Save Typesense collections out of the config
-        Typesense::$plugin->collections->saveCollections();
+        self::$plugin->collections->saveCollections();
+    }
+
+    private function _createNodes(Settings $settings): array {
+        $typesenseNodes = explode(";", App::parseEnv($this::$settings->cluster));
+        $nodes = [];
+
+        foreach ($typesenseNodes as $node) {
+            $nodes[] = [
+                'host'      => $node,
+                'port'      => App::parseEnv($this::$settings->clusterPort),
+                'protocol'  => 'https', //App::parseEnv($this::$settings->protocol),
+            ];
+        }
+
+        return $nodes;
     }
 
 }

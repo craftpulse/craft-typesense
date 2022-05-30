@@ -32,69 +32,109 @@ class Settings extends Model
     // =========================================================================
 
     /**
+     * @const int
+     */
+    public const TYPESENSE_SERVER = 'server';
+
+    /**
+     * @const int
+     */
+    public const TYPESENSE_CLUSTER = 'cluster';
+
+    /**
+     * @const int
+     */
+    public const TYPESENSE_CLOUD = 'cloud';
+
+    /**
      * @var string The public-facing name of the plugin
      */
-    public $pluginName = 'Typesense';
+    public string $pluginName = 'Typesense';
 
     /**
-     * @var string The API endpoint where Typesense connects to.
+     * @var string which type of Typesense connection needs to be used.
+     *
+     * - `self::TYPESENSE_SERVER`: Use a single server connection
+     * - `self::TYPESENSE_CLUSTER`: Use a cluster server connection
+     * - `self::TYPESENSE_CLOUD`: Use the Typesense cloud connection
      */
-    public $server = '0.0.0.0';
+    public string $serverType = self::TYPESENSE_SERVER;
 
     /**
-     * @var string The API port which Typesense listens to.
+     * @var string|null The API cluster endpoint where Typesense connects to.
      */
-    public $port = '8108';
+    public ?string $cluster = '0.0.0.0;0.0.0.1;0.0.0.2';
 
     /**
-     * @var string The Admin API key.
+     * @var string|null The API port which the Typesense cluster listens to.
      */
-    public $apiKey = '';
+    public ?string $clusterPort = '443';
 
     /**
-     * @var string The search-only API key.
+     * @var string|null The API endpoint where Typesense connects to.
      */
-    public $searchOnlyApiKey = '';
+    public ?string $server = '0.0.0.0';
+
+    /**
+     * @var string|null The API port which Typesense listens to.
+     */
+    public ?string $port = '443';
+
+    /**
+     * @var string|null The API port which Typesense listens to.
+     */
+    public ?string $protocol = 'http';
+
+    /**
+     * @var string|null The Admin API key.
+     */
+    public ?string $apiKey = null;
+
+    /**
+     * @var string|null The search-only API key.
+     */
+    public ?string $searchOnlyApiKey = null;
 
     /**
      * @var array Provide an array of collections that needs to be added.
      */
-    public $collections = [];
+    public array $collections = [];
 
     // Public Methods
     // =========================================================================
 
     /**
-     * Returns the validation rules for attributes.
-     *
-     * Validation rules are used by [[validate()]] to check if attribute values are valid.
-     * Child classes may override this method to declare different validation rules.
-     *
-     * More info: http://www.yiiframework.com/doc-2.0/guide-input-validation.html
-     *
-     * @return array
+     * @inheritdoc
      */
-    public function rules()
+    protected function defineBehaviors(): array
     {
         return [
-            [['pluginName', 'server', 'port', 'apiKey', 'searchOnlyApiKey'] , 'string'],
-            [['apiKey'] , 'required'],
-            ['pluginName', 'default', 'value' => 'Typesense'],
-            ['server', 'default', 'value' => '0.0.0.0'],
-            ['port', 'default', 'value' => '8108'],
+            'parser' => [
+                'class' => EnvAttributeParserBehavior::class,
+                'attributes' => ['apiKey', 'cluster', 'clusterPort', 'port', 'protocol', 'searchOnlyApiKey', 'server'],
+            ],
         ];
     }
 
     /**
      * @inheritdoc
      */
-    public function behaviors(): array
+    public function defineRules(): array
     {
         return [
-            'parser' => [
-                'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['server', 'port', 'apiKey', 'searchOnlyApiKey'],
-            ]
+            [['apiKey', 'cluster', 'clusterPort', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'] , 'string'],
+            [['apiKey', 'serverType'] , 'required'],
+            [['serverType'], 'in', 'range' => [
+                self::TYPESENSE_SERVER,
+                self::TYPESENSE_CLUSTER,
+                self::TYPESENSE_CLOUD,
+            ]],
+            [['cluster', 'clusterPort'], 'required', 'when' => function($model) {
+                return $model->serverType === self::TYPESENSE_CLUSTER;
+            }],
+            [['port', 'server'], 'required', 'when' => function($model) {
+                return $model->serverType === self::TYPESENSE_SERVER;
+            }],
         ];
     }
 }

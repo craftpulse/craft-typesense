@@ -11,12 +11,14 @@ namespace percipiolondon\typesense\controllers;
 
 use Craft;
 use craft\elements\Entry;
+use craft\errors\MissingComponentException;
 use craft\helpers\UrlHelper;
 use craft\models\Sites;
 use craft\web\Controller;
 
-use Typesense\Client as TypesenseClient;
 use yii\base\InvalidConfigException;
+use yii\web\BadRequestHttpException;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -44,7 +46,7 @@ class SettingsController extends Controller
      *
      * @return Response The rendered result
      * @throws NotFoundHttpException
-     * @throws \yii\web\ForbiddenHttpException
+     * @throws ForbiddenHttpException
      */
     public function actionDashboard(string $siteHandle = null, bool $showWelcome = false): Response
     {
@@ -70,7 +72,7 @@ class SettingsController extends Controller
      *
      * @return Response The rendered result
      * @throws NotFoundHttpException
-     * @throws \yii\web\ForbiddenHttpException
+     * @throws ForbiddenHttpException
      */
     public function actionPlugin(): Response
     {
@@ -94,15 +96,14 @@ class SettingsController extends Controller
      *
      * @return Response|null
      * @throws NotFoundHttpException if the requested plugin cannot be found
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \craft\errors\MissingComponentException
+     * @throws BadRequestHttpException
+     * @throws MissingComponentException
      */
 
     public function actionSavePluginSettings()
     {
         $this->requirePostRequest();
         $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
-//        $settings = Craft::$app->getRequest()->getBodyParam('settings', []);
         $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
         if ( $plugin === null ) {
@@ -111,9 +112,13 @@ class SettingsController extends Controller
 
         $settings = [
             'apiKey' => Craft::$app->getRequest()->getBodyParam('apiKey'),
+            'cluster' => Craft::$app->getRequest()->getBodyParam('cluster'),
+            'clusterPort' => Craft::$app->getRequest()->getBodyParam('clusterPort'),
+            'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
+            'protocol' => Craft::$app->getRequest()->getBodyParam('protocol'),
             'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
-            'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiportKey'),
             'server' => Craft::$app->getRequest()->getBodyParam('server'),
+            'serverType' => Craft::$app->getRequest()->getBodyParam('serverType'),
         ];
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {

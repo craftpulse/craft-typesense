@@ -21,6 +21,7 @@ use percipiolondon\typesense\events\CollectionEvent;
 use percipiolondon\typesense\models\CollectionModel as Collection;
 
 use percipiolondon\typesense\Typesense;
+use Throwable;
 use Typesense\Client as TypesenseClient;
 use yii\base\Component;
 use yii\base\Exception;
@@ -203,7 +204,7 @@ class CollectionService extends Component
      * @param Collection $collection The section to be saved
      * @return bool
      * @throws CollectionNotFoundException if $collection->id is invalid
-     * @throws \Throwable if reasons
+     * @throws Throwable if reasons
      */
 //    public function saveCollection(Collection $collection): bool
 //    {
