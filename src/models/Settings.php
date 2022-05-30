@@ -68,7 +68,7 @@ class Settings extends Model
     /**
      * @var string|null The API port which the Typesense cluster listens to.
      */
-    public ?string $clusterPort = '8108';
+    public ?string $clusterPort = '443';
 
     /**
      * @var string|null The API endpoint where Typesense connects to.
@@ -78,7 +78,7 @@ class Settings extends Model
     /**
      * @var string|null The API port which Typesense listens to.
      */
-    public ?string $port = '8108';
+    public ?string $port = '443';
 
     /**
      * @var string|null The API port which Typesense listens to.
@@ -86,14 +86,14 @@ class Settings extends Model
     public ?string $protocol = 'http';
 
     /**
-     * @var string The Admin API key.
+     * @var string|null The Admin API key.
      */
-    public string $apiKey = '';
+    public ?string $apiKey = null;
 
     /**
      * @var string|null The search-only API key.
      */
-    public ?string $searchOnlyApiKey;
+    public ?string $searchOnlyApiKey = null;
 
     /**
      * @var array Provide an array of collections that needs to be added.

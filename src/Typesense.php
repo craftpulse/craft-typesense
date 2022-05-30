@@ -469,7 +469,8 @@ class Typesense extends Plugin
     /**
      * @throws MissingComponentException
      */
-    private function _createTypesenseClient() {
+    private function _createTypesenseClient(): void
+    {
 
         if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
             Craft::$container->setSingleton(TypesenseClient::class, function() {
@@ -511,7 +512,7 @@ class Typesense extends Plugin
             $nodes[] = [
                 'host'      => $node,
                 'port'      => App::parseEnv($this::$settings->clusterPort),
-                'protocol'  => App::parseEnv($this::$settings->protocol),
+                'protocol'  => 'https', //App::parseEnv($this::$settings->protocol),
             ];
         }
 

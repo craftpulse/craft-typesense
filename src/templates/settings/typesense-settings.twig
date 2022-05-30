@@ -84,6 +84,15 @@
     </div>
 
     {{ forms.autosuggestField({
+        label: 'Protocol ( default is http )',
+        instructions: 'Protocol on which the Typesense API service is accessed.'|t('typesense'),
+        suggestEnvVars: true,
+        id: 'protocol',
+        name: 'protocol',
+        value: settings.protocol,
+    }) }}
+
+    {{ forms.autosuggestField({
         label: 'API Key',
         instructions: 'The admin API key that allows all operations.'|t('typesense'),
         suggestEnvVars: true,
