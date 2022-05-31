@@ -471,37 +471,43 @@ class Typesense extends Plugin
      */
     private function _createTypesenseClient(): void
     {
-
-        if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
-            Craft::$container->setSingleton(TypesenseClient::class, function() {
-                return new TypesenseClient([
-                    'api_key' => App::parseEnv($this::$settings->apiKey),
-                    'nodes' => [
-                        [
-                            'host' => App::parseEnv($this::$settings->server),
-                            'port' => App::parseEnv($this::$settings->port),
-                            'protocol' => App::parseEnv($this::$settings->protocol),
+        try {
+            if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
+                Craft::$container->setSingleton(TypesenseClient::class, function() {
+                    return new TypesenseClient([
+                        'api_key' => App::parseEnv($this::$settings->apiKey),
+                        'nodes' => [
+                            [
+                                'host' => App::parseEnv($this::$settings->server),
+                                'port' => App::parseEnv($this::$settings->port),
+                                'protocol' => App::parseEnv($this::$settings->protocol),
+                            ],
                         ],
-                    ],
-                    'connection_timeout_seconds' => 2,
-                ]);
-            });
-        } else if ($this::$settings->serverType === 'cluster' && App::parseEnv($this::$settings->apiKey)) {
-            Craft::$container->setSingleton(TypesenseClient::class, function() {
-                return new TypesenseClient([
-                    'api_key' => App::parseEnv($this::$settings->apiKey),
-                    'nodes' => $this->_createNodes($this::$settings),
-                    'connection_timeout_seconds' => 2,
-                ]);
-            });
-        } else if ($this::$settings->serverType === 'cloud' && App::parseEnv($this::$settings->apiKey)) {
-            // Currently nothing!
-        } else {
-            Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
-        }
+                        'connection_timeout_seconds' => 2,
+                    ]);
+                });
+            } else if ($this::$settings->serverType === 'cluster' && App::parseEnv($this::$settings->apiKey)) {
+                Craft::$container->setSingleton(TypesenseClient::class, function() {
+                    return new TypesenseClient([
+                        'api_key' => App::parseEnv($this::$settings->apiKey),
+                        'nodes' => $this->_createNodes($this::$settings),
+                        'connection_timeout_seconds' => 2,
+                    ]);
+                });
+            } else if ($this::$settings->serverType === 'cloud' && App::parseEnv($this::$settings->apiKey)) {
+                // Currently nothing!
+            } else {
+                Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
+            }
 
-        // Save Typesense collections out of the config
-        self::$plugin->collections->saveCollections();
+            if(App::parseEnv($this::$settings->apiKey)) {
+                // Save Typesense collections out of the config
+                self::$plugin->collections->saveCollections();
+            }
+        } catch( \Exception $e ) {
+            Craft::$app->getSession()->setError(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
+            Craft::error($e->getMessage(), __METHOD__);
+        }
     }
 
     private function _createNodes(Settings $settings): array {
