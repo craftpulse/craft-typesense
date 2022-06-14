@@ -424,9 +424,9 @@ class Typesense extends Plugin
                 $event[1],
                 function (ElementEvent $event) {
                     $entry = $event->element;
-                    $section = $entry->section->handle;
+                    $section = $entry->section->handle ?? null;
 
-                    if (ElementHelper::isDraftOrRevision($entry)) {
+                    if (ElementHelper::isDraftOrRevision($entry) && !$section) {
                         // don’t do anything with drafts or revisions
                         return;
                     }
