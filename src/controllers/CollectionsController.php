@@ -10,7 +10,9 @@
 
 namespace percipiolondon\typesense\controllers;
 
+use craft\helpers\Queue;
 use Http\Client\Exception;
+use percipiolondon\typesense\jobs\SyncDocumentsJob;
 use percipiolondon\typesense\Typesense;
 
 use Craft;
@@ -143,29 +145,16 @@ class CollectionsController extends Controller
         //delete collection
         Craft::$container->get(TypesenseClient::class)->collections[$index]->delete();
 
-        //fetch skeleton of collection
-        $collection = CollectionHelper::getCollection($index);
+        Queue::push(new SyncDocumentsJob([
+            'criteria' => [
+                'index' => $index,
+                'isNew' => true
+            ]
+        ]));
 
-        if($collection) {
-            //create new collection
-            Craft::$container->get(TypesenseClient::class)->collections->create($collection->schema);
-
-            // add entries as documents to the collection
-            $entries = $collection->criteria->all();
-
-            foreach ($entries as $entry) {
-                Craft::$container->get(TypesenseClient::class)
-                    ->collections[$index]
-                    ->documents
-                    ->upsert($collection->schema['resolver']($entry));
-                $upsertIds[] = $entry->id;
-            }
-        }
-
-        //prepare documents to parse as an array
-        $documents = CollectionHelper::convertDocumentsToArray($index);
-
-        return $this->asJson($documents);
+        return $this->asJson([
+            'success' => true
+        ]);
     }
 
     /**
@@ -181,34 +170,17 @@ class CollectionsController extends Controller
 
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
-        $collection = CollectionHelper::getCollection($index);
 
-        $upsertIds = [];
+        Queue::push(new SyncDocumentsJob([
+            'criteria' => [
+                'index' => $index
+            ]
+        ]));
 
-        // Add or update documents on sync
-        if($collection) {
-            $entries = $collection->criteria->all();
-
-            foreach ($entries as $entry) {
-                Craft::$container->get(TypesenseClient::class)
-                    ->collections[$index]
-                    ->documents
-                    ->upsert($collection->schema['resolver']($entry));
-                $upsertIds[] = $entry->id;
-            }
-        }
-
-        // convert documents into an array
-        $documents = CollectionHelper::convertDocumentsToArray($index);
-
-        // delete documents that aren't existing anymore
-        foreach($documents as $document) {
-            if( !in_array($document->id, $upsertIds) ) {
-                Craft::$container->get(TypesenseClient::class)->collections[$index]->documents->delete(['filter_by' => 'id: '.$document->id]);
-            }
-        }
-
-        return $this->asJson($documents);
+        return $this->asJson([
+            'success' => true,
+            'documents' =>  CollectionHelper::convertDocumentsToArray($index)
+        ]);
     }
 
     /**
