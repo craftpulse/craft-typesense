@@ -65,7 +65,6 @@ use yii\base\Event;
  * @property  TypesenseService $typesenseService
  * @property  CollectionService $collectionService
  * @property  Settings $settings
- * @method    Settings getSettings()
  */
 class Typesense extends Plugin
 {
@@ -433,6 +432,7 @@ class Typesense extends Plugin
                 function (ElementEvent $event) {
                     $entry = $event->element;
                     $section = $entry->section->handle ?? null;
+                    $type = $entry->type->handle ?? null;
                     $collection = null;
 
                     if (ElementHelper::isDraftOrRevision($entry)) {
@@ -441,14 +441,18 @@ class Typesense extends Plugin
                     }
 
                     if($section) {
+                        if($type) {
+                            $section = $section.'.'.$type;
+                        }
+
                         $collection = CollectionHelper::getCollectionBySection($section);
                     }
 
                     if($collection) {
                         Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                        // Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->export());
                     }
 
-//                    Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
                 }
             );
         }
@@ -460,6 +464,7 @@ class Typesense extends Plugin
                 $entry = $event->element;
                 $section = $entry->section->handle ?? null;
                 $id = $entry->id;
+                $type = $entry->type->handle ?? null;
                 $collection = null;
 
                 if (ElementHelper::isDraftOrRevision($entry)) {
@@ -468,6 +473,10 @@ class Typesense extends Plugin
                 }
 
                 if($section) {
+                    if($type) {
+                        $section = $section.'.'.$type;
+                    }
+
                     $collection = CollectionHelper::getCollectionBySection($section);
                 }
 
