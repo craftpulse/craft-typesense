@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.0.0-beta.4 - 2022-06-20
+### Fixed
+- Fixed the session error in yaml
+
 ## 1.0.0-beta.3 - 2022-06-20
 ## Added
 - Provide different entry types for sections
