@@ -528,8 +528,10 @@ class Typesense extends Plugin
                 self::$plugin->collections->saveCollections();
             }
         } catch( \Exception $e ) {
-            Craft::$app->getSession()->setError(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
-            Craft::error($e->getMessage(), __METHOD__);
+            if(Craft::$app->getSession() !== null) {
+                Craft::$app->getSession()->setError(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
+                Craft::error($e->getMessage(), __METHOD__);
+            }
         }
     }
 
