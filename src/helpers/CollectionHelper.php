@@ -73,6 +73,23 @@ class CollectionHelper
     }
 
     /**
+     * @param string $name
+     * @return TypesenseCollectionIndex|null
+     */
+    public static function getCollectionBySection(string $name): ?TypesenseCollectionIndex
+    {
+        $indexes = Typesense::$plugin->getSettings()->collections;
+
+        foreach( $indexes as $index) {
+            if ($index->section === $name) {
+                return $index;
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * @param string $index
      * @return array
      */

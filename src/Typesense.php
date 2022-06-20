@@ -433,16 +433,19 @@ class Typesense extends Plugin
                 function (ElementEvent $event) {
                     $entry = $event->element;
                     $section = $entry->section->handle ?? null;
+                    $collection = null;
 
-                    if (ElementHelper::isDraftOrRevision($entry) && !$section) {
+                    if (ElementHelper::isDraftOrRevision($entry)) {
                         // don’t do anything with drafts or revisions
                         return;
                     }
 
-                    $collection = CollectionHelper::getCollection($section);
+                    if($section) {
+                        $collection = CollectionHelper::getCollectionBySection($section);
+                    }
 
                     if($collection) {
-                        Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->upsert($collection->schema['resolver']($entry));
+                        Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
                     }
 
 //                    Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
@@ -455,18 +458,21 @@ class Typesense extends Plugin
             Elements::EVENT_AFTER_DELETE_ELEMENT,
             function (ElementEvent $event) {
                 $entry = $event->element;
-                $section = $entry->section->handle;
+                $section = $entry->section->handle ?? null;
                 $id = $entry->id;
+                $collection = null;
 
                 if (ElementHelper::isDraftOrRevision($entry)) {
                     // don’t do anything with drafts or revisions
                     return;
                 }
 
-                $collection = CollectionHelper::getCollection($section);
+                if($section) {
+                    $collection = CollectionHelper::getCollectionBySection($section);
+                }
 
                 if($collection) {
-                    Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->delete(['filter_by' => 'id: '.$id]);
+                    Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: '.$id]);
                 }
 
 //                Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());

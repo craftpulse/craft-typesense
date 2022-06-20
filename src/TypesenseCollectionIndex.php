@@ -13,6 +13,9 @@ class TypesenseCollectionIndex
     /** @var string */
     public $indexName;
 
+    /** @var string */
+    public $section;
+
     /** @var array */
     public $schema;
 
@@ -31,6 +34,7 @@ class TypesenseCollectionIndex
     public function __construct(array $schema)
     {
         $this->indexName = $schema['name'];
+        $this->section = $schema['section'];
         $this->schema = $schema;
         $this->criteria = $this->elementType::find();
     }
