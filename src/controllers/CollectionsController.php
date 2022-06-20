@@ -110,15 +110,16 @@ class CollectionsController extends Controller
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
-            $section = $index->criteria->one()->section ?? null;
+            $entry = $index->criteria->one();
+            $section = $entry->section ?? null;
 
             if($section) {
                 $variables['sections'][] = [
                     'id' => $section->id,
                     'name' => $section->name,
                     'handle' => $section->handle,
-                    'type' => $section->type,
-                    'entryCount' => Entry::find()->section($section->handle)->count(),
+                    'type' => $entry->type->handle,
+                    'entryCount' => $index->criteria->count(),
                     'index' => $index->indexName
                 ];
             }
