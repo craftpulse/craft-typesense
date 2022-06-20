@@ -55,11 +55,11 @@ class SyncDocumentsJob extends BaseJob
         $collection = CollectionHelper::getCollection($this->criteria['index']);
 
         //create a new schema if a collection has been flushed
-        if(!$collection && $isNew) {
+        if (!$collection && $isNew) {
             Craft::$container->get(TypesenseClient::class)->collections->create($collection->schema);
         }
 
-        if($collection) {
+        if ($collection) {
 
             $entries = $collection->criteria->all();
             $totalEntries = count($entries);
@@ -81,7 +81,6 @@ class SyncDocumentsJob extends BaseJob
                         'total' => $totalEntries,
                     ])
                 );
-
             }
 
 
@@ -89,9 +88,9 @@ class SyncDocumentsJob extends BaseJob
             $documents = CollectionHelper::convertDocumentsToArray($this->criteria['index']);
 
             // delete documents that aren't existing anymore
-            foreach($documents as $document) {
-                if( !in_array($document['id'], $upsertIds) ) {
-                    Craft::$container->get(TypesenseClient::class)->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: '.$document['id']]);
+            foreach ($documents as $document) {
+                if (!in_array($document['id'], $upsertIds)) {
+                    Craft::$container->get(TypesenseClient::class)->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
                 }
             }
         }
@@ -108,6 +107,6 @@ class SyncDocumentsJob extends BaseJob
     protected function defaultDescription(): string
     {
         $isNew = isset($this->criteria['isNew']) ? $this->criteria['isNew'] : false;
-        return Craft::t('typesense', ($isNew ? 'Flushing' : 'Syncing') . ' documents for '. $this->criteria['index']);
+        return Craft::t('typesense', ($isNew ? 'Flushing' : 'Syncing') . ' documents for ' . $this->criteria['index']);
     }
 }

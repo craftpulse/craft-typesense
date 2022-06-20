@@ -10,6 +10,8 @@
 
 namespace percipiolondon\typesense\console\controllers;
 
+use craft\helpers\Queue;
+use percipiolondon\typesense\jobs\SyncDocumentsJob;
 use percipiolondon\typesense\Typesense;
 
 use Craft;
@@ -54,29 +56,20 @@ class DefaultController extends Controller
      *
      * @return mixed
      */
-    public function actionIndex()
+    public function actionFlush()
     {
-        $result = 'something';
+        $indexes = Typesense::$plugin->getSettings()->collections;
 
-        echo "Welcome to the console CollectionsController actionIndex() method\n";
+        foreach( $indexes as $index) {
+            $this->stdout('Start flushing ' . $index->indexName);
+            $this->stdout(PHP_EOL);
 
-        return $result;
-    }
-
-    /**
-     * Handle typesense/default/do-something console commands
-     *
-     * The first line of this method docblock is displayed as the description
-     * of the Console Command in ./craft help
-     *
-     * @return mixed
-     */
-    public function actionDoSomething()
-    {
-        $result = 'something';
-
-        echo "Welcome to the console CollectionsController actionDoSomething() method\n";
-
-        return $result;
+            Queue::push(new SyncDocumentsJob([
+                'criteria' => [
+                    'index' => $index->indexName,
+                    'isNew' => true
+                ]
+            ]));
+        }
     }
 }
