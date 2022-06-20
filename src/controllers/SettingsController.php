@@ -16,6 +16,7 @@ use craft\helpers\UrlHelper;
 use craft\models\Sites;
 use craft\web\Controller;
 
+use Typesense\Client;
 use yii\base\InvalidConfigException;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
@@ -86,6 +87,12 @@ class SettingsController extends Controller
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
         $variables['selectedSubnavItem'] = 'plugin';
         $variables['settings'] = Typesense::$settings;
+
+        $variables['searchKey'] = Craft::$container->get(Client::class)->keys->create([
+            'description' => 'Search-only companies key.',
+            'actions' => ['documents:search'],
+            'collections' => ['*']
+        ]);
 
         // Render the template
         return $this->renderTemplate('typesense/settings/typesense-settings', $variables);
