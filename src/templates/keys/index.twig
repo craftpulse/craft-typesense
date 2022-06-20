@@ -1,0 +1,16 @@
+{%- requirePermission "typesense:collections" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+
+{%- set content -%}
+
+    <div>
+        <div class="heading">
+            <strong>Generated search key</strong>
+        </div>
+        <div class="input">
+            {{  searchKey['value'] ??? 'none' }}
+        </div>
+    </div>
+
+{%- endset -%}

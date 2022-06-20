@@ -68,6 +68,35 @@ class SettingsController extends Controller
     }
 
     /**
+     * Keys display
+     *
+     *
+     * @return Response The rendered result
+     * @throws NotFoundHttpException
+     * @throws ForbiddenHttpException
+     */
+    public function actionKeys(): Response
+    {
+        $variables = [];
+        $pluginName = Typesense::$settings->pluginName;
+        $templateTitle = Craft::t('typesense', 'Keys');
+
+        $variables['pluginName'] = Typesense::$settings->pluginName;
+        $variables['title'] = $templateTitle;
+        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['selectedSubnavItem'] = 'keys';
+
+        $variables['searchKey'] = Craft::$container->get(Client::class)->keys->create([
+            'description' => 'Search-only companies key.',
+            'actions' => ['documents:search'],
+            'collections' => ['*']
+        ]);
+
+        // Render the template
+        return $this->renderTemplate('typesense/keys/index', $variables);
+    }
+
+    /**
      * Settings display
      *
      *

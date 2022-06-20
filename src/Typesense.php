@@ -272,6 +272,13 @@ class Typesense extends Plugin
         }
 
         if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
+            $subNavs['keys'] = [
+                'label' => Craft::t('typesense', 'Keys'),
+                'url' => 'typesense/keys',
+            ];
+        }
+
+        if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
             $subNavs['plugin'] = [
                 'label' => Craft::t('typesense', 'Plugin settings'),
                 'url' => 'typesense/plugin',
@@ -360,6 +367,7 @@ class Typesense extends Plugin
             'typesense' => 'typesense/settings/dashboard',
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense/keys' => 'typesense/settings/keys',
             'typesense/collections' => 'typesense/collections/collections',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
