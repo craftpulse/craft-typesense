@@ -89,8 +89,10 @@ class SyncDocumentsJob extends BaseJob
 
             // delete documents that aren't existing anymore
             foreach ($documents as $document) {
-                if (!in_array($document['id'], $upsertIds)) {
-                    Craft::$container->get(TypesenseClient::class)->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
+                if(isset($document['id'])) {
+                    if (!in_array($document['id'], $upsertIds)) {
+                        Craft::$container->get(TypesenseClient::class)->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
+                    }
                 }
             }
         }
