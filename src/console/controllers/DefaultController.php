@@ -15,6 +15,7 @@ use percipiolondon\typesense\jobs\SyncDocumentsJob;
 use percipiolondon\typesense\Typesense;
 
 use Craft;
+use Typesense\Client as TypesenseClient;
 use yii\console\Controller;
 use yii\helpers\Console;
 
@@ -61,7 +62,12 @@ class DefaultController extends Controller
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach( $indexes as $index) {
-            $this->stdout('Start flushing ' . $index->indexName);
+            $this->stdout('Flush ' . $index->indexName);
+            $this->stdout(PHP_EOL);
+
+            Craft::$container->get(TypesenseClient::class)->collections[$index->indexName]->delete();
+
+            $this->stdout('Resync ' . $index->indexName);
             $this->stdout(PHP_EOL);
 
             Queue::push(new SyncDocumentsJob([
