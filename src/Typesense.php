@@ -494,7 +494,7 @@ class Typesense extends Plugin
      */
     private function _createTypesenseClient(): void
     {
-        if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
+        // if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
             try {
                 if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
                     Craft::$container->setSingleton(TypesenseClient::class, function() {
@@ -524,7 +524,7 @@ class Typesense extends Plugin
                     Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
                 }
 
-                if (App::parseEnv($this::$settings->apiKey)) {
+                if (!Craft::$app->getRequest()->getIsConsoleRequest() && App::parseEnv($this::$settings->apiKey)) {
                     // Save Typesense collections out of the config
                     self::$plugin->collections->saveCollections();
                 }
@@ -532,7 +532,7 @@ class Typesense extends Plugin
                 Craft::$app->getSession()->setError(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
                 Craft::error($e->getMessage(), __METHOD__);
             }
-        }
+        // }
     }
 
     private function _createNodes(Settings $settings): array {
