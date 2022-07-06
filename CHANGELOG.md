@@ -4,10 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.0.0-beta.7 - 2022-07-06
+### Fixed
+- Fix the null check on document delete
+
 ## 1.0.0-beta.6 - 2022-06-20
 ### Added
 - Added a console controller to flush the indexes
-
 
 ## 1.0.0-beta.5 - 2022-06-20
 ### Fixed
