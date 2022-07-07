@@ -65,7 +65,9 @@ class DefaultController extends Controller
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
 
-            Craft::$container->get(TypesenseClient::class)->collections[$index->indexName]->delete();
+            if(count(Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index->indexName)) > 0){
+                Craft::$container->get(TypesenseClient::class)->collections[$index->indexName]->delete();
+            }
 
             $this->stdout('Resync ' . $index->indexName);
             $this->stdout(PHP_EOL);
