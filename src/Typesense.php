@@ -514,6 +514,7 @@ class Typesense extends Plugin
                     Craft::$container->setSingleton(TypesenseClient::class, function() {
                         return new TypesenseClient([
                             'api_key' => App::parseEnv($this::$settings->apiKey),
+                            'nearest_node' => $this->_createNearestNodes(), // This is the special Nearest Node hostname that you'll see in the Typesense Cloud dashboard if you turn on Search Delivery Network
                             'nodes' => $this->_createNodes($this::$settings),
                             'connection_timeout_seconds' => 2,
                         ]);
@@ -533,6 +534,20 @@ class Typesense extends Plugin
                 Craft::error($e->getMessage(), __METHOD__);
             }
         // }
+    }
+
+    private function _createNearestNodes(): ?array {
+        $nearest = App::parseEnv('TYPESENSE_NEAREST');
+
+        if($nearest !== 'TYPESENSE_NEAREST') {
+            return [
+                'host' => $nearest,
+                'port' => App::parseEnv($this::$settings->clusterPort),
+                'protocol' => 'https'
+            ];
+        }
+
+        return null;
     }
 
     private function _createNodes(Settings $settings): array {
