@@ -394,7 +394,7 @@ class Typesense extends Plugin
     private function _registerProjectConfigEventListeners() {
         $projectConfigService = Craft::$app->getProjectConfig();
 
-        $collectionService = $this::$plugin->collections->getCollections();
+        $collectionService = $this::$plugin->collections;
         $projectConfigService
             ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
             ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
