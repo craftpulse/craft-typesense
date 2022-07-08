@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.0.0-beta.11 - 2022-07-08
+### Fixed
+- Fixed the deletion of the collection when flushing the collections
+
+### Added
+- Added Typesense Service to connect to the Typesense Client
+- Added the nearest node settings
+
+### Changed
+- Removed the singleton connection in the root
+- Removed the key generation
 
 ## 1.0.0-beta.10 - 2022-07-07
 ### Added
