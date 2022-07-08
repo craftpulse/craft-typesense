@@ -69,12 +69,12 @@ class DefaultController extends Controller
 
             //delete collection
             if (!empty($collection)) {
-                Typesense::$plugin->client->client()?->collections[$index]->delete();
+                Typesense::$plugin->client->client()?->collections[$index->indexName]->delete();
             }
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
-                    'index' => $index,
+                    'index' => $index->indexName,
                     'type' => 'Flush'
                 ]
             ]));
