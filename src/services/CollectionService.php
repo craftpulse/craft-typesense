@@ -6,25 +6,14 @@
 
 namespace percipiolondon\typesense\services;
 
-use Craft;
-
 use craft\base\MemoizableArray;
 use craft\db\Query;
-use craft\helpers\ArrayHelper;
-use craft\helpers\DateTimeHelper;
-use craft\helpers\Db;
-use craft\helpers\Json;
-use craft\helpers\StringHelper;
 
-use percipiolondon\typesense\db\Table;
-use percipiolondon\typesense\events\CollectionEvent;
 use percipiolondon\typesense\models\CollectionModel as Collection;
 
 use percipiolondon\typesense\Typesense;
 use Throwable;
-use Typesense\Client as TypesenseClient;
 use yii\base\Component;
-use yii\base\Exception;
 
 class CollectionService extends Component
 {
