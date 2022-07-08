@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+
+## 1.0.0-beta.12 - 2022-07-08
+### Fixed
+- Fixed the typo on fetching the indexName in the queue job to flush
+
 ## 1.0.0-beta.11 - 2022-07-08
 ### Fixed
 - Fixed the deletion of the collection when flushing the collections
