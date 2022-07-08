@@ -142,14 +142,17 @@ class CollectionsController extends Controller
 
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
+        $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index);
 
         //delete collection
-        Craft::$container->get(TypesenseClient::class)->collections[$index]->delete();
+        if (!empty($collection)) {
+            Typesense::$plugin->client->client()?->collections[$index]->delete();
+        }
 
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
                 'index' => $index,
-                'isNew' => true
+                'type' => 'Flush'
             ]
         ]));
 
@@ -174,7 +177,8 @@ class CollectionsController extends Controller
 
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
-                'index' => $index
+                'index' => $index,
+                'type' => 'Sync'
             ]
         ]));
 
@@ -234,8 +238,8 @@ class CollectionsController extends Controller
 //            'default_sorting_field' => 'dateCreated' // can only be an integer
 //        ];
 //
-//        if ( !Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
-//            Craft::$container->get(TypesenseClient::class)->collections->create($schema);
+//        if ( !Typesense::$plugin->client->client()?->collections['news'] ) {
+//            Typesense::$plugin->client->client()?->collections->create($schema);
 //            return 'index successfully created';
 //        } else {
 //            return 'this index already exists';
@@ -309,9 +313,9 @@ class CollectionsController extends Controller
 //        ];
 //
 //
-//        if ( Craft::$container->get(TypesenseClient::class)->collections['news'] ) {
+//        if ( Typesense::$plugin->client->client()?->collections['news'] ) {
 //            foreach ( $documents as $document) {
-//                Craft::$container->get(TypesenseClient::class)->collections['news']->documents->upsert($document);
+//                Typesense::$plugin->client->client()?->collections['news']->documents->upsert($document);
 //            }
 //            return 'All elements added to the index';
 //        } else {
@@ -330,8 +334,8 @@ class CollectionsController extends Controller
     {
         $index = $request->getBodyParam('index');
 
-        if ( Craft::$container->get(TypesenseClient::class)->collections[$index] ) {
-            return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections[$index]->documents->export());
+        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
+            return $this->asJson(Typesense::$plugin->client->client()?->collections[$index]->documents->export());
         } else {
             return 'this index doesn\'t exist';
         }
@@ -348,8 +352,8 @@ class CollectionsController extends Controller
     {
         $index = $request->getBodyParam('index');
 
-        if ( Craft::$container->get(TypesenseClient::class)->collections[$index] ) {
-            Craft::$container->get(TypesenseClient::class)->collections[$index]->documents->delete(['filter_by' => 'title: Typesense']);
+        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
+            Typesense::$plugin->client->client()?->collections[$index]->documents->delete(['filter_by' => 'title: Typesense']);
         } else {
             return 'this index doesn\'t exist';
         }
@@ -367,8 +371,8 @@ class CollectionsController extends Controller
     {
         $index = $request->getBodyParam('index');
 
-        if ( Craft::$container->get(TypesenseClient::class)->collections[$index] ) {
-            Craft::$container->get(TypesenseClient::class)->collections[$index]->delete();
+        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
+            Typesense::$plugin->client->client()?->collections[$index]->delete();
             return 'index successfully deleted';
         } else {
             return 'this index doesn\'t exist';
@@ -384,7 +388,7 @@ class CollectionsController extends Controller
      */
     public function actionListCollections(): Response
     {
-        return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections->retrieve());
+        return $this->asJson(Typesense::$plugin->client->client()?->collections->retrieve());
     }
 
     /**
@@ -398,6 +402,6 @@ class CollectionsController extends Controller
     {
         $index = $request->getBodyParam('index');
 
-        return $this->asJson(Craft::$container->get(TypesenseClient::class)->collections[$index]->retrieve());
+        return $this->asJson(Typesense::$plugin->client->client()?->collections[$index]->retrieve());
     }
 }

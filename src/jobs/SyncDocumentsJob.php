@@ -51,23 +51,23 @@ class SyncDocumentsJob extends BaseJob
     public function execute($queue)
     {
         $upsertIds = [];
-        $isNew = isset($this->criteria['isNew']) ? $this->criteria['isNew'] : false;
         $collection = CollectionHelper::getCollection($this->criteria['index']);
+        $collectionTypesense = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($this->criteria['index']);
+        $client = Typesense::$plugin->client->client();
 
         //create a new schema if a collection has been flushed
-        if (!$collection && $isNew) {
-            Craft::$container->get(TypesenseClient::class)->collections->create($collection->schema);
+        if (!$collectionTypesense) {
+            $collectionTypesense = $client?->collections->create($collection->schema);
         }
 
-        if ($collection) {
+        if ($collectionTypesense) {
 
             $entries = $collection->criteria->all();
             $totalEntries = count($entries);
 
             //fetch each document of entry to update
             foreach ($entries as $i => $entry) {
-                Craft::$container->get(TypesenseClient::class)
-                    ->collections[$this->criteria['index']]
+                $client?->collections[$this->criteria['index']]
                     ->documents
                     ->upsert($collection->schema['resolver']($entry));
 
@@ -91,7 +91,7 @@ class SyncDocumentsJob extends BaseJob
             foreach ($documents as $document) {
                 if(isset($document['id'])) {
                     if (!in_array($document['id'], $upsertIds)) {
-                        Craft::$container->get(TypesenseClient::class)->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
+                        $client?->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
                     }
                 }
             }
@@ -108,7 +108,6 @@ class SyncDocumentsJob extends BaseJob
      */
     protected function defaultDescription(): string
     {
-        $isNew = isset($this->criteria['isNew']) ? $this->criteria['isNew'] : false;
-        return Craft::t('typesense', ($isNew ? 'Flushing' : 'Syncing') . ' documents for ' . $this->criteria['index']);
+        return Craft::t('typesense', ($this->criteria['type'] ?? 'Unkown') . ' documents for ' . $this->criteria['index']);
     }
 }

@@ -167,7 +167,7 @@ class CollectionService extends Component
 
     public function getCollectionByCollectionRetrieve(string $indexName): ?array
     {
-        $collections = Craft::$container->get(TypesenseClient::class)->collections->retrieve();
+        $collections = Typesense::$plugin->client->client()?->collections->retrieve();
         $retrievedCollection = [];
 
         foreach($collections as $collection) {
@@ -185,7 +185,7 @@ class CollectionService extends Component
 
         foreach ($indexes as $index) {
             if(!$this->getCollectionByCollectionRetrieve($index->indexName)) {
-               Craft::$container->get(TypesenseClient::class)->collections->create($index->schema);
+               Typesense::$plugin->client->client()?->collections->create($index->schema);
             }
         }
     }

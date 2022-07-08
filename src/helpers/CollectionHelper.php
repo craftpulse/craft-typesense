@@ -95,7 +95,7 @@ class CollectionHelper
      */
     public static function convertDocumentsToArray(string $index): array
     {
-        $documents = Craft::$container->get(TypesenseClient::class)->collections[$index]->documents->export();
+        $documents = Typesense::$plugin->client->client()?->collections[$index]->documents->export();
         $jsonDocs = explode("\n",$documents);
         $documents = [];
 

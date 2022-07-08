@@ -36,8 +36,7 @@
         value: settings.serverType,
         options: {
             'server': "Single Server"|t('typesense'),
-            'cluster': "Cluster"|t('typesense'),
-            'cloud': "Typesense Cloud"|t('typesense')
+            'cluster': "Cluster"|t('typesense')
         },
         toggle: true,
         required: true,
@@ -71,6 +70,15 @@
             id: 'cluster',
             name: 'cluster',
             value: settings.cluster,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Typesense cluster nearest node',
+            instructions: 'The Typesense nearest node.'|t('typesense'),
+            suggestEnvVars: true,
+            id: 'nearestNode',
+            name: 'nearestNode',
+            value: settings.nearestNode,
         }) }}
 
         {{ forms.autosuggestField({

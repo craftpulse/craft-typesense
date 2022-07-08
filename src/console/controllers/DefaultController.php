@@ -11,6 +11,7 @@
 namespace percipiolondon\typesense\console\controllers;
 
 use craft\helpers\Queue;
+use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
 use percipiolondon\typesense\Typesense;
 
@@ -64,18 +65,17 @@ class DefaultController extends Controller
         foreach( $indexes as $index) {
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
+            $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index);
 
-            if(count(Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index->indexName)) > 0){
-                Craft::$container->get(TypesenseClient::class)->collections[$index->indexName]->delete();
+            //delete collection
+            if (!empty($collection)) {
+                Typesense::$plugin->client->client()?->collections[$index]->delete();
             }
-
-            $this->stdout('Resync ' . $index->indexName);
-            $this->stdout(PHP_EOL);
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
-                    'index' => $index->indexName,
-                    'isNew' => true
+                    'index' => $index,
+                    'type' => 'Flush'
                 ]
             ]));
         }

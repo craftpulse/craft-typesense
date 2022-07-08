@@ -23,6 +23,7 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\App;
 use craft\helpers\ElementHelper;
+use craft\helpers\Queue;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\Plugins;
@@ -126,6 +127,7 @@ class Typesense extends Plugin
         $config['components'] = [
             'typesense' => Typesense::class,
             'collections' => CollectionService::class,
+            'client' => TypesenseService::class,
             // Register the vite service
             'vite' => [
                 'class' => VitePluginService::class,
@@ -172,13 +174,10 @@ class Typesense extends Plugin
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
         }
 
-
         // Install our event listeners
         $this->installEventListeners();
 
         $this->_registerEventHandlers();
-
-        $this->_createTypesenseClient();
 
         // Register our utilities
         /*Event::on(
@@ -271,13 +270,6 @@ class Typesense extends Plugin
         }
 
         if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
-            $subNavs['keys'] = [
-                'label' => Craft::t('typesense', 'Keys'),
-                'url' => 'typesense/keys',
-            ];
-        }
-
-        if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
             $subNavs['plugin'] = [
                 'label' => Craft::t('typesense', 'Plugin settings'),
                 'url' => 'typesense/plugin',
@@ -366,7 +358,6 @@ class Typesense extends Plugin
             'typesense' => 'typesense/settings/dashboard',
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/plugin' => 'typesense/settings/plugin',
-            'typesense/keys' => 'typesense/settings/keys',
             'typesense/collections' => 'typesense/collections/collections',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
@@ -401,17 +392,17 @@ class Typesense extends Plugin
      * Register Typesense’s project config event listeners
      */
     private function _registerProjectConfigEventListeners() {
-        $projectConfigService = Craft::$app->getProjectConfig();
-
-        $collectionService = $this->getCollections();
-        $projectConfigService
-            ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
-            ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
-            ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
-
-        Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
-            $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
-        });
+//         $projectConfigService = Craft::$app->getProjectConfig();
+//
+//         $collectionService = $this::$plugin->collectionService->getCollections();
+//         $projectConfigService
+//             ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+//             ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+//             ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
+//
+//         Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
+//             $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
+//         });
     }
 
     /**
@@ -446,11 +437,16 @@ class Typesense extends Plugin
                         }
 
                         $collection = CollectionHelper::getCollectionBySection($section);
+
+                        //create collection if it doesn't exist
+                        if(!$collection) {
+                            $this::$plugin->collectionService->saveCollections();
+                            $collection = CollectionHelper::getCollectionBySection($section);
+                        }
                     }
 
                     if($collection) {
-                        Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
-                        // Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->export());
+                        Typesense::$plugin->client->client()?->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
                     }
 
                 }
@@ -478,91 +474,18 @@ class Typesense extends Plugin
                     }
 
                     $collection = CollectionHelper::getCollectionBySection($section);
+
+                    //create collection if it doesn't exist
+                    if(!$collection) {
+                        $this::$plugin->collectionService->saveCollections();
+                        $collection = CollectionHelper::getCollectionBySection($section);
+                    }
                 }
 
                 if($collection) {
-                    Craft::$container->get(TypesenseClient::class)->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: '.$id]);
+                    Typesense::$plugin->client->client()?->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: '.$id]);
                 }
-
-//                Craft::dd(Craft::$container->get(TypesenseClient::class)->collections[$section]->documents->export());
             }
         );
     }
-
-    /**
-     * @throws MissingComponentException
-     */
-    private function _createTypesenseClient(): void
-    {
-        // if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
-            try {
-                if ($this::$settings->serverType === 'server' && App::parseEnv($this::$settings->apiKey)) {
-                    Craft::$container->setSingleton(TypesenseClient::class, function() {
-                        return new TypesenseClient([
-                            'api_key' => App::parseEnv($this::$settings->apiKey),
-                            'nodes' => [
-                                [
-                                    'host' => App::parseEnv($this::$settings->server),
-                                    'port' => App::parseEnv($this::$settings->port),
-                                    'protocol' => App::parseEnv($this::$settings->protocol),
-                                ],
-                            ],
-                            'connection_timeout_seconds' => 2,
-                        ]);
-                    });
-                } else if ($this::$settings->serverType === 'cluster' && App::parseEnv($this::$settings->apiKey)) {
-                    Craft::$container->setSingleton(TypesenseClient::class, function() {
-                        return new TypesenseClient([
-                            'api_key' => App::parseEnv($this::$settings->apiKey),
-                            'nearest_node' => $this->_createNearestNodes(), // This is the special Nearest Node hostname that you'll see in the Typesense Cloud dashboard if you turn on Search Delivery Network
-                            'nodes' => $this->_createNodes($this::$settings),
-                            'connection_timeout_seconds' => 2,
-                        ]);
-                    });
-                } else if ($this::$settings->serverType === 'cloud' && App::parseEnv($this::$settings->apiKey)) {
-                    // Currently nothing!
-                } else {
-                    Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
-                }
-
-                if (!Craft::$app->getRequest()->getIsConsoleRequest() && App::parseEnv($this::$settings->apiKey)) {
-                    // Save Typesense collections out of the config
-                    self::$plugin->collections->saveCollections();
-                }
-            } catch (\Exception $e) {
-                Craft::$app->getSession()->setError(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
-                Craft::error($e->getMessage(), __METHOD__);
-            }
-        // }
-    }
-
-    private function _createNearestNodes(): ?array {
-        $nearest = App::parseEnv('TYPESENSE_NEAREST');
-
-        if($nearest !== 'TYPESENSE_NEAREST') {
-            return [
-                'host' => $nearest,
-                'port' => App::parseEnv($this::$settings->clusterPort),
-                'protocol' => 'https'
-            ];
-        }
-
-        return null;
-    }
-
-    private function _createNodes(Settings $settings): array {
-        $typesenseNodes = explode(";", App::parseEnv($this::$settings->cluster));
-        $nodes = [];
-
-        foreach ($typesenseNodes as $node) {
-            $nodes[] = [
-                'host'      => $node,
-                'port'      => App::parseEnv($this::$settings->clusterPort),
-                'protocol'  => 'https', //App::parseEnv($this::$settings->protocol),
-            ];
-        }
-
-        return $nodes;
-    }
-
 }

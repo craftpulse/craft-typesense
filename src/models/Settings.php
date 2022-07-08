@@ -66,6 +66,11 @@ class Settings extends Model
     public ?string $cluster = '0.0.0.0;0.0.0.1;0.0.0.2';
 
     /**
+     * @var string|null The API cluster endpoint where Typesense connects to.
+     */
+    public ?string $nearestNode = null;
+
+    /**
      * @var string|null The API port which the Typesense cluster listens to.
      */
     public ?string $clusterPort = '443';
@@ -111,7 +116,7 @@ class Settings extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['apiKey', 'cluster', 'clusterPort', 'port', 'protocol', 'searchOnlyApiKey', 'server'],
+                'attributes' => ['apiKey', 'cluster', 'nearestNode', 'clusterPort', 'port', 'protocol', 'searchOnlyApiKey', 'server'],
             ],
         ];
     }
@@ -122,7 +127,7 @@ class Settings extends Model
     public function defineRules(): array
     {
         return [
-            [['apiKey', 'cluster', 'clusterPort', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'] , 'string'],
+            [['apiKey', 'cluster', 'clusterPort', 'nearestNode', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'] , 'string'],
             [['apiKey', 'serverType'] , 'required'],
             [['serverType'], 'in', 'range' => [
                 self::TYPESENSE_SERVER,
