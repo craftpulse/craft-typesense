@@ -440,7 +440,7 @@ class Typesense extends Plugin
 
                         //create collection if it doesn't exist
                         if(!$collection) {
-                            $this::$plugin->collectionService->saveCollections();
+                            $this::$plugin->collections->saveCollections();
                             $collection = CollectionHelper::getCollectionBySection($section);
                         }
                     }
@@ -477,7 +477,7 @@ class Typesense extends Plugin
 
                     //create collection if it doesn't exist
                     if(!$collection) {
-                        $this::$plugin->collectionService->saveCollections();
+                        $this::$plugin->collections->saveCollections();
                         $collection = CollectionHelper::getCollectionBySection($section);
                     }
                 }
