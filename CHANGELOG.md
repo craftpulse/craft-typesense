@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 1.0.0-beta.13 - 2022-07-19
+### Fixed
+- Fixed an issue where the port wouldn't be saved on a single server setting
+
 ## 1.0.0-beta.13 - 2022-07-11
 ### Fixed
 - Fixed the service to save the typesense

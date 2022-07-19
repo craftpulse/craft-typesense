@@ -2,7 +2,7 @@
     "name": "percipiolondon/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "1.0.0-beta.13",
+    "version": "1.0.0-beta.14",
     "keywords": [
         "craft",
         "cms",

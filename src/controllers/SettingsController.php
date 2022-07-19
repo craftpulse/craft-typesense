@@ -116,7 +116,7 @@ class SettingsController extends Controller
             'cluster' => Craft::$app->getRequest()->getBodyParam('cluster'),
             'clusterPort' => Craft::$app->getRequest()->getBodyParam('clusterPort'),
             'nearestNode' => Craft::$app->getRequest()->getBodyParam('nearestNode'),
-            'port' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
+            'port' => Craft::$app->getRequest()->getBodyParam('port'),
             'protocol' => Craft::$app->getRequest()->getBodyParam('protocol'),
             'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
             'server' => Craft::$app->getRequest()->getBodyParam('server'),
