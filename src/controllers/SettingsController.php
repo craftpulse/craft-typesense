@@ -10,20 +10,15 @@
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
-use craft\elements\Entry;
 use craft\errors\MissingComponentException;
-use craft\helpers\UrlHelper;
-use craft\models\Sites;
 use craft\web\Controller;
 
-use Typesense\Client;
-use yii\base\InvalidConfigException;
+use percipiolondon\typesense\Typesense;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
-use yii\web\Response;
 
-use percipiolondon\typesense\Typesense;
+use yii\web\Response;
 
 /**
  * @author    Percipio.London
@@ -53,11 +48,11 @@ class SettingsController extends Controller
     {
         $variables = [];
 
-        $pluginName = Typesense::$settings->pluginName;
+        $pluginName = Typesense::$plugin->getSettings()->pluginName;
         $templateTitle = Craft::t('typesense', 'Dashboard');
 
         $variables['controllerHandle'] = 'dashboard';
-        $variables['pluginName'] = Typesense::$settings->pluginName;
+        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
         $variables['selectedSubnavItem'] = 'dashboard';
@@ -78,15 +73,15 @@ class SettingsController extends Controller
     public function actionPlugin(): Response
     {
         $variables = [];
-        $pluginName = Typesense::$settings->pluginName;
+        $pluginName = Typesense::$plugin->getSettings()->pluginName;
         $templateTitle = Craft::t('typesense', 'Plugin Settings');
 
         $variables['fullPageForm'] = true;
-        $variables['pluginName'] = Typesense::$settings->pluginName;
+        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
         $variables['selectedSubnavItem'] = 'plugin';
-        $variables['settings'] = Typesense::$settings;
+        $variables['settings'] = Typesense::$plugin->getSettings();
 
         // Render the template
         return $this->renderTemplate('typesense/settings/typesense-settings', $variables);
@@ -107,7 +102,7 @@ class SettingsController extends Controller
         $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
         $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
-        if ( $plugin === null ) {
+        if ($plugin === null) {
             throw new NotFoundHttpException('Plugin not found');
         }
 
@@ -136,9 +131,8 @@ class SettingsController extends Controller
 
         Craft::$app->getSession()->setNotice(Craft::t('app', 'Plugin settings saved.'));
 
-        Typesense::$plugin->collections->saveCollections();
+        Typesense::$plugin->getCollections()->saveCollections();
 
         return $this->redirectToPostedUrl();
     }
-
 }

@@ -1,16 +1,13 @@
-<?php /** @noinspection RepetitiveMethodCallsInspection */
+<?php
+
+/** @noinspection RepetitiveMethodCallsInspection */
 
 namespace percipiolondon\typesense\migrations;
 
 use Craft;
-use craft\db\ActiveRecord;
 use craft\db\Migration;
-use craft\db\Query;
-use craft\helpers\MigrationHelper;
 
-use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\db\Table;
-
 
 /**
  * Installation Migration
@@ -20,7 +17,6 @@ use percipiolondon\typesense\db\Table;
  */
 class Install extends Migration
 {
-
     /**
      * @inheritdoc
      */
@@ -73,5 +69,4 @@ class Install extends Migration
     {
         Craft::$app->projectConfig->remove('typesense');
     }
-
 }

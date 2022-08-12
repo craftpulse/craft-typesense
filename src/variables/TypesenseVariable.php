@@ -17,7 +17,6 @@ use nystudio107\pluginvite\variables\ViteVariableTrait;
 
 use percipiolondon\typesense\Typesense;
 
-
 /**
  * Typesense Variable
  *
@@ -51,5 +50,4 @@ class TypesenseVariable implements ViteVariableInterface
      */
 
     use ViteVariableTrait;
-
 }

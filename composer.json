@@ -31,7 +31,8 @@
         "php-http/guzzle7-adapter": "^1.0.0"
     },
     "require-dev": {
-        "codeception/codeception": "^3.0",
+        "craftcms/phpstan":"dev-main",
+        "codeception/codeception": "^5.0",
         "vlucas/phpdotenv": "^3.0"
     },
     "repositories": [
@@ -44,6 +45,9 @@
         "psr-4": {
             "percipiolondon\\typesense\\": "src/"
         }
+    },
+    "scripts": {
+        "phpstan": "phpstan --memory-limit=1G"
     },
     "extra": {
         "name": "Typesense",

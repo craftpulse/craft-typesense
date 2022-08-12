@@ -19,16 +19,13 @@ class TypesenseCollectionIndex
     /** @var array */
     public $schema;
 
-    /** @var IndexSettings */
-    public $indexSettings;
-
     /** @var string */
     public $elementType = Entry::class;
 
     /** @var ElementQuery */
     public $criteria;
 
-    /** @var callable|string|array| */
+    /** @var callable|string|array */
     public $resolver;
 
     public function __construct(array $schema)
@@ -80,24 +77,5 @@ class TypesenseCollectionIndex
         $this->resolver = $resolver;
 
         return $this;
-    }
-
-    /**
-     * @throws \yii\base\InvalidConfigException
-     *
-     * @return array
-     */
-    public function getResolver($entry)
-    {
-//        if (is_null($this->resolver)) {
-//            $this->resolver = new Elementresolver();
-//        }
-
-        if (is_callable($this->resolver) || $this->resolver instanceof resolverAbstract) {
-            Craft::dd("teest");
-            return $this->resolver($entry);
-        }
-
-        return null;
     }
 }

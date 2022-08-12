@@ -10,22 +10,16 @@
 
 namespace percipiolondon\typesense\controllers;
 
+use Craft;
 use craft\helpers\Queue;
+
+use craft\web\Controller;
 use Http\Client\Exception;
+use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
+
 use percipiolondon\typesense\Typesense;
 
-use Craft;
-use craft\elements\Entry;
-use craft\web\Controller;
-use craft\helpers\DateTimeHelper;
-use craft\helpers\Json;
-
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\models\CollectionModel as Collection;
-use percipiolondon\typesense\services\CollectionService;
-
-use Typesense\Client as TypesenseClient;
 
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;
@@ -56,15 +50,8 @@ use yii\web\Response;
  */
 class CollectionsController extends Controller
 {
-
     // Protected Properties
     // =========================================================================
-
-    /**
-     * @var    bool|array Allows anonymous access to this controller's actions.
-     *         The actions must be in 'kebab-case'
-     * @access protected
-     */
     protected $allowAnonymous = ['create-collection', 'drop-collection', 'list-collections', 'retrieve-collection', 'index-documents', 'list-documents', 'delete-documents'];
 
     // Public Methods
@@ -85,24 +72,20 @@ class CollectionsController extends Controller
     /**
      * Collections display
      *
-     * @param string|null $siteHandle
-     *
      * @return Response The rendered result
-     * @throws NotFoundHttpException
-     * @throws ForbiddenHttpException
      */
-    public function actionCollections(string $siteHandle = null): Response
+    public function actionCollections(): Response
     {
         $variables = [];
         $entriesCount = [
             'entries' => [],
         ];
 
-        $pluginName = Typesense::$settings->pluginName;
+        $pluginName = Typesense::$plugin->getSettings()->pluginName;
         $templateTitle = Craft::t('typesense', 'Collections');
 
         $variables['controllerHandle'] = 'collections';
-        $variables['pluginName'] = Typesense::$settings->pluginName;
+        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
         $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
         $variables['selectedSubnavItem'] = 'collections';
@@ -113,14 +96,14 @@ class CollectionsController extends Controller
             $entry = $index->criteria->one();
             $section = $entry->section ?? null;
 
-            if($section) {
+            if ($section) {
                 $variables['sections'][] = [
                     'id' => $section->id,
                     'name' => $section->name,
                     'handle' => $section->handle,
                     'type' => $entry->type->handle,
                     'entryCount' => $index->criteria->count(),
-                    'index' => $index->indexName
+                    'index' => $index->indexName,
                 ];
             }
         }
@@ -137,27 +120,28 @@ class CollectionsController extends Controller
     /**
      * @return Response
      */
-    public function actionFlushCollection(): Response {
+    public function actionFlushCollection(): Response
+    {
         $this->requirePostRequest();
 
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
-        $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index);
+        $collection = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($index);
 
         //delete collection
         if (!empty($collection)) {
-            Typesense::$plugin->client->client()?->collections[$index]->delete();
+            Typesense::$plugin->getClient()->client()->collections[$index]->delete();
         }
 
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
                 'index' => $index,
-                'type' => 'Flush'
-            ]
+                'type' => 'Flush',
+            ],
         ]));
 
         return $this->asJson([
-            'success' => true
+            'success' => true,
         ]);
     }
 
@@ -169,7 +153,8 @@ class CollectionsController extends Controller
      * @throws NotInstantiableException
      * @throws BadRequestHttpException
      */
-    public function actionSyncCollection(): Response {
+    public function actionSyncCollection(): Response
+    {
         $this->requirePostRequest();
 
         $request = Craft::$app->getRequest();
@@ -178,13 +163,13 @@ class CollectionsController extends Controller
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
                 'index' => $index,
-                'type' => 'Sync'
-            ]
+                'type' => 'Sync',
+            ],
         ]));
 
         return $this->asJson([
             'success' => true,
-            'documents' =>  CollectionHelper::convertDocumentsToArray($index)
+            'documents' => CollectionHelper::convertDocumentsToArray($index),
         ]);
     }
 
@@ -202,7 +187,7 @@ class CollectionsController extends Controller
 //        $collection->dateSynced = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
 //
 //        // Save the collection
-//        if (!Typesense::$plugin->collections->saveCollection($collection)) {
+//        if (!Typesense::$plugin->getCollections()->saveCollection($collection)) {
 //            // Response error
 //            //$this->setFailFlash(Craft::t('typesense', 'Couldn’t save collection.'));
 //
@@ -238,8 +223,8 @@ class CollectionsController extends Controller
 //            'default_sorting_field' => 'dateCreated' // can only be an integer
 //        ];
 //
-//        if ( !Typesense::$plugin->client->client()?->collections['news'] ) {
-//            Typesense::$plugin->client->client()?->collections->create($schema);
+//        if ( !Typesense::$plugin->getClient()->client()->collections['news'] ) {
+//            Typesense::$plugin->getClient()->client()->collections->create($schema);
 //            return 'index successfully created';
 //        } else {
 //            return 'this index already exists';
@@ -313,9 +298,9 @@ class CollectionsController extends Controller
 //        ];
 //
 //
-//        if ( Typesense::$plugin->client->client()?->collections['news'] ) {
+//        if ( Typesense::$plugin->getClient()->client()->collections['news'] ) {
 //            foreach ( $documents as $document) {
-//                Typesense::$plugin->client->client()?->collections['news']->documents->upsert($document);
+//                Typesense::$plugin->getClient()->client()->collections['news']->documents->upsert($document);
 //            }
 //            return 'All elements added to the index';
 //        } else {
@@ -324,21 +309,22 @@ class CollectionsController extends Controller
 //    }
 
     /**
-     * @return Response
+     * @return Response|string
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException
      * @throws NotInstantiableException
      */
-    public function actionListDocuments(): Response
+    public function actionListDocuments(): Response|string
     {
+        $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
-        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
-            return $this->asJson(Typesense::$plugin->client->client()?->collections[$index]->documents->export());
-        } else {
-            return 'this index doesn\'t exist';
+        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
+            return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->documents->export());
         }
+
+        return "this index doesn't exist";
     }
 
     /**
@@ -348,16 +334,17 @@ class CollectionsController extends Controller
      * @throws InvalidConfigException
      * @throws NotInstantiableException
      */
-    public function actionDeleteDocuments()
+    public function actionDeleteDocuments(): string
     {
+        $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
-        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
-            Typesense::$plugin->client->client()?->collections[$index]->documents->delete(['filter_by' => 'title: Typesense']);
-        } else {
-            return 'this index doesn\'t exist';
+        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
+            Typesense::$plugin->getClient()->client()->collections[$index]->documents->delete(['filter_by' => 'title: Typesense']);
+            return "documents for this index are deleted";
         }
 
+        return "this index doesn't exist";
     }
 
     /**
@@ -367,16 +354,17 @@ class CollectionsController extends Controller
      * @throws InvalidConfigException
      * @throws NotInstantiableException
      */
-    public function actionDropCollection()
+    public function actionDropCollection(): string
     {
+        $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
-        if ( Typesense::$plugin->client->client()?->collections[$index] ) {
-            Typesense::$plugin->client->client()?->collections[$index]->delete();
-            return 'index successfully deleted';
-        } else {
-            return 'this index doesn\'t exist';
+        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
+            Typesense::$plugin->getClient()->client()->collections[$index]->delete();
+            return "this index is successfully deleted";
         }
+
+        return "this index doesn't exist";
     }
 
     /**
@@ -388,7 +376,7 @@ class CollectionsController extends Controller
      */
     public function actionListCollections(): Response
     {
-        return $this->asJson(Typesense::$plugin->client->client()?->collections->retrieve());
+        return $this->asJson(Typesense::$plugin->getClient()->client()->collections->retrieve());
     }
 
     /**
@@ -400,8 +388,9 @@ class CollectionsController extends Controller
      */
     public function actionRetrieveCollection()
     {
+        $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
-        return $this->asJson(Typesense::$plugin->client->client()?->collections[$index]->retrieve());
+        return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->retrieve());
     }
 }

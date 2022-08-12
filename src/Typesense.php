@@ -11,33 +11,31 @@
 namespace percipiolondon\typesense;
 
 use Craft;
-use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
-use craft\errors\MissingComponentException;
 use craft\events\ElementEvent;
 use craft\events\PluginEvent;
+use craft\events\RebuildConfigEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
-use craft\helpers\App;
 use craft\helpers\ElementHelper;
-use craft\helpers\Queue;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\Plugins;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
-use craft\web\UrlManager;
 use craft\web\twig\variables\CraftVariable;
+use craft\web\UrlManager;
 
 use nystudio107\pluginvite\services\VitePluginService;
 
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
+use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\helpers\ProjectConfigData;
+use percipiolondon\typesense\helpers\ProjectConfigDataHelper;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
 use percipiolondon\typesense\services\TypesenseService;
@@ -45,7 +43,6 @@ use percipiolondon\typesense\typesense\Services as TypesenseServices;
 use percipiolondon\typesense\utilities\TypesenseUtility;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
-use Typesense\Client as TypesenseClient;
 
 use yii\base\Event;
 
@@ -74,21 +71,16 @@ class Typesense extends Plugin
 
     /**
      * Static property that is an instance of this plugin class so that it can be accessed via
-     * Typesense::$plugin
+     * self::$plugin
      *
      * @var Typesense
      */
-    public static $plugin;
+    public static Typesense $plugin;
 
     /**
-     * @var Settings
+     * @var Settings|Model|null
      */
-    public static $settings;
-
-    /**
-     * @var View
-     */
-    public static $view;
+    public static Settings|Model|null $settings = null;
 
     // Public Properties
     // =========================================================================
@@ -114,42 +106,14 @@ class Typesense extends Plugin
      */
     public $hasCpSettings = true;
 
-    use TypesenseServices;
-
-    // Static Methods
-    // =========================================================================
-    /**
-     * @inheritdoc
-     */
-
-    public function __construct($id, $parent = null, array $config = [])
-    {
-        $config['components'] = [
-            'typesense' => Typesense::class,
-            'collections' => CollectionService::class,
-            'client' => TypesenseService::class,
-            // Register the vite service
-            'vite' => [
-                'class' => VitePluginService::class,
-                'assetClass' => TypesenseAsset::class,
-                'useDevServer' => true,
-                'devServerPublic' => 'http://localhost:3001',
-                'serverPublic' => 'http://localhost:8001',
-                'errorEntry' => '/src/js/typesense.ts',
-                'devServerInternal' => 'http://craft-typesense-buildchain:3001',
-                'checkDevServer' => true,
-            ]
-        ];
-
-        parent::__construct($id, $parent, $config);
-    }
+    use PluginTrait;
 
     // Public Methods
     // =========================================================================
 
     /**
      * Set our $plugin static property to this class so that it can be accessed via
-     * Typesense::$plugin
+     * self::$plugin
      *
      * Called after the plugin class is instantiated; do any one-time initialization
      * here such as hooks and events.
@@ -163,21 +127,21 @@ class Typesense extends Plugin
         parent::init();
         self::$plugin = $this;
 
-        // Initialize properties
-        self::$settings = self::$plugin->getSettings();
-        self::$view = Craft::$app->getView();
+        $this->_registerComponents();
+        $this->installEventListeners();
+        $this->_registerEventHandlers();
+        $this->_registerVariable();
 
-        $this->name = self::$settings->pluginName;
+//        // Initialize properties
+//        self::$settings = self::$plugin->getSettings();
+//
+//        $this->name = self::$settings->pluginName ?? 'Typesense';
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
         }
 
-        // Install our event listeners
-        $this->installEventListeners();
-
-        $this->_registerEventHandlers();
 
         // Register our utilities
         /*Event::on(
@@ -187,31 +151,6 @@ class Typesense extends Plugin
                 $event->types[] = TypesenseUtility::class;
             }
         ); */
-
-        // Register our variables
-        Event::on(
-            CraftVariable::class,
-            CraftVariable::EVENT_INIT,
-            function (Event $event) {
-                /** @var CraftVariable $variable */
-                $variable = $event->sender;
-                $variable->set('typesense', [
-                    'class' => TypesenseVariable::class,
-                    'viteService' => $this->vite,
-                ]);
-            }
-        );
-
-        // Do something after we're installed
-        /*Event::on(
-            Plugins::class,
-            Plugins::EVENT_AFTER_INSTALL_PLUGIN,
-            function (PluginEvent $event) {
-                if ($event->plugin === $this) {
-                    // We were just installed
-                }
-            }
-        );*/
 
         Craft::info(
             Craft::t(
@@ -226,10 +165,10 @@ class Typesense extends Plugin
     /**
      * @inheritdoc
      */
-    public function getSettings()
-    {
-        return parent::getSettings();;
-    }
+//    public function getSettings()
+//    {
+//        return parent::getSettings();
+//    }
 
     /**
      * @inheritdoc
@@ -243,33 +182,33 @@ class Typesense extends Plugin
     /**
      * @inheritdoc
      */
-    public function getCpNavItem(){
+    public function getCpNavItem()
+    {
         $subNavs = [];
         $navItem = parent::getCpNavItem();
-        /** @var User $currentUser */
-        $request = Craft::$app->getRequest();
         $currentUser = Craft::$app->getUser()->getIdentity();
+
         // Only show sub navigation the user has permission to view
-        if ($currentUser->can('typesense:dashboard')) {
+        if (Craft::$app->getUser()->checkPermission('typesense:dashboard')) {
             $subNavs['dashboard'] = [
                 'label' => Craft::t('typesense', 'Dashboard'),
-                'url' => 'typesense/dashboard'
+                'url' => 'typesense/dashboard',
             ];
         }
-        if ($currentUser->can('typesense:collections')) {
+        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
             $subNavs['collections'] = [
                 'label' => Craft::t('typesense', 'Collections'),
-                'url' => 'typesense/collections'
+                'url' => 'typesense/collections',
             ];
         }
 
         $editableSettings = true;
         // Check against allowAdminChanges
-        if ( !Craft::$app->getConfig()->getGeneral()->allowAdminChanges ) {
+        if (!Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
             $editableSettings = false;
         }
 
-        if ($currentUser->can('typesense:plugin-settings') && $editableSettings) {
+        if (Craft::$app->getUser()->checkPermission('typesense:plugin-settings') && $editableSettings) {
             $subNavs['plugin'] = [
                 'label' => Craft::t('typesense', 'Plugin settings'),
                 'url' => 'typesense/plugin',
@@ -309,7 +248,7 @@ class Typesense extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 Craft::debug(
                     'UrlManager::EVENT_REGISTER_CP_URL_RULES',
                     __METHOD__
@@ -326,7 +265,7 @@ class Typesense extends Plugin
         Event::on(
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function (RegisterUserPermissionsEvent $event) {
+            function(RegisterUserPermissionsEvent $event) {
                 Craft::debug(
                     'UserPermissions::EVENT_REGISTER_PERMISSIONS',
                     __METHOD__
@@ -384,24 +323,25 @@ class Typesense extends Plugin
             ],
             'typesense:plugin-settings' => [
                 'label' => Craft::t('typesense', 'Edit Plugin Settings'),
-            ]
+            ],
         ];
     }
 
     /**
      * Register Typesense’s project config event listeners
      */
-    private function _registerProjectConfigEventListeners() {
+    private function _registerProjectConfigEventListeners()
+    {
         $projectConfigService = Craft::$app->getProjectConfig();
 
-        $collectionService = $this::$plugin->collections;
+        $collectionService = self::$plugin->getCollections();
         $projectConfigService
             ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
             ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
             ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
 
         Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
-            $event->config['typesense'] = ProjectConfigData::rebuildProjectConfig();
+            $event->config['typesense'] = ProjectConfigDataHelper::rebuildProjectConfig();
         });
     }
 
@@ -420,7 +360,7 @@ class Typesense extends Plugin
             Event::on(
                 $event[0],
                 $event[1],
-                function (ElementEvent $event) {
+                function(ElementEvent $event) {
                     $entry = $event->element;
                     $section = $entry->section->handle ?? null;
                     $type = $entry->type->handle ?? null;
@@ -431,24 +371,23 @@ class Typesense extends Plugin
                         return;
                     }
 
-                    if($section) {
-                        if($type) {
-                            $section = $section.'.'.$type;
+                    if ($section) {
+                        if ($type) {
+                            $section = $section . '.' . $type;
                         }
 
                         $collection = CollectionHelper::getCollectionBySection($section);
 
                         //create collection if it doesn't exist
-                        if(!$collection) {
-                            $this::$plugin->collections->saveCollections();
+                        if (!$collection) {
+                            self::$plugin->getCollections()->saveCollections();
                             $collection = CollectionHelper::getCollectionBySection($section);
                         }
                     }
 
-                    if($collection) {
-                        Typesense::$plugin->client->client()?->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                    if ($collection) {
+                        self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
                     }
-
                 }
             );
         }
@@ -456,7 +395,7 @@ class Typesense extends Plugin
         Event::on(
             Elements::class,
             Elements::EVENT_AFTER_DELETE_ELEMENT,
-            function (ElementEvent $event) {
+            function(ElementEvent $event) {
                 $entry = $event->element;
                 $section = $entry->section->handle ?? null;
                 $id = $entry->id;
@@ -468,24 +407,49 @@ class Typesense extends Plugin
                     return;
                 }
 
-                if($section) {
-                    if($type) {
-                        $section = $section.'.'.$type;
+                if ($section) {
+                    if ($type) {
+                        $section = $section . '.' . $type;
                     }
 
                     $collection = CollectionHelper::getCollectionBySection($section);
 
                     //create collection if it doesn't exist
-                    if(!$collection) {
-                        $this::$plugin->collections->saveCollections();
+                    if (!$collection) {
+                        self::$plugin->getCollections()->saveCollections();
                         $collection = CollectionHelper::getCollectionBySection($section);
                     }
                 }
 
-                if($collection) {
-                    Typesense::$plugin->client->client()?->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: '.$id]);
+                if ($collection) {
+                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
                 }
             }
         );
     }
+
+    private function _registerVariable(): void
+    {
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $event) {
+            /** @var CraftVariable $variable */
+            $variable = $event->sender;
+            $variable->set('typesense', [
+                'class' => TypesenseVariable::class,
+                'viteService' => $this->getVite(),
+            ]);
+        });
+    }
 }
+
+// Register our variables
+/*Event::on(
+    CraftVariable::class,
+    CraftVariable::EVENT_INIT,
+    function(Event $event) {
+        $variable = $event->sender;
+        $variable->set('typesense', [
+            'class' => TypesenseVariable::class,
+            'viteService' => $this->vite,
+        ]);
+    }
+);*/

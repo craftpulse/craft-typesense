@@ -1,14 +1,12 @@
 <?php
 
-namepsace percipiolondon\typesense\records;
-
-use Craft;
+namespace percipiolondon\typesense\records;
 
 use craft\db\ActiveRecord;
 use craft\records\FieldLayout;
 
 use percipiolondon\typesense\db\Table;
-u
+
 use yii\db\ActiveQueryInterface;
 
 class CollectionRecord extends ActiveRecord

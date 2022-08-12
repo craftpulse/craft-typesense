@@ -10,9 +10,7 @@
 
 namespace percipiolondon\typesense\assetbundles\typesense;
 
-use Craft;
 use craft\web\AssetBundle;
-use craft\web\assets\cp\CpAsset;
 
 /**
  * TypesenseAsset AssetBundle

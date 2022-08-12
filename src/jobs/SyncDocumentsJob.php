@@ -10,12 +10,11 @@
 
 namespace percipiolondon\typesense\jobs;
 
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\Typesense;
-
 use Craft;
 use craft\queue\BaseJob;
-use Typesense\Client as TypesenseClient;
+
+use percipiolondon\typesense\helpers\CollectionHelper;
+use percipiolondon\typesense\Typesense;
 
 /**
  * TypesenseTask job
@@ -52,46 +51,48 @@ class SyncDocumentsJob extends BaseJob
     {
         $upsertIds = [];
         $collection = CollectionHelper::getCollection($this->criteria['index']);
-        $collectionTypesense = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($this->criteria['index']);
-        $client = Typesense::$plugin->client->client();
+        $collectionTypesense = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($this->criteria['index']);
+        $client = Typesense::$plugin->getClient()->client();
 
-        //create a new schema if a collection has been flushed
-        if (!$collectionTypesense) {
-            $collectionTypesense = $client?->collections->create($collection->schema);
-        }
+        if($client !== false && !is_null($collection)) {
 
-        if ($collectionTypesense) {
-
-            $entries = $collection->criteria->all();
-            $totalEntries = count($entries);
-
-            //fetch each document of entry to update
-            foreach ($entries as $i => $entry) {
-                $client?->collections[$this->criteria['index']]
-                    ->documents
-                    ->upsert($collection->schema['resolver']($entry));
-
-                $upsertIds[] = $entry->id;
-
-                $this->setProgress(
-                    $queue,
-                    $i / $totalEntries,
-                    \Craft::t('app', '{step, number} of {total, number}', [
-                        'step' => $i + 1,
-                        'total' => $totalEntries,
-                    ])
-                );
+            //create a new schema if a collection has been flushed
+            if (!$collectionTypesense) {
+                $collectionTypesense = $client->collections->create($collection->schema);
             }
 
+            if ($collectionTypesense) {
+                $entries = $collection->criteria->all();
+                $totalEntries = count($entries);
 
-            // convert documents into an array
-            $documents = CollectionHelper::convertDocumentsToArray($this->criteria['index']);
+                //fetch each document of entry to update
+                foreach ($entries as $i => $entry) {
+                    $client->collections[$this->criteria['index']]
+                        ->documents
+                        ->upsert($collection->schema['resolver']($entry));
 
-            // delete documents that aren't existing anymore
-            foreach ($documents as $document) {
-                if(isset($document['id'])) {
-                    if (!in_array($document['id'], $upsertIds)) {
-                        $client?->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
+                    $upsertIds[] = $entry->id;
+
+                    $this->setProgress(
+                        $queue,
+                        $i / $totalEntries,
+                        \Craft::t('app', '{step, number} of {total, number}', [
+                            'step' => $i + 1,
+                            'total' => $totalEntries,
+                        ])
+                    );
+                }
+
+
+                // convert documents into an array
+                $documents = CollectionHelper::convertDocumentsToArray($this->criteria['index']);
+
+                // delete documents that aren't existing anymore
+                foreach ($documents as $document) {
+                    if (isset($document['id'])) {
+                        if (!in_array($document['id'], $upsertIds)) {
+                            $client->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
+                        }
                     }
                 }
             }

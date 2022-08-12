@@ -2,11 +2,7 @@
 
 namespace percipiolondon\typesense\helpers;
 
-use Craft;
-use craft\typesense\db\Table;
-use craft\typesense\Typesense;
-use craft\db\Query;
-use craft\helpers\Json;
+use percipiolondon\typesense\Typesense;
 
 class ProjectConfigDataHelper
 {
@@ -17,7 +13,7 @@ class ProjectConfigDataHelper
      */
     public static function rebuildProjectConfig(): array
     {
-        $output = self::_getCollectionData();
+        return self::_getCollectionData();
     }
 
     /**
@@ -28,7 +24,7 @@ class ProjectConfigDataHelper
     private static function _getCollectionData(): array
     {
         $data = [];
-        foreach (Typesense::getInstance()->getCollection()->getAllCollections() as $collection) {
+        foreach (Typesense::$plugin->getSettings()->collections as $collection) {
             $data[$collection->uid] = $collection->getConfig();
         }
         return $data;

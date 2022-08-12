@@ -2,7 +2,6 @@
 
 namespace percipiolondon\typesense\models;
 
-use Craft;
 use craft\base\Model;
 use craft\validators\DateTimeValidator;
 use craft\validators\HandleValidator;
@@ -24,12 +23,12 @@ class CollectionModel extends Model
     public $sectionId;
 
     /**
-     * @var datetime|null Collection's creation date
+     * @var \DateTime|null Collection's creation date
      */
     public $dateCreated;
 
     /**
-     * @var datetime|null Collection's sync date
+     * @var \DateTime|null Collection's sync date
      */
     public $dateSynced;
 
@@ -66,13 +65,13 @@ class CollectionModel extends Model
     public function rules()
     {
         return [
-            [['id', 'sectionId'] , 'number', 'integerOnly' => true],
-            [['uid'] , 'string'],
+            [['id', 'sectionId'], 'number', 'integerOnly' => true],
+            [['uid'], 'string'],
             [['handle'], HandleValidator::class],
             [['handle'], UniqueValidator::class],
             [['handle'], 'string', 'max' => 255],
-            [['dateCreated', 'dateSynced'] , DateTimeValidator::class],
-            [['id', 'uid', 'sectionId', 'dateCreated'] , 'required'],
+            [['dateCreated', 'dateSynced'], DateTimeValidator::class],
+            [['id', 'uid', 'sectionId', 'dateCreated'], 'required'],
         ];
     }
 
@@ -84,5 +83,4 @@ class CollectionModel extends Model
 
         return $config;
     }
-
 }

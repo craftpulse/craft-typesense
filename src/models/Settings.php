@@ -10,14 +10,10 @@
 
 namespace percipiolondon\typesense\models;
 
-use percipiolondon\typesense\Typesense;
-
-use Craft;
 use craft\base\Model;
-use craft\behaviors\EnvAttributeParserBehavior;
-use craft\validators\ArrayValidator;
 
-use yii\behaviors\AttributeTypecastBehavior;
+use craft\behaviors\EnvAttributeParserBehavior;
+use percipiolondon\typesense\Typesense;
 
 /**
  * Typesense Settings Model
@@ -127,8 +123,8 @@ class Settings extends Model
     public function defineRules(): array
     {
         return [
-            [['apiKey', 'cluster', 'clusterPort', 'nearestNode', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'] , 'string'],
-            [['apiKey', 'serverType'] , 'required'],
+            [['apiKey', 'cluster', 'clusterPort', 'nearestNode', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'], 'string'],
+            [['apiKey', 'serverType'], 'required'],
             [['serverType'], 'in', 'range' => [
                 self::TYPESENSE_SERVER,
                 self::TYPESENSE_CLUSTER,

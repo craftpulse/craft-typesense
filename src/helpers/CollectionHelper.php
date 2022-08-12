@@ -4,15 +4,14 @@ namespace percipiolondon\typesense\helpers;
 
 use Craft;
 
-use craft\web\Request;
 use craft\helpers\DateTimeHelper;
 use craft\helpers\Json;
 use craft\helpers\StringHelper;
+use craft\web\Request;
 
 use percipiolondon\typesense\models\CollectionModel as Collection;
 use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\TypesenseCollectionIndex;
-use Typesense\Client as TypesenseClient;
 
 /**
  * Class CollectionHelper
@@ -63,7 +62,7 @@ class CollectionHelper
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
 
-        foreach( $indexes as $index) {
+        foreach ($indexes as $index) {
             if ($index->indexName === $name) {
                 return $index;
             }
@@ -80,7 +79,7 @@ class CollectionHelper
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
 
-        foreach( $indexes as $index) {
+        foreach ($indexes as $index) {
             if ($index->section === $name) {
                 return $index;
             }
@@ -95,16 +94,14 @@ class CollectionHelper
      */
     public static function convertDocumentsToArray(string $index): array
     {
-        $documents = Typesense::$plugin->client->client()?->collections[$index]->documents->export();
+        $documents = Typesense::$plugin->getClient()->client()->collections[$index]->documents->export();
         $jsonDocs = explode("\n",$documents);
         $documents = [];
 
-        foreach($jsonDocs as $document) {
+        foreach ($jsonDocs as $document) {
             $documents[] = Json::decode($document);
         }
 
         return $documents;
     }
 }
-
-

@@ -10,11 +10,11 @@
 
 namespace percipiolondon\typesense\utilities;
 
-use percipiolondon\typesense\Typesense;
-use percipiolondon\typesense\assetbundles\typesenseutility\TypesenseUtilityAsset;
-
 use Craft;
 use craft\base\Utility;
+
+use percipiolondon\typesense\assetbundles\typesenseutility\TypesenseUtilityAsset;
+use percipiolondon\typesense\Typesense;
 
 /**
  * Typesense Utility
@@ -84,13 +84,6 @@ class TypesenseUtility extends Utility
     public static function contentHtml(): string
     {
         Craft::$app->getView()->registerAssetBundle(TypesenseUtilityAsset::class);
-
-        $someVar = 'Have a nice day!';
-        return Craft::$app->getView()->renderTemplate(
-            'typesense/_components/utilities/TypesenseUtility_content',
-            [
-                'someVar' => $someVar
-            ]
-        );
+        return Craft::$app->getView()->renderTemplate('typesense/_components/utilities/TypesenseUtility_content');
     }
 }

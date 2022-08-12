@@ -2,6 +2,7 @@
 
 namespace percipiolondon\typesense\events;
 
+use percipiolondon\typesense\models\CollectionModel;
 use yii\base\Event;
 
 /**
@@ -13,12 +14,12 @@ use yii\base\Event;
 class CollectionEvent extends Event
 {
     /**
-     * @var \percipiolondon\models\Collection|null The collection model associated with the event.
+     * @var CollectionModel|null The collection model associated with the event.
      */
-    public $collection;
+    public CollectionModel|null $collection;
 
     /**
      * @var bool Whether the collection is brand new
      */
-    public $isNew = false;
+    public bool $isNew = false;
 }

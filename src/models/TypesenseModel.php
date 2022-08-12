@@ -10,10 +10,10 @@
 
 namespace percipiolondon\typesense\models;
 
-use percipiolondon\typesense\Typesense;
-
 use Craft;
+
 use craft\base\Model;
+use percipiolondon\typesense\Typesense;
 
 /**
  * TypesenseModel Model

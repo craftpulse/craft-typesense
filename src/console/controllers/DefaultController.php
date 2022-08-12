@@ -10,13 +10,11 @@
 
 namespace percipiolondon\typesense\console\controllers;
 
-use craft\helpers\Queue;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\jobs\SyncDocumentsJob;
-use percipiolondon\typesense\Typesense;
-
 use Craft;
-use Typesense\Client as TypesenseClient;
+use craft\helpers\Queue;
+use percipiolondon\typesense\jobs\SyncDocumentsJob;
+
+use percipiolondon\typesense\Typesense;
 use yii\console\Controller;
 use yii\helpers\Console;
 
@@ -60,23 +58,23 @@ class DefaultController extends Controller
      */
     public function actionFlush()
     {
-        $indexes = Typesense::$plugin->getSettings()->collections;
+        $indexes = Typesense::$plugin->getClient()->client()->collections;
 
-        foreach( $indexes as $index) {
+        foreach ($indexes as $index) {
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
-            $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index->indexName);
+            $collection = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($index->indexName);
 
             //delete collection
             if (!empty($collection)) {
-                Typesense::$plugin->client->client()?->collections[$index->indexName]->delete();
+                Typesense::$plugin->getClient()->client()->collections[$index->indexName]->delete();
             }
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
                     'index' => $index->indexName,
-                    'type' => 'Flush'
-                ]
+                    'type' => 'Flush',
+                ],
             ]));
         }
     }
