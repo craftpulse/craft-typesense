@@ -61,7 +61,7 @@ class SyncDocumentsJob extends BaseJob
                 $collectionTypesense = $client->collections->create($collection->schema);
             }
 
-            if ($collectionTypesense) {
+            if ($collectionTypesense !== []) {
                 $entries = $collection->criteria->all();
                 $totalEntries = count($entries);
 
@@ -89,10 +89,8 @@ class SyncDocumentsJob extends BaseJob
 
                 // delete documents that aren't existing anymore
                 foreach ($documents as $document) {
-                    if (isset($document['id'])) {
-                        if (!in_array($document['id'], $upsertIds)) {
-                            $client->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
-                        }
+                    if (isset($document['id']) && !in_array($document['id'], $upsertIds)) {
+                        $client->collections[$this->criteria['index']]->documents->delete(['filter_by' => 'id: ' . $document['id']]);
                     }
                 }
             }

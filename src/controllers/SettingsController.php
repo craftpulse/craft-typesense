@@ -30,15 +30,12 @@ class SettingsController extends Controller
 {
     // Constants
     // =========================================================================
-
     // Public Methods
     // =========================================================================
-
     /**
      * Dashboard display
      *
      * @param string|null $siteHandle
-     * @param bool        $showWelcome
      *
      * @return Response The rendered result
      * @throws NotFoundHttpException
@@ -54,7 +51,7 @@ class SettingsController extends Controller
         $variables['controllerHandle'] = 'dashboard';
         $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
-        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
         $variables['selectedSubnavItem'] = 'dashboard';
         $variables['showWelcome'] = $showWelcome;
 
@@ -79,7 +76,7 @@ class SettingsController extends Controller
         $variables['fullPageForm'] = true;
         $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
-        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
         $variables['selectedSubnavItem'] = 'plugin';
         $variables['settings'] = Typesense::$plugin->getSettings();
 

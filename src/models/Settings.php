@@ -26,19 +26,21 @@ class Settings extends Model
 {
     // Public Properties
     // =========================================================================
-
     /**
      * @const int
+     * @var string
      */
     public const TYPESENSE_SERVER = 'server';
 
     /**
      * @const int
+     * @var string
      */
     public const TYPESENSE_CLUSTER = 'cluster';
 
     /**
      * @const int
+     * @var string
      */
     public const TYPESENSE_CLOUD = 'cloud';
 
@@ -120,7 +122,7 @@ class Settings extends Model
     /**
      * @inheritdoc
      */
-    public function defineRules(): array
+    protected function defineRules(): array
     {
         return [
             [['apiKey', 'cluster', 'clusterPort', 'nearestNode', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'], 'string'],
@@ -130,12 +132,8 @@ class Settings extends Model
                 self::TYPESENSE_CLUSTER,
                 self::TYPESENSE_CLOUD,
             ]],
-            [['cluster', 'clusterPort'], 'required', 'when' => function($model) {
-                return $model->serverType === self::TYPESENSE_CLUSTER;
-            }],
-            [['port', 'server'], 'required', 'when' => function($model) {
-                return $model->serverType === self::TYPESENSE_SERVER;
-            }],
+            [['cluster', 'clusterPort'], 'required', 'when' => fn($model) => $model->serverType === self::TYPESENSE_CLUSTER],
+            [['port', 'server'], 'required', 'when' => fn($model) => $model->serverType === self::TYPESENSE_SERVER],
         ];
     }
 }

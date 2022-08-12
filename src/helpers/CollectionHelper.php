@@ -20,44 +20,6 @@ use percipiolondon\typesense\TypesenseCollectionIndex;
  */
 class CollectionHelper
 {
-    /**
-     * Instantiates the collection specified by the post data.
-     *
-     * @param Request|null $request
-     * @return CollectionsModel
-     * @throws NotFoundHttpException
-     * @since 1.0.0
-     */
-//    public static function collectionToSync(Request $request = null): Collection
-//    {
-//
-//        if ($request === null) {
-//            $request = Craft::$app->getRequest();
-//        }
-//
-//        $collectionId = $request->getBodyParam('collectionId');
-//
-//        if ($collectionId) {
-//            $collection = Typesense::getCollections()->getCollectionById($collectionId);
-//
-//            if (!$collection) {
-//                throw new NotFoundHttpException(Craft::t('typesense', 'No collection with the ID “{id}”', ['id' => $collectionId]));
-//            }
-//        } else {
-//            $collection = new Collection();
-//            $collection->dateCreated = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
-//            $collection->handle = $request->getBodyParam('handle');
-//            $collection->sectionId = $request->getBodyParam('sectionId');
-//            $collection->uid = StringHelper::UUID();
-//        }
-//
-//        return $collection;
-//    }
-
-    /**
-     * @param string $name
-     * @return TypesenseCollectionIndex|null
-     */
     public static function getCollection(string $name): ?TypesenseCollectionIndex
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
@@ -71,10 +33,6 @@ class CollectionHelper
         return null;
     }
 
-    /**
-     * @param string $name
-     * @return TypesenseCollectionIndex|null
-     */
     public static function getCollectionBySection(string $name): ?TypesenseCollectionIndex
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
@@ -88,10 +46,6 @@ class CollectionHelper
         return null;
     }
 
-    /**
-     * @param string $index
-     * @return array
-     */
     public static function convertDocumentsToArray(string $index): array
     {
         $documents = Typesense::$plugin->getClient()->client()->collections[$index]->documents->export();

@@ -34,9 +34,7 @@ class TypesenseService extends Component
 {
     // Public Methods
     // =========================================================================
-
     /**
-     * @return TypesenseClient|null
      * @throws \craft\errors\MissingComponentException
      */
     public function client(): ?TypesenseClient
@@ -67,21 +65,20 @@ class TypesenseService extends Component
                 if (Craft::$app->getRequest()->getIsConsoleRequest()) {
                     Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
                 }
+
                 Craft::error(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
             }
-        } catch (\Exception $e) {
+        } catch (\Exception $exception) {
             if (Craft::$app->getRequest()->getIsConsoleRequest()) {
                 Craft::$app->getSession()->setNotice(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
             }
-            Craft::error($e->getMessage(), __METHOD__);
+
+            Craft::error($exception->getMessage(), __METHOD__);
         }
 
         return $client;
     }
 
-    /**
-     * @return array|null
-     */
     private function _createNearestNodes(): ?array
     {
         $nearest = App::parseEnv(Typesense::$plugin->getSettings()->nearestNode);
@@ -99,7 +96,6 @@ class TypesenseService extends Component
 
     /**
      * @param Settings $settings
-     * @return array
      */
     private function _createNodes(): array
     {

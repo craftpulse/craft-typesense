@@ -8,8 +8,6 @@ class ProjectConfigDataHelper
 {
     /**
      * Return a rebuilt project config array
-     *
-     * @return array
      */
     public static function rebuildProjectConfig(): array
     {
@@ -18,8 +16,6 @@ class ProjectConfigDataHelper
 
     /**
      * Return collection data config array.
-     *
-     * @return array
      */
     private static function _getCollectionData(): array
     {
@@ -27,6 +23,7 @@ class ProjectConfigDataHelper
         foreach (Typesense::$plugin->getSettings()->collections as $collection) {
             $data[$collection->uid] = $collection->getConfig();
         }
+
         return $data;
     }
 }

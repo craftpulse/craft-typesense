@@ -17,7 +17,7 @@ class TypesenseCollectionIndex
     public $section;
 
     /** @var array */
-    public $schema;
+    public $schema = [];
 
     /** @var string */
     public $elementType = Entry::class;
@@ -44,7 +44,7 @@ class TypesenseCollectionIndex
     public function elementType(string $class): self
     {
         if (!is_subclass_of($class, Element::class)) {
-            throw new Exception("Invalid Element Type {$class}");
+            throw new Exception(sprintf('Invalid Element Type %s', $class));
         }
 
         $this->elementType = $class;

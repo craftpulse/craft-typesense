@@ -15,32 +15,23 @@ use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
 use craft\events\ElementEvent;
-use craft\events\PluginEvent;
 use craft\events\RebuildConfigEvent;
-use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
-use craft\services\Plugins;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
-use craft\services\Utilities;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
-use nystudio107\pluginvite\services\VitePluginService;
-
-use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
 use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\ProjectConfigDataHelper;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
 use percipiolondon\typesense\services\TypesenseService;
-use percipiolondon\typesense\typesense\Services as TypesenseServices;
-use percipiolondon\typesense\utilities\TypesenseUtility;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
 
@@ -182,11 +173,11 @@ class Typesense extends Plugin
     /**
      * @inheritdoc
      */
-    public function getCpNavItem()
+    public function getCpNavItem(): ?array
     {
         $subNavs = [];
         $navItem = parent::getCpNavItem();
-        $currentUser = Craft::$app->getUser()->getIdentity();
+        Craft::$app->getUser()->getIdentity();
 
         // Only show sub navigation the user has permission to view
         if (Craft::$app->getUser()->checkPermission('typesense:dashboard')) {
@@ -195,6 +186,7 @@ class Typesense extends Plugin
                 'url' => 'typesense/dashboard',
             ];
         }
+
         if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
             $subNavs['collections'] = [
                 'label' => Craft::t('typesense', 'Collections'),
@@ -215,11 +207,9 @@ class Typesense extends Plugin
             ];
         }
 
-        $navItem = array_merge($navItem, [
+        return array_merge($navItem, [
             'subnav' => $subNavs,
         ]);
-
-        return $navItem;
     }
 
     // Protected Methods
@@ -235,6 +225,7 @@ class Typesense extends Plugin
         if ($request->getIsCpRequest() && !$request->getIsConsoleRequest()) {
             $this->installCpEventListeners();
         }
+
         $this->_registerProjectConfigEventListeners();
     }
 
@@ -278,18 +269,14 @@ class Typesense extends Plugin
 
     /**
      * Creates and returns the model used to store the plugin’s settings.
-     *
-     * @return Model|null
      */
-    protected function createSettingsModel()
+    protected function createSettingsModel(): ?\craft\base\Model
     {
         return new Settings();
     }
 
     /**
      * Return the custom Control Panel routes
-     *
-     * @return array
      */
     protected function customAdminCpRoutes(): array
     {
@@ -306,8 +293,6 @@ class Typesense extends Plugin
 
     /**
      * Return the custom Control Panel user permissions.
-     *
-     * @return array
      */
     protected function customAdminCpPermissions(): array
     {
@@ -379,13 +364,13 @@ class Typesense extends Plugin
                         $collection = CollectionHelper::getCollectionBySection($section);
 
                         //create collection if it doesn't exist
-                        if (!$collection) {
+                        if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
                             self::$plugin->getCollections()->saveCollections();
                             $collection = CollectionHelper::getCollectionBySection($section);
                         }
                     }
 
-                    if ($collection) {
+                    if ($collection !== null) {
                         self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
                     }
                 }
@@ -415,13 +400,13 @@ class Typesense extends Plugin
                     $collection = CollectionHelper::getCollectionBySection($section);
 
                     //create collection if it doesn't exist
-                    if (!$collection) {
+                    if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
                         self::$plugin->getCollections()->saveCollections();
                         $collection = CollectionHelper::getCollectionBySection($section);
                     }
                 }
 
-                if ($collection) {
+                if ($collection !== null) {
                     self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
                 }
             }
@@ -440,16 +425,3 @@ class Typesense extends Plugin
         });
     }
 }
-
-// Register our variables
-/*Event::on(
-    CraftVariable::class,
-    CraftVariable::EVENT_INIT,
-    function(Event $event) {
-        $variable = $event->sender;
-        $variable->set('typesense', [
-            'class' => TypesenseVariable::class,
-            'viteService' => $this->vite,
-        ]);
-    }
-);*/

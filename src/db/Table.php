@@ -4,5 +4,8 @@ namespace percipiolondon\typesense\db;
 
 abstract class Table
 {
-    const COLLECTIONS = "{{%typesense_collections}}";
+    /**
+     * @var string
+     */
+    public const COLLECTIONS = "{{%typesense_collections}}";
 }

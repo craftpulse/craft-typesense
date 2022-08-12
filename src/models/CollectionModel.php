@@ -77,10 +77,8 @@ class CollectionModel extends Model
 
     public function getConfig(): array
     {
-        $config = [
+        return [
             'handle' => $this->handle,
         ];
-
-        return $config;
     }
 }

@@ -14,16 +14,12 @@ class CollectionRecord extends ActiveRecord
 
     /**
      * @inheritdoc
-     * @return string
      */
     public static function tableName(): string
     {
         return Table::COLLECTIONS;
     }
 
-    /**
-     * @return ActiveQueryInterface
-     */
     public function getFieldLayout(): ActiveQueryInterface
     {
         return $this->hasOne(FieldLayout::class, ['id' => 'fieldLayoutId']);

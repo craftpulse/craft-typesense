@@ -77,9 +77,6 @@ class CollectionsController extends Controller
     public function actionCollections(): Response
     {
         $variables = [];
-        $entriesCount = [
-            'entries' => [],
-        ];
 
         $pluginName = Typesense::$plugin->getSettings()->pluginName;
         $templateTitle = Craft::t('typesense', 'Collections');
@@ -87,7 +84,7 @@ class CollectionsController extends Controller
         $variables['controllerHandle'] = 'collections';
         $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
         $variables['title'] = $templateTitle;
-        $variables['docTitle'] = "{$pluginName} - {$templateTitle}";
+        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
         $variables['selectedSubnavItem'] = 'collections';
 
         $indexes = Typesense::$plugin->getSettings()->collections;
@@ -117,9 +114,6 @@ class CollectionsController extends Controller
         return $this->renderTemplate('typesense/collections/index', $variables);
     }
 
-    /**
-     * @return Response
-     */
     public function actionFlushCollection(): Response
     {
         $this->requirePostRequest();
@@ -146,7 +140,6 @@ class CollectionsController extends Controller
     }
 
     /**
-     * @return Response
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException
@@ -177,139 +170,136 @@ class CollectionsController extends Controller
      * @return Response
      * @throws BadRequestHttpException
      */
-//    public function actionSaveCollection(): Response {
-//        $this->requirePostRequest();
-//
-//        $request = Craft::$app->getRequest();
-//        $collection = CollectionHelper::collectionToSync($request);
-//
-//        // Always update the sync data ( after all the data has synced before re-writing in the database )
-//        $collection->dateSynced = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
-//
-//        // Save the collection
-//        if (!Typesense::$plugin->getCollections()->saveCollection($collection)) {
-//            // Response error
-//            //$this->setFailFlash(Craft::t('typesense', 'Couldn’t save collection.'));
-//
-//            return $this->asJson([
-//                'error' => Craft::t('typesense', 'Couldn’t save collection.'),
-//            ]);
-//        }
-//
-//        return $this->asJson($collection);
-//    }
-
-//    public function actionCreateCollection()
-//    {
-//
-//        $schema = [
-//            'name'      => 'news',
-//            'fields'    => [
-//                [
-//                    'name'  => 'title',
-//                    'type'  => 'string'
-//                ],
-//                [
-//                    'name'  => 'slug',
-//                    'type'  => 'string',
-//                    'facet' => true
-//                ],
-//                [
-//                    'name'  => 'dateCreated',
-//                    'type'  => 'int32',
-//
-//                ]
-//            ],
-//            'default_sorting_field' => 'dateCreated' // can only be an integer
-//        ];
-//
-//        if ( !Typesense::$plugin->getClient()->client()->collections['news'] ) {
-//            Typesense::$plugin->getClient()->client()->collections->create($schema);
-//            return 'index successfully created';
-//        } else {
-//            return 'this index already exists';
-//        }
-//
-//    }
-//
-//    public function actionIndexDocuments()
-//    {
-//        $documents = [
-//            [
-//                'id' => '1',
-//                'title' => 'Typesense Entry 1',
-//                'slug' => 'typesense-entry-1',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '2',
-//                'title' => 'Typesense Entry 2',
-//                'slug' => 'typesense-entry-2',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '3',
-//                'title' => 'Typesense Entry 3',
-//                'slug' => 'typesense-entry-3',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '4',
-//                'title' => 'Typesense Entry 4',
-//                'slug' => 'typesense-entry-4',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '5',
-//                'title' => 'Typesense Entry 5',
-//                'slug' => 'typesense-entry-5',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '6',
-//                'title' => 'Typesense Entry 6',
-//                'slug' => 'typesense-entry-6',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '7',
-//                'title' => 'Typesense Entry 7',
-//                'slug' => 'typesense-entry-7',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '8',
-//                'title' => 'Typesense Entry 8',
-//                'slug' => 'typesense-entry-8',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '9',
-//                'title' => 'Typesense Entry 9',
-//                'slug' => 'typesense-entry-9',
-//                'dateCreated' => 1639663729
-//            ],
-//            [
-//                'id' => '10',
-//                'title' => 'Typesense Entry 10',
-//                'slug' => 'typesense-entry-10',
-//                'dateCreated' => 1639663729
-//            ],
-//        ];
-//
-//
-//        if ( Typesense::$plugin->getClient()->client()->collections['news'] ) {
-//            foreach ( $documents as $document) {
-//                Typesense::$plugin->getClient()->client()->collections['news']->documents->upsert($document);
-//            }
-//            return 'All elements added to the index';
-//        } else {
-//            return 'this index doesn\'t exist';
-//        }
-//    }
-
+    //    public function actionSaveCollection(): Response {
+    //        $this->requirePostRequest();
+    //
+    //        $request = Craft::$app->getRequest();
+    //        $collection = CollectionHelper::collectionToSync($request);
+    //
+    //        // Always update the sync data ( after all the data has synced before re-writing in the database )
+    //        $collection->dateSynced = DateTimeHelper::toDateTime(DateTimeHelper::currentTimeStamp());
+    //
+    //        // Save the collection
+    //        if (!Typesense::$plugin->getCollections()->saveCollection($collection)) {
+    //            // Response error
+    //            //$this->setFailFlash(Craft::t('typesense', 'Couldn’t save collection.'));
+    //
+    //            return $this->asJson([
+    //                'error' => Craft::t('typesense', 'Couldn’t save collection.'),
+    //            ]);
+    //        }
+    //
+    //        return $this->asJson($collection);
+    //    }
+    //    public function actionCreateCollection()
+    //    {
+    //
+    //        $schema = [
+    //            'name'      => 'news',
+    //            'fields'    => [
+    //                [
+    //                    'name'  => 'title',
+    //                    'type'  => 'string'
+    //                ],
+    //                [
+    //                    'name'  => 'slug',
+    //                    'type'  => 'string',
+    //                    'facet' => true
+    //                ],
+    //                [
+    //                    'name'  => 'dateCreated',
+    //                    'type'  => 'int32',
+    //
+    //                ]
+    //            ],
+    //            'default_sorting_field' => 'dateCreated' // can only be an integer
+    //        ];
+    //
+    //        if ( !Typesense::$plugin->getClient()->client()->collections['news'] ) {
+    //            Typesense::$plugin->getClient()->client()->collections->create($schema);
+    //            return 'index successfully created';
+    //        } else {
+    //            return 'this index already exists';
+    //        }
+    //
+    //    }
+    //
+    //    public function actionIndexDocuments()
+    //    {
+    //        $documents = [
+    //            [
+    //                'id' => '1',
+    //                'title' => 'Typesense Entry 1',
+    //                'slug' => 'typesense-entry-1',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '2',
+    //                'title' => 'Typesense Entry 2',
+    //                'slug' => 'typesense-entry-2',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '3',
+    //                'title' => 'Typesense Entry 3',
+    //                'slug' => 'typesense-entry-3',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '4',
+    //                'title' => 'Typesense Entry 4',
+    //                'slug' => 'typesense-entry-4',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '5',
+    //                'title' => 'Typesense Entry 5',
+    //                'slug' => 'typesense-entry-5',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '6',
+    //                'title' => 'Typesense Entry 6',
+    //                'slug' => 'typesense-entry-6',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '7',
+    //                'title' => 'Typesense Entry 7',
+    //                'slug' => 'typesense-entry-7',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '8',
+    //                'title' => 'Typesense Entry 8',
+    //                'slug' => 'typesense-entry-8',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '9',
+    //                'title' => 'Typesense Entry 9',
+    //                'slug' => 'typesense-entry-9',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //            [
+    //                'id' => '10',
+    //                'title' => 'Typesense Entry 10',
+    //                'slug' => 'typesense-entry-10',
+    //                'dateCreated' => 1639663729
+    //            ],
+    //        ];
+    //
+    //
+    //        if ( Typesense::$plugin->getClient()->client()->collections['news'] ) {
+    //            foreach ( $documents as $document) {
+    //                Typesense::$plugin->getClient()->client()->collections['news']->documents->upsert($document);
+    //            }
+    //            return 'All elements added to the index';
+    //        } else {
+    //            return 'this index doesn\'t exist';
+    //        }
+    //    }
     /**
-     * @return Response|string
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException
@@ -328,7 +318,6 @@ class CollectionsController extends Controller
     }
 
     /**
-     * @return string
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException
@@ -348,7 +337,6 @@ class CollectionsController extends Controller
     }
 
     /**
-     * @return string
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException
@@ -368,7 +356,6 @@ class CollectionsController extends Controller
     }
 
     /**
-     * @return Response
      * @throws Exception
      * @throws TypesenseClientError
      * @throws InvalidConfigException

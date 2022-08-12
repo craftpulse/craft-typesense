@@ -16,7 +16,7 @@ class CollectionEvent extends Event
     /**
      * @var CollectionModel|null The collection model associated with the event.
      */
-    public CollectionModel|null $collection;
+    public CollectionModel|null $collection = null;
 
     /**
      * @var bool Whether the collection is brand new

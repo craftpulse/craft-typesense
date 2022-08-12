@@ -46,8 +46,6 @@ class TypesenseUtility extends Utility
      * Returns the utility’s unique identifier.
      *
      * The ID should be in `kebab-case`, as it will be visible in the URL (`admin/utilities/the-handle`).
-     *
-     * @return string
      */
     public static function id(): string
     {
@@ -68,8 +66,6 @@ class TypesenseUtility extends Utility
      * Returns the number that should be shown in the utility’s nav item badge.
      *
      * If `0` is returned, no badge will be shown
-     *
-     * @return int
      */
     public static function badgeCount(): int
     {
@@ -78,8 +74,6 @@ class TypesenseUtility extends Utility
 
     /**
      * Returns the utility's content HTML.
-     *
-     * @return string
      */
     public static function contentHtml(): string
     {

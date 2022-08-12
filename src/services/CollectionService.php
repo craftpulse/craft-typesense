@@ -17,7 +17,10 @@ use yii\base\Component;
 
 class CollectionService extends Component
 {
-    const CONFIG_COLLECTIONS_KEY = 'collections';
+    /**
+     * @var string
+     */
+    public const CONFIG_COLLECTIONS_KEY = 'collections';
 
     public function getCollectionByCollectionRetrieve(string $indexName): ?array
     {
