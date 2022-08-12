@@ -47,7 +47,7 @@ class SyncDocumentsJob extends BaseJob
     // Public Methods
     // =========================================================================
 
-    public function execute($queue)
+    public function execute($queue) :void
     {
         $upsertIds = [];
         $collection = CollectionHelper::getCollection($this->criteria['index']);

@@ -4,18 +4,18 @@
     "src": "src/js/typesense.ts",
     "isEntry": true,
     "css": [
-      "assets/typesense.120d962b.css"
+      "assets/typesense.a09facb1.css"
     ]
   },
   "src/js/typesense-collections.ts": {
-    "file": "assets/typesense-collections.316f53b9.js",
+    "file": "assets/typesense-collections.e3f4c2e8.js",
     "src": "src/js/typesense-collections.ts",
     "isEntry": true,
     "imports": [
-      "_vendor.978221e7.js"
+      "_vendor.68b06e04.js"
     ]
   },
-  "_vendor.978221e7.js": {
-    "file": "assets/vendor.978221e7.js"
+  "_vendor.68b06e04.js": {
+    "file": "assets/vendor.68b06e04.js"
   }
 }

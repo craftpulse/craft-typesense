@@ -4,7 +4,10 @@ module.exports = {
         '../src/templates/**/*.{twig,html}',
         './src/vue/**/*.{vue,html}',
     ],
-    safelist: [],
+    safelist: [
+        'pl-4',
+        'pt-4',
+    ],
     theme: {
         extend: {
         }

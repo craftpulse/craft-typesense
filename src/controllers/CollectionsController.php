@@ -52,7 +52,7 @@ class CollectionsController extends Controller
 {
     // Protected Properties
     // =========================================================================
-    protected $allowAnonymous = ['create-collection', 'drop-collection', 'list-collections', 'retrieve-collection', 'index-documents', 'list-documents', 'delete-documents'];
+    protected array|int|bool $allowAnonymous = ['create-collection', 'drop-collection', 'list-collections', 'retrieve-collection', 'index-documents', 'list-documents', 'delete-documents'];
 
     // Public Methods
     // =========================================================================
@@ -61,7 +61,7 @@ class CollectionsController extends Controller
      * @throws InvalidConfigException
      * @throws ForbiddenHttpException
      */
-    public function init()
+    public function init() :void
     {
         parent::init();
 

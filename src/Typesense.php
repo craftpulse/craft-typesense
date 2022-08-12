@@ -81,21 +81,21 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public $schemaVersion = '1.0.0';
+    public string $schemaVersion = '1.0.0';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
      *
      * @var bool
      */
-    public $hasCpSection = true;
+    public bool $hasCpSection = true;
 
     /**
      * Set to `true` if the plugin should have a settings view in the control panel.
      *
      * @var bool
      */
-    public $hasCpSettings = true;
+    public bool $hasCpSettings = true;
 
     use PluginTrait;
 
@@ -164,10 +164,10 @@ class Typesense extends Plugin
     /**
      * @inheritdoc
      */
-    public function getSettingsResponse()
+    public function getSettingsResponse(): mixed
     {
         // redirect to plugin settings page
-        Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/plugin'));
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/plugin'));
     }
 
     /**

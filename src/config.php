@@ -1,11 +1,11 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 3.x
+ * Typesense plugin for Craft CMS 4.x
  *
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2022 percipiolondon
  */
 
 /**
@@ -24,7 +24,47 @@
 
 return [
 
-    // This controls blah blah blah
-    "test" => true,
-
+    'collections' => [
+        // CONTENT
+        \percipiolondon\typesense\TypesenseCollectionIndex::create(
+            [
+                'name' => 'blog',
+                'section' => 'blog.blog', //section handle + entry type handle
+                'fields' => [
+                    [
+                        'name' => 'title',
+                        'type' => 'string',
+                        'sort' => true,
+                    ],
+                    [
+                        'name' => 'slug',
+                        'type' => 'string',
+                        'facet' => true
+                    ],
+                    [
+                        'name' => 'handle',
+                        'type' => 'string',
+                    ],
+                    [
+                        'name' => 'post_date_timestamp',
+                        'type' => 'int32',
+                    ],
+                ],
+                'default_sorting_field' => 'post_date_timestamp', // can only be an integer,
+                'resolver' => static function(\craft\elements\Entry $entry) {
+                    return [
+                        'id' => (string)$entry->id,
+                        'title' => $entry->title,
+                        'handle' => $entry->section->handle,
+                        'slug' => $entry->slug,
+                        'post_date_timestamp' => (int)$entry->postDate->format('U')
+                    ];
+                }
+            ]
+        )
+        ->elementType(\craft\elements\Entry::class)
+        ->criteria(function(\craft\elements\db\EntryQuery $query) {
+            return $query->section('blog');
+        }),
+    ]
 ];
