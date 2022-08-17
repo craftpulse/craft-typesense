@@ -11,15 +11,15 @@
 {%- set content -%}
 
     {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
+    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
 
     <div class="-m-6" id="typesense-collections">
         {%- if sections ?? null -%}
-            {# @TODO: reintroduce {{- cpUrl() -}} when the ?default=site is off of it #}
             <grid-sections
                 :sections="{{- sections|json_encode -}}"
                 :api-config="{
                     csrf: {{- csrf|json_encode -}},
-                    baseUrl: '/cp'
+                    baseUrl: '{{- apiBaseUrl -}}'
                 }"
             />
         {%- else -%}
