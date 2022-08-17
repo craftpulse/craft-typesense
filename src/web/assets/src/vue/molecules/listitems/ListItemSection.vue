@@ -83,7 +83,7 @@ export default defineComponent({
         </span>
     </div-->
 
-    <div class="px-6 py-2 border-b border-gray-100 space-x-2">
+    <div class="px-6 py-2 space-x-2">
         <button
             type="button"
             class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-900"
