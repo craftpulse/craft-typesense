@@ -262,7 +262,10 @@ class Typesense extends Plugin
                     __METHOD__
                 );
                 // Register our custom permissions
-                $event->permissions[Craft::t('typesense', 'Typesense')] = $this->customAdminCpPermissions();
+                $event->permissions[] = [
+                    'heading' => Craft::t('typesense', 'Typesense'),
+                    'permissions' => $this->customAdminCpPermissions()
+                ];
             }
         );
     }
