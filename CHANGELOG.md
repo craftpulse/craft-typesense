@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 4.0.0-beta.1 - 2022-08-21
+### Added
+- Added support for Craft 4
+
 ## 1.0.0-beta.14 - 2022-07-19
 ### Fixed
 - Fixed an issue where the port wouldn't be saved on a single server setting
