@@ -11,12 +11,12 @@
 namespace percipiolondon\typesense\console\controllers;
 
 use Craft;
+use craft\elements\Entry;
 use craft\helpers\Queue;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
 
 use percipiolondon\typesense\Typesense;
 use yii\console\Controller;
-use yii\helpers\Console;
 
 /**
  * Default Command
@@ -77,5 +77,32 @@ class DefaultController extends Controller
                 ],
             ]));
         }
+    }
+
+    public function actionUpdateScheduledPosts()
+    {
+        $this->stdout("Start fetching entries with today's post date");
+        $this->stdout(PHP_EOL);
+
+        // set timestamps to fetch todays entries
+        $morning = mktime(0,0,0, date('m'), date('d'), date('y'));
+        $evening = mktime(23,59,00, date('m'), date('d'), date('y'));
+
+        // select entries of today's postDate where the dateUpdated is before the postDate gets out
+        $todaysEntries = Entry::find()
+            ->where(['between', 'postDate', date('Y/m/d H:i', $morning), date('Y/m/d H:i', $evening)])
+            ->andWhere('`elements`.`dateUpdated` < `entries`.`postDate`')
+            ->all();
+
+        // resave those entries to setup the document in typsense
+        $count = 0;
+        foreach($todaysEntries as $entry) {
+            Craft::$app->getElements()->saveElement($entry);
+            $count += 1;
+        }
+
+        Craft::info("Typesense update scheduled post fired with ".$count." result(s)");
+        $this->stdout("End fetching entries with today's post date with " . $count . ' result(s)');
+        $this->stdout(PHP_EOL);
     }
 }
