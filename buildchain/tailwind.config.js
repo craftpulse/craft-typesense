@@ -5,6 +5,12 @@ module.exports = {
         './src/vue/**/*.{vue,html}',
     ],
     safelist: [
+        'font-bold',
+        'grid-cols-4',
+        'mb-0',
+        'mb-2',
+        'mt-0',
+        'p-4',
         'pl-4',
         'pt-4',
     ],
@@ -13,5 +19,6 @@ module.exports = {
         }
     },
     corePlugins: {},
+    important: true,
     plugins: [],
 };

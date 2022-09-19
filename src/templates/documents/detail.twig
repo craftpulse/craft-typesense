@@ -1,0 +1,29 @@
+{%- requirePermission "typesense:collections" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+
+{%- set tagOptions = {
+    'depends': [
+        'percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset'
+    ]
+} -%}
+
+{%- set content -%}
+
+    {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
+    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
+
+    <section class="rounded-tr-sm rounded-tl-sm">
+        {%- for document in documents -%}
+            <article class="bg-gray-100 rounded-md w-full mb-2 p-4">
+                {%- for heading, value in document -%}
+                    <p class="mb-0 mt-0">
+                        <span class="font-bold">{{- heading -}}:</span>
+                        <span>{{- value -}}</span>
+                    </p>
+                {%- endfor -%}
+            </article>
+        {%- endfor -%}
+    </section>
+
+{%- endset -%}

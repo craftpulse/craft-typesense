@@ -14,13 +14,18 @@ use Craft;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\elements\actions\SetStatus;
+use craft\elements\Entry;
 use craft\events\ElementEvent;
+use craft\events\ModelEvent;
 use craft\events\RebuildConfigEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\helpers\DateTimeHelper;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
+use craft\services\Plugins;
 use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
@@ -36,6 +41,7 @@ use percipiolondon\typesense\variables\TypesenseVariable;
 
 
 use yii\base\Event;
+use yii\db\Expression;
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -194,6 +200,13 @@ class Typesense extends Plugin
             ];
         }
 
+//        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
+//            $subNavs['documents'] = [
+//                'label' => Craft::t('typesense', 'Documents'),
+//                'url' => 'typesense/documents',
+//            ];
+//        }
+
         $editableSettings = true;
         // Check against allowAdminChanges
         if (!Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
@@ -288,6 +301,8 @@ class Typesense extends Plugin
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/plugin' => 'typesense/settings/plugin',
             'typesense/collections' => 'typesense/collections/collections',
+            'typesense/documents' => 'typesense/collections/documents',
+            'typesense/documents/<sectionId:\d+>' => 'typesense/collections/document',
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
             'typesense/flush-collection' => 'typesense/collections/flush-collection',
@@ -338,21 +353,54 @@ class Typesense extends Plugin
      */
     private function _registerEventHandlers(): void
     {
+        /* PENDING EVENT */
+        Event::on(
+            Plugins::class,
+            Plugins::EVENT_AFTER_LOAD_PLUGINS,
+            function() {
+                $request = Craft::$app->getRequest();
+                if (!$request->getIsConsoleRequest()) {
+                    // set timestamps to fetch todays entries
+                    $morning = mktime(0,0,0, date('m'), date('d'), date('y'));
+                    $evening = mktime(23,59,00, date('m'), date('d'), date('y'));
+
+                    // select entries of today's postDate where the dateUpdated is before the postDate gets out
+                    $todaysEntries = Entry::find()
+                        ->where(['between', 'postDate', date('Y/m/d H:i', $morning), date('Y/m/d H:i', $evening)])
+                        ->andWhere('`elements`.`dateUpdated` < `entries`.`postDate`')
+                        ->all();
+
+                    // resave those entries to setup the document in typsense
+                    foreach($todaysEntries as $entry) {
+                        Craft::$app->getElements()->saveElement($entry);
+                    }
+                }
+            }
+        );
+
+        /* SAVE EVENTS */
         $events = [
             [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
         ];
-
         foreach ($events as $event) {
             Event::on(
                 $event[0],
                 $event[1],
                 function(ElementEvent $event) {
+                    // Ignore any element that is not an entry
+                    if (!($event->element instanceof Entry)) {
+                        return;
+                    }
+
                     $entry = $event->element;
+                    $id = $entry->id;
                     $section = $entry->section->handle ?? null;
                     $type = $entry->type->handle ?? null;
                     $collection = null;
+
+                    Craft::info('Typesense edit / add / delete document based of: ' . $entry->title);
 
                     if (ElementHelper::isDraftOrRevision($entry)) {
                         // don’t do anything with drafts or revisions
@@ -361,7 +409,7 @@ class Typesense extends Plugin
 
                     if ($section) {
                         if ($type) {
-                            $section = $section . '.' . $type;
+                            $section .= '.' . $type;
                         }
 
                         $collection = CollectionHelper::getCollectionBySection($section);
@@ -373,13 +421,22 @@ class Typesense extends Plugin
                         }
                     }
 
-                    if ($collection !== null) {
-                        self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                    if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
+                        // element is enabled --> save to Typesense
+                        if ($collection !== null) {
+                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                        }
+                    } else {
+                        // element is disabled --> delete from Typesense
+                        if ($collection !== null) {
+                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
+                        }
                     }
                 }
             );
         }
 
+        /* DELETE EVENT */
         Event::on(
             Elements::class,
             Elements::EVENT_AFTER_DELETE_ELEMENT,

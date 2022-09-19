@@ -24,6 +24,7 @@ use percipiolondon\typesense\Typesense;
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;
 use yii\di\NotInstantiableException;
+use yii\helpers\Json;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -305,16 +306,96 @@ class CollectionsController extends Controller
      * @throws InvalidConfigException
      * @throws NotInstantiableException
      */
-    public function actionListDocuments(): Response|string
+    public function actionDocuments(): Response|string
     {
-        $request = Craft::$app->getRequest();
-        $index = $request->getBodyParam('index');
+        $variables = [];
 
-        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
-            return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->documents->export());
+        $pluginName = Typesense::$plugin->getSettings()->pluginName;
+        $templateTitle = Craft::t('typesense', 'Collections');
+
+        $variables['controllerHandle'] = 'collections';
+        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
+        $variables['title'] = $templateTitle;
+        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
+        $variables['selectedSubnavItem'] = 'collections';
+
+        $indexes = Typesense::$plugin->getSettings()->collections;
+
+        foreach ($indexes as $index) {
+            $entry = $index->criteria->one();
+            $section = $entry->section ?? null;
+
+            if ($section) {
+                $variables['sections'][] = [
+                    'id' => $section->id,
+                    'name' => $section->name,
+                    'handle' => $section->handle,
+                    'type' => $entry->type->handle,
+                    'index' => $index->indexName,
+                ];
+            }
         }
 
-        return "this index doesn't exist";
+        $variables['csrf'] = [
+            'name' => Craft::$app->getConfig()->getGeneral()->csrfTokenName,
+            'value' => Craft::$app->getRequest()->getCsrfToken(),
+        ];
+
+        // Render the template
+        return $this->renderTemplate('typesense/documents/index', $variables);
+//        $request = Craft::$app->getRequest();
+//        $index = $request->getBodyParam('index');
+//
+//        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
+//            return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->documents->export());
+//        }
+//
+//        return "this index doesn't exist";
+    }
+
+    /**
+     * @throws Exception
+     * @throws TypesenseClientError
+     * @throws InvalidConfigException
+     * @throws NotInstantiableException
+     */
+    public function actionDocument(int $sectionId): Response|string
+    {
+        $variables = [];
+
+        $pluginName = Typesense::$plugin->getSettings()->pluginName;
+        $variables['documents'] = [];
+
+        $indexes = Typesense::$plugin->getSettings()->collections;
+
+        foreach ($indexes as $index) {
+            $entry = $index->criteria->one();
+            $section = $entry->section ?? null;
+
+            if ($section->id === $sectionId) {
+                $templateTitle = Craft::t('typesense', 'Collections of '.$section->name);
+                $documents = $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index->indexName]->documents->export());
+
+                if ($documents) {
+                    $documents = explode("\n",$documents->data);
+                    foreach ($documents as $document) {
+                        $variables['documents'][] = Json::decode($document);
+                    }
+                }
+            }
+        }
+
+        $variables['controllerHandle'] = 'collections';
+        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
+        $variables['title'] = $templateTitle;
+        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
+        $variables['selectedSubnavItem'] = 'documents';
+
+        $variables['headings'] = ($variables['documents'][0] ?? null) ? array_keys($variables['documents'][0]) : [];
+        $variables['documents'] = array_reverse($variables['documents']);
+
+        // Render the template
+        return $this->renderTemplate('typesense/documents/detail', $variables);
     }
 
     /**
@@ -379,5 +460,13 @@ class CollectionsController extends Controller
         $index = $request->getBodyParam('index');
 
         return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->retrieve());
+    }
+
+    private function _sortDocuments($a, $b) {
+        if ($a['post_date_timestamp'] == $b['post_date_timestamp']) {
+            return 0;
+        }
+
+        return ($a['post_date_timestamp'] < $b['post_date_timestamp']) ? -1 : 1;
     }
 }

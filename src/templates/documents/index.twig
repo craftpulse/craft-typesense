@@ -1,0 +1,70 @@
+{%- requirePermission "typesense:collections" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+
+{%- set tagOptions = {
+    'depends': [
+        'percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset'
+    ]
+} -%}
+
+{%- set content -%}
+
+    {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
+    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
+
+    <div class="-m-6" id="typesense-collections">
+        {%- if sections ?? null -%}
+        <section class="rounded-tr-sm rounded-tl-sm">
+            <div class="grid grid-cols-4 rounded-tr-md rounded-tl-md bg-gray-100">
+
+                <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Index
+                </div>
+
+                <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Section
+                </div>
+
+                <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Type
+                </div>
+
+                <!--div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                </div-->
+
+                <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Sync
+                </div>
+
+            </div>
+
+            {%- for section in sections -%}
+                <div class="grid grid-cols-4">
+                    <div class="px-6 py-4 whitespace-nowrap flex items-center">
+                        {{ section.index }}
+                    </div>
+
+                    <div class="px-6 py-4 whitespace-nowrap flex items-center">
+                        {{ section.name }}
+                    </div>
+
+                    <div class="px-6 py-4 whitespace-nowrap flex items-center">
+                        {{ section.type }}
+                    </div>
+
+                    <div class="px-6 py-2 space-x-2">
+                        <a href="{{- url('typesense') -}}/documents/{{- section.id -}}" class="cursor-pointer inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-indigo-700 hover:bg-indigo-900">Show Documents</a>
+                    </div>
+                </div>
+            {%- endfor -%}
+        {%- else -%}
+
+            <p class="pt-4 pl-4">There are currently no collections defined or no collections with entries. Please provide the collections in config/typesense.php</p>
+
+        {%- endif -%}
+
+    </div>
+
+{%- endset -%}

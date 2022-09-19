@@ -4,11 +4,11 @@
     "src": "src/js/typesense.ts",
     "isEntry": true,
     "css": [
-      "assets/typesense.a09facb1.css"
+      "assets/typesense.e0a07466.css"
     ]
   },
   "src/js/typesense-collections.ts": {
-    "file": "assets/typesense-collections.e3f4c2e8.js",
+    "file": "assets/typesense-collections.0883031a.js",
     "src": "src/js/typesense-collections.ts",
     "isEntry": true,
     "imports": [
