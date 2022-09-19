@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 4.0.0-beta.3 - 2022-09-19
+### Changed
+- Changed: disabled the before routing fetch to check for scheduled posts
+
 ## 4.0.0-beta.2 - 2022-09-19
 ### Added
 - Added: Delete the document when setting an enabled entry to disable [#6](https://github.com/percipioglobal/craft-typesense/issues/6)
