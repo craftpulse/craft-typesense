@@ -23,7 +23,6 @@
  */
 
 return [
-
     'collections' => [
         // CONTENT
         \percipiolondon\typesense\TypesenseCollectionIndex::create(
