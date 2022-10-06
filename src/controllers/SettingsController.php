@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 3.x
+ * Typesense plugin for Craft CMS 4.x
  *
  * @link      https://percipio.london/
  * @copyright Copyright (c) 2022 Percipio Global Ltd.
