@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 3.x
+ * Typesense plugin for Craft CMS 4.x
  *
  * Craft Plugin that synchronises with Typesense
  *
@@ -58,30 +58,30 @@ class DefaultController extends Controller
      */
     public function actionFlush()
     {
-        $indexes = Typesense::$plugin->getClient()->client()->collections;
+        $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
-            $collection = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($index->indexName);
+            $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index->indexName);
 
             //delete collection
             if (!empty($collection)) {
-                Typesense::$plugin->getClient()->client()->collections[$index->indexName]->delete();
+                Typesense::$plugin->client->client()?->collections[$index->indexName]->delete();
             }
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
                     'index' => $index->indexName,
-                    'type' => 'Flush',
-                ],
+                    'type' => 'Flush'
+                ]
             ]));
         }
     }
 
     public function actionSync()
     {
-        $indexes = Typesense::$plugin->getClient()->client()->collections;
+        $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
             $this->stdout('Sync ' . $index->indexName);
@@ -102,8 +102,8 @@ class DefaultController extends Controller
         $this->stdout(PHP_EOL);
 
         // set timestamps to fetch todays entries
-        $morning = mktime(0,0,0, date('m'), date('d'), date('y'));
-        $evening = mktime(23,59,00, date('m'), date('d'), date('y'));
+        $morning = mktime(0, 0, 0, date('m'), date('d'), date('y'));
+        $evening = mktime(23, 59, 00, date('m'), date('d'), date('y'));
 
         // select entries of today's postDate where the dateUpdated is before the postDate gets out
         $todaysEntries = Entry::find()
@@ -113,12 +113,12 @@ class DefaultController extends Controller
 
         // resave those entries to setup the document in typsense
         $count = 0;
-        foreach($todaysEntries as $entry) {
+        foreach ($todaysEntries as $entry) {
             Craft::$app->getElements()->saveElement($entry);
             $count += 1;
         }
 
-        Craft::info("Typesense update scheduled post fired with ".$count." result(s)");
+        Craft::info('Typesense update scheduled post fired with ' . $count . ' result(s)');
         $this->stdout("End fetching entries with today's post date with " . $count . ' result(s)');
         $this->stdout(PHP_EOL);
     }
