@@ -79,6 +79,23 @@ class DefaultController extends Controller
         }
     }
 
+    public function actionSync()
+    {
+        $indexes = Typesense::$plugin->getClient()->client()->collections;
+
+        foreach ($indexes as $index) {
+            $this->stdout('Sync ' . $index->indexName);
+            $this->stdout(PHP_EOL);
+
+            Queue::push(new SyncDocumentsJob([
+                'criteria' => [
+                    'index' => $index->indexName,
+                    'type' => 'Sync',
+                ],
+            ]));
+        }
+    }
+
     public function actionUpdateScheduledPosts()
     {
         $this->stdout("Start fetching entries with today's post date");
