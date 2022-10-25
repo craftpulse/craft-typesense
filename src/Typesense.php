@@ -332,17 +332,17 @@ class Typesense extends Plugin
      */
     private function _registerProjectConfigEventListeners()
     {
-        $projectConfigService = Craft::$app->getProjectConfig();
+        // $projectConfigService = Craft::$app->getProjectConfig();
 
-        $collectionService = self::$plugin->getCollections();
-        $projectConfigService
-            ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
-            ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
-            ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
+        // $collectionService = self::$plugin->getCollections();
+        // $projectConfigService
+        //     ->onAdd(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+        //     ->onUpdate(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleChangedCollection'])
+        //     ->onRemove(CollectionService::CONFIG_COLLECTIONS_KEY, [$collectionService, 'handleDeletedCollection']);
 
-        Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
-            $event->config['typesense'] = ProjectConfigDataHelper::rebuildProjectConfig();
-        });
+        // Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
+        //     $event->config['typesense'] = ProjectConfigDataHelper::rebuildProjectConfig();
+        // });
     }
 
     /**
