@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 4.0.2 - 2022-11-04
+### Added
+- Added the possibility to handle save for all the types inside of the section
+
 ## 4.0.1 - 2022-10-25
 ### Fix
 - Fixed: the project rebuild command was failing because of project config settings, these were disabled since we don't use them yet
