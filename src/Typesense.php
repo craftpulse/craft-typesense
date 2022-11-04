@@ -381,6 +381,7 @@ class Typesense extends Plugin
             [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
         ];
+        
         foreach ($events as $event) {
             Event::on(
                 $event[0],
@@ -393,23 +394,27 @@ class Typesense extends Plugin
 
                     $entry = $event->element;
                     $id = $entry->id;
-                    $section = $entry->section->handle ?? null;
+                    $sectionHande = $entry->section->handle ?? null;
                     $type = $entry->type->handle ?? null;
                     $collection = null;
-
-                    Craft::info('Typesense edit / add / delete document based of: ' . $entry->title);
 
                     if (ElementHelper::isDraftOrRevision($entry)) {
                         // don’t do anything with drafts or revisions
                         return;
                     }
 
-                    if ($section) {
+                    if ($sectionHande) {
                         if ($type) {
-                            $section .= '.' . $type;
+                            $section = $sectionHande . '.' . $type;
                         }
 
                         $collection = CollectionHelper::getCollectionBySection($section);
+
+                        // get the generic type if specific doesn't exist
+                        if (is_null($collection)) {
+                            $section = $sectionHande . '.all';
+                            $collection = CollectionHelper::getCollectionBySection($section);
+                        }
 
                         //create collection if it doesn't exist
                         if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
@@ -421,6 +426,7 @@ class Typesense extends Plugin
                     if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
                         // element is enabled --> save to Typesense
                         if ($collection !== null) {
+                            Craft::info('Typesense edit / add / delete document based of: ' . $entry->title);
                             self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
                         }
                     } else {
