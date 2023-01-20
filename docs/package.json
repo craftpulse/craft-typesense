@@ -1,0 +1,19 @@
+{
+  "name": "typesense",
+  "version": "0.0.1",
+  "description": "Documentation on how to use typsense in a CraftCMS environment",
+  "main": "index.js",
+  "authors": {
+    "name": "Stefanie Gevaert",
+    "email": "stefanie@percipio.london"
+  },
+  "repository": "/typesense",
+  "scripts": {
+    "dev": "vuepress dev src",
+    "build": "vuepress build src"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "vuepress": "^1.5.3"
+  }
+}

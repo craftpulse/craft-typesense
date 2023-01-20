@@ -24,7 +24,7 @@ To install the plugin, follow these instructions.
 
 ## Typesense Overview
 
-After setting up the config file on which indexes you want to create, you start right away after add / edit / delete entries. If you want to sync all of them, you can go to the Collections within the Typesense section in the control panel and sync all of them.
+After setting up the config file on which indexes you want to create, you start right away after add / edit / delete elements. If you want to sync all of them, you can go to the Collections within the Typesense section in the control panel and sync all of them.
 
 ## Configuring Typesense
 
