@@ -4,6 +4,13 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.0.0 - 2023-03-13 / Official release
+### Added
+- Docs for the official release
+
+### Changed
+- Move the deletion of the collection into the sync if it's a flush #7
+
 ## 4.0.2 - 2022-11-04
 ### Added
 - Added the possibility to handle save for all the types inside of the section
