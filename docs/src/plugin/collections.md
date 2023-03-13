@@ -13,8 +13,8 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
 ```
 \percipiolondon\typesense\TypesenseCollectionIndex::create(
     [
-        'name' => 'blog',
-        'section' => 'blog.blog', //section handle + entry type handle
+        'name' => 'schools',
+        'section' => 'schools.default', //section handle + entry type handle
         'fields' => [
             [
                 'name' => 'title',
@@ -35,7 +35,7 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
                 'type' => 'int32',
             ],
         ],
-        'default_sorting_field' => 'post_date_timestamp',
+        'default_sorting_field' => 'post_date_timestamp', // can only be an integer,
         'resolver' => static function(\craft\elements\Entry $entry) {
             return [
                 'id' => (string)$entry->id,
@@ -49,7 +49,7 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
 )
 ->elementType(\craft\elements\Entry::class)
 ->criteria(function(\craft\elements\db\EntryQuery $query) {
-    return $query->section('blog');
+    return $query->section('schools');
 }),
 ```
 
@@ -58,7 +58,7 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
 ### Name
 The name is how the collection will be named in Typesense. If you're using different indexes per environment, you would simply do this (if you're using the default environment variable, you can change this to whatever suits in your .env file):
 ```
-'name' => 'blog'.App::env('CRAFT_ENVIRONMENT')
+'name' => App::env('COLLECTION_SCHOOLS')
 ```
 
 ### Section
@@ -73,7 +73,7 @@ The documents will be sorted on this field by default. As a warning, you can onl
 ### Resolver
 This function will give each entry queries by the Section variable. You need to map the fieds you need within Typesense. Make sure you're using the correct types, which means for example to format your datestamps to unix.
 
-Typesense can't handle objects to be saved. What is recommended is providing the data from within the entry you need as a value, so you can filter on. You can parse all the data through a json encoded string, so you can use the data after fetching the Typesense documents. For example
+<!--Typesense can't handle objects to be saved. What is recommended is providing the data from within the entry you need as a value, so you can filter on. You can parse all the data through a json encoded string, so you can use the data after fetching the Typesense documents. For example
 
 #### Returned array inside of the resolver
 ```
@@ -97,7 +97,7 @@ function _getCategory($category)
 
     return '';
 }
-```
+```-->
 
 ### Element type
 Define which element from Craft CMS is used to provide the data.

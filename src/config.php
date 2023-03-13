@@ -27,8 +27,8 @@ return [
         // CONTENT
         \percipiolondon\typesense\TypesenseCollectionIndex::create(
             [
-                'name' => 'blog',
-                'section' => 'blog.blog', //section handle + entry type handle
+                'name' => 'schools',
+                'section' => 'schools.default', //section handle + entry type handle
                 'fields' => [
                     [
                         'name' => 'title',
@@ -63,7 +63,7 @@ return [
         )
         ->elementType(\craft\elements\Entry::class)
         ->criteria(function(\craft\elements\db\EntryQuery $query) {
-            return $query->section('blog');
+            return $query->section('schools');
         }),
     ]
 ];
