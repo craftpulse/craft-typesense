@@ -121,12 +121,6 @@ class CollectionsController extends Controller
 
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
-        $collection = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($index);
-
-        //delete collection
-        if (!empty($collection)) {
-            Typesense::$plugin->getClient()->client()->collections[$index]->delete();
-        }
 
         Queue::push(new SyncDocumentsJob([
             'criteria' => [

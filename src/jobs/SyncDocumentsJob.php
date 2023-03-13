@@ -56,6 +56,12 @@ class SyncDocumentsJob extends BaseJob
 
         if($client !== false && !is_null($collection)) {
 
+            // delete collections if the action is flush
+            if ($collectionTypesense !== [] && $this->criteria['type'] === 'Flush') {
+                Typesense::$plugin->client->client()?->collections[$this->criteria['index']]->delete();
+                $collectionTypesense = null;
+            }
+
             //create a new schema if a collection has been flushed
             if (!$collectionTypesense) {
                 $collectionTypesense = $client->collections->create($collection->schema);
@@ -67,6 +73,7 @@ class SyncDocumentsJob extends BaseJob
 
                 //fetch each document of entry to update
                 foreach ($entries as $i => $entry) {
+
                     $client->collections[$this->criteria['index']]
                         ->documents
                         ->upsert($collection->schema['resolver']($entry));

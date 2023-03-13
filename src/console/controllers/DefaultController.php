@@ -63,12 +63,6 @@ class DefaultController extends Controller
         foreach ($indexes as $index) {
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
-            $collection = Typesense::$plugin->collections->getCollectionByCollectionRetrieve($index->indexName);
-
-            //delete collection
-            if (!empty($collection)) {
-                Typesense::$plugin->client->client()?->collections[$index->indexName]->delete();
-            }
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
