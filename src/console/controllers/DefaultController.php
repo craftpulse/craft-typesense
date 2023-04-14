@@ -112,7 +112,7 @@ class DefaultController extends Controller
             $count += 1;
         }
 
-        Craft::info('Typesense update scheduled post fired with ' . $count . ' result(s)');
+        Craft::info('Typesense update scheduled post fired with ' . $count . ' result(s)', __METHOD__);
         $this->stdout("End fetching entries with today's post date with " . $count . ' result(s)');
         $this->stdout(PHP_EOL);
     }

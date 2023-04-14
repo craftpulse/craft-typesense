@@ -1,8 +1,8 @@
 ---
-title: Sync and Flush documents
+title: Documents
 description: Synd and flush documents inside of Craft CMS
 ---
-# Sync and Flush documents
+# Documents
 By default, if any change is being done on an element, it will sync up to Typesense. So any delete, edit or add action will be synced. If you want to sync of flush manually, you can either do it in the control panel or as a console command.
 
 Sync will empty the existing document and add the new content. It will also add or delete any change on entries. The flush will empty out all the documents and schema and build it from fresh. This last one is recommended if you have changed the schema in your config.php file or as best practice is you deploy to another environment.

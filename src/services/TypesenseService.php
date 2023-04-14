@@ -66,14 +66,14 @@ class TypesenseService extends Component
                     Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
                 }
 
-                Craft::error(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
+                Craft::error(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'), 'typesense');
             }
         } catch (\Exception $exception) {
             if (Craft::$app->getRequest()->getIsConsoleRequest()) {
                 Craft::$app->getSession()->setNotice(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
             }
 
-            Craft::error($exception->getMessage(), __METHOD__);
+            Craft::error($exception->getMessage(), 'typesense');
         }
 
         return $client;

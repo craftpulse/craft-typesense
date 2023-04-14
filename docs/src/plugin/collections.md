@@ -7,7 +7,7 @@ description: Create collections inside of Craft CMS
 Collections are created within the Craft CMS through a config file. Copy over `src/config.php` and edit to get started with your collections.
 
 ## Config.php
-Return an array with a keyed value `collections`. This key contains an array of all the collections you want to add.
+Return an array with a keyed value `collections`. This key contains an array of all the collections you want to add. You can find all the supported [Typesense Field Types here](https://typesense.org/docs/0.23.0/api/collections.html#field-types)
 
 Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic example on how to achieve this
 ```
@@ -100,7 +100,7 @@ function _getCategory($category)
 ```-->
 
 ### Element type
-Define which element from Craft CMS is used to provide the data.
+Define which element from Craft CMS is used to provide the data. You can look up the [documentation](https://typesense.org/docs/0.24.0/api/collections.html#field-types) to map out the data
 
 ### Criteria
 Define the query to fetch the data from within the Database. You can look at the Craft CMS documentation on how to [fetch data from within PHP](https://Craft CMS.com/docs/4.x/element-queries.html#executing-element-queries). You don't have to define the `->all()`, this is being handled within the plugin.

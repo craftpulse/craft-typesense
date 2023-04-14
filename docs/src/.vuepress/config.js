@@ -41,7 +41,7 @@ module.exports = {
             '',
             'configuration',
             'collections',
-            'sync-and-flush',
+            'documents',
           ]
         }
       ],

@@ -16,20 +16,18 @@ use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
-use craft\events\RebuildConfigEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
-use craft\services\Plugins;
-use craft\services\ProjectConfig;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
+use percipiolondon\typesense\helpers\FileLog;
 use percipiolondon\typesense\helpers\ProjectConfigDataHelper;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
@@ -37,6 +35,8 @@ use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
 
+use Typesense\Exceptions\ObjectNotFound;
+use Typesense\Exceptions\ServerError;
 use yii\base\Event;
 use yii\db\Expression;
 
@@ -126,25 +126,13 @@ class Typesense extends Plugin
         $this->_registerEventHandlers();
         $this->_registerVariable();
 
-//        // Initialize properties
-//        self::$settings = self::$plugin->getSettings();
-//
-//        $this->name = self::$settings->pluginName ?? 'Typesense';
-
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
         }
 
-
-        // Register our utilities
-        /*Event::on(
-            Utilities::class,
-            Utilities::EVENT_REGISTER_UTILITY_TYPES,
-            function (RegisterComponentTypesEvent $event) {
-                $event->types[] = TypesenseUtility::class;
-            }
-        ); */
+        // Create endpoint for custom logs
+        FileLog::create('typesense', 'percipiolondon\craft-typesense\*');
 
         Craft::info(
             Craft::t(
@@ -350,38 +338,13 @@ class Typesense extends Plugin
      */
     private function _registerEventHandlers(): void
     {
-        /* PENDING EVENT */
-//        Event::on(
-//            Plugins::class,
-//            Plugins::EVENT_AFTER_LOAD_PLUGINS,
-//            function() {
-//                $request = Craft::$app->getRequest();
-//                if (!$request->getIsConsoleRequest()) {
-//                    // set timestamps to fetch todays entries
-//                    $morning = mktime(0,0,0, date('m'), date('d'), date('y'));
-//                    $evening = mktime(23,59,00, date('m'), date('d'), date('y'));
-//
-//                    // select entries of today's postDate where the dateUpdated is before the postDate gets out
-//                    $todaysEntries = Entry::find()
-//                        ->where(['between', 'postDate', date('Y/m/d H:i', $morning), date('Y/m/d H:i', $evening)])
-//                        ->andWhere('`elements`.`dateUpdated` < `entries`.`postDate`')
-//                        ->all();
-//
-//                    // resave those entries to setup the document in typsense
-//                    foreach($todaysEntries as $entry) {
-//                        Craft::$app->getElements()->saveElement($entry);
-//                    }
-//                }
-//            }
-//        );
-
         /* SAVE EVENTS */
         $events = [
             [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
         ];
-        
+
         foreach ($events as $event) {
             Event::on(
                 $event[0],
@@ -426,8 +389,14 @@ class Typesense extends Plugin
                     if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
                         // element is enabled --> save to Typesense
                         if ($collection !== null) {
-                            Craft::info('Typesense edit / add / delete document based of: ' . $entry->title);
-                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                            Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
+
+                            try {
+                                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
+                            } catch(ObjectNotFound | ServerError $e) {
+                                Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
+                                Craft::error($e->getMessage(), __METHOD__);
+                            }
                         }
                     } else {
                         // element is disabled --> delete from Typesense
