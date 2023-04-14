@@ -7,6 +7,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## 5.0.0 - 2023-03-13 / Official release
 ### Added
 - Docs for the official release
+- Seperate typesense logging
 
 ### Changed
 - Move the deletion of the collection into the sync if it's a flush #7
