@@ -74,11 +74,11 @@ class SyncDocumentsJob extends BaseJob
                 //fetch each document of entry to update
                 foreach ($entries as $i => $entry) {
 
-                    $client->collections[$this->criteria['index']]
+                    $doc = $client->collections[$this->criteria['index']]
                         ->documents
                         ->upsert($collection->schema['resolver']($entry));
 
-                    $upsertIds[] = $entry->id;
+                    $upsertIds[] = $doc['id'];
 
                     $this->setProgress(
                         $queue,

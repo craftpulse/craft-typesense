@@ -1,6 +1,6 @@
 # Typesense plugin for Craft CMS 4.x
 
-Craft Plugin that synchronises with Typesense
+Craft Plugin that synchronises with Typesense. Visit our [Demo](https://typesense.percipio.london/demo) to see the Craft Typesense plugin in action. You can read our [docs](https://typesense.percipio.london/docs/about) to setup your project. Need more help with the setup? Follow our blogpost "[Setup the Typsesense plugin with Typesense Cloud with javascript](https://percipio.london/blog/craftcms-plugin-typsesense)"
 
 ![Screenshot](resources/img/plugin-logo.png)
 
@@ -18,7 +18,7 @@ To install the plugin, follow these instructions.
 
 2. Then tell Composer to load the plugin:
 
-        composer require percipioglobal/typesense
+        composer require craftpulse/craft-typesense
 
 3. In the Control Panel, go to Settings → Plugins and click the “Install” button for Typesense.
 
