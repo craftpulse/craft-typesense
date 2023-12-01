@@ -8,7 +8,7 @@
     ]
   },
   "src/js/typesense-collections.ts": {
-    "file": "assets/typesense-collections.05a23db9.js",
+    "file": "assets/typesense-collections.78c961d3.js",
     "src": "src/js/typesense-collections.ts",
     "isEntry": true,
     "imports": [

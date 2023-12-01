@@ -1,6 +1,8 @@
 # Typesense plugin for Craft CMS 4.x
 
-Craft Plugin that synchronises with Typesense. Visit our [Demo](https://typesense.percipio.london/demo) to see the Craft Typesense plugin in action. You can read our [docs](https://typesense.percipio.london/docs/about) to setup your project. Need more help with the setup? Follow our blogpost "[Setup the Typsesense plugin with Typesense Cloud with javascript](https://percipio.london/blog/craftcms-plugin-typsesense)"
+Craft Plugin that synchronises with Typesense.
+
+<!-- Visit our [Demo](https://typesense.percipio.london/demo) to see the Craft Typesense plugin in action. You can read our [docs](https://typesense.percipio.london/docs/about) to setup your project. Need more help with the setup? Follow our blogpost "[Setup the Typsesense plugin with Typesense Cloud with javascript](https://percipio.london/blog/craftcms-plugin-typsesense)" -->
 
 ![Screenshot](resources/img/plugin-logo.png)
 
@@ -12,15 +14,15 @@ This plugin requires Craft CMS 4.0.0 or later.
 
 To install the plugin, follow these instructions.
 
-1. Open your terminal and go to your Craft project:
+1.  Open your terminal and go to your Craft project:
 
         cd /path/to/project
 
-2. Then tell Composer to load the plugin:
+2.  Then tell Composer to load the plugin:
 
         composer require craftpulse/craft-typesense
 
-3. In the Control Panel, go to Settings → Plugins and click the “Install” button for Typesense.
+3.  In the Control Panel, go to Settings → Plugins and click the “Install” button for Typesense.
 
 ## Typesense Overview
 
@@ -77,6 +79,7 @@ After copy and paste the config.php into your own config folder and name it type
 ```
 
 By default, Craft CMS doesn't fire an event after updating a status when a scheduled post goes out. Therefore we provide a console command that you can attach to your cron jobs. The command checks if there are entries that are scheduled to go out today and if they haven't been updated after that date
+
 ```
 ./craft typesense/default/update-scheduled-posts
 ```
@@ -89,6 +92,6 @@ By default, Craft CMS doesn't fire an event after updating a status when a sched
 
 Some things to do, and ideas for potential features:
 
-* Release it
+-   Release it
 
-Brought to you by [percipiolondon](https://percipio.london)
+Brought to you by [craftpulse](https://github.com/craftpulse)

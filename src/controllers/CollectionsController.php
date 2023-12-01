@@ -62,7 +62,7 @@ class CollectionsController extends Controller
      * @throws InvalidConfigException
      * @throws ForbiddenHttpException
      */
-    public function init() :void
+    public function init(): void
     {
         parent::init();
 
@@ -91,19 +91,53 @@ class CollectionsController extends Controller
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
-            $entry = $index->criteria->one();
-            $section = $entry->section ?? null;
+            $element = $index->criteria->one();
 
-            if ($section) {
-                $variables['sections'][] = [
-                    'id' => $section->id,
-                    'name' => $section->name,
-                    'handle' => $section->handle,
-                    'type' => $entry->type->handle,
-                    'entryCount' => $index->criteria->count(),
-                    'index' => $index->indexName,
-                ];
+            switch ($index->elementType) {
+                case 'craft\elements\Asset':
+                    $volume = $element->getVolume() ?? null;
+
+                    if ($volume) {
+                        $variables['sections'][] = [
+                            'id' => 1,
+                            'name' => $volume->name,
+                            'handle' => $volume->handle,
+                            'type' => 'Asset: ' . $volume->handle,
+                            'entryCount' => $index->criteria->count(),
+                            'index' => $index->indexName,
+                        ];
+                    }
+                    break;
+
+                case 'craft\elements\Entry':
+                    $section = $element->section ?? null;
+
+                    if ($section) {
+                        $variables['sections'][] = [
+                            'id' => $section->id,
+                            'name' => $section->name,
+                            'handle' => $section->handle,
+                            'type' => 'Entry: ' . $element->type->handle,
+                            'entryCount' => $index->criteria->count(),
+                            'index' => $index->indexName,
+                        ];
+                    }
+                    break;
             }
+
+            // Craft::dd($element);
+            // $section = $entry->section ?? null;
+
+            // if ($section) {
+            //     $variables['sections'][] = [
+            //         'id' => $section->id,
+            //         'name' => $section->name,
+            //         'handle' => $section->handle,
+            //         'type' => $entry->type->handle,
+            //         'entryCount' => $index->criteria->count(),
+            //         'index' => $index->indexName,
+            //     ];
+            // }
         }
 
         $variables['csrf'] = [
@@ -337,7 +371,7 @@ class CollectionsController extends Controller
 
         // Render the template
         return $this->renderTemplate('typesense/documents/index', $variables);
-//        $request = Craft::$app->getRequest();
+        //        $request = Craft::$app->getRequest();
 //        $index = $request->getBodyParam('index');
 //
 //        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
@@ -367,11 +401,11 @@ class CollectionsController extends Controller
             $section = $entry->section ?? null;
 
             if ($section->id === $sectionId) {
-                $templateTitle = Craft::t('typesense', 'Collections of '.$section->name);
+                $templateTitle = Craft::t('typesense', 'Collections of ' . $section->name);
                 $documents = $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index->indexName]->documents->export());
 
                 if ($documents) {
-                    $documents = explode("\n",$documents->data);
+                    $documents = explode("\n", $documents->data);
                     foreach ($documents as $document) {
                         $variables['documents'][] = Json::decode($document);
                     }
@@ -456,7 +490,8 @@ class CollectionsController extends Controller
         return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->retrieve());
     }
 
-    private function _sortDocuments($a, $b) {
+    private function _sortDocuments($a, $b)
+    {
         if ($a['post_date_timestamp'] == $b['post_date_timestamp']) {
             return 0;
         }
