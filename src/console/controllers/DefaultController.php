@@ -14,6 +14,7 @@ use Craft;
 use craft\elements\Entry;
 use craft\helpers\Queue;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
+use percipiolondon\typesense\events\DocumentEvent;
 
 use percipiolondon\typesense\Typesense;
 use yii\console\Controller;
@@ -45,6 +46,15 @@ use yii\console\Controller;
  */
 class DefaultController extends Controller
 {
+    // Events
+    // -------------------------------------------------------------------------
+
+    /**
+     * @event The event that is triggered before a flush / sync happens.
+     */
+    public const EVENT_BEFORE_FLUSH = 'beforeFlush';
+    public const EVENT_BEFORE_SYNC = 'beforeSync';
+
     // Public Methods
     // =========================================================================
 
@@ -64,6 +74,15 @@ class DefaultController extends Controller
             $this->stdout('Flush ' . $index->indexName);
             $this->stdout(PHP_EOL);
 
+            if ($this->hasEventHandlers(self::EVENT_BEFORE_FLUSH)) {
+                $this->trigger(self::EVENT_BEFORE_FLUSH, new DocumentEvent([
+                    'document' => [
+                        'index' => $index->indexName,
+                        'type' => 'Flush',
+                    ]
+                ]));
+            }
+
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [
                     'index' => $index->indexName,
@@ -80,6 +99,15 @@ class DefaultController extends Controller
         foreach ($indexes as $index) {
             $this->stdout('Sync ' . $index->indexName);
             $this->stdout(PHP_EOL);
+
+            if ($this->hasEventHandlers(self::EVENT_BEFORE_SYNC)) {
+                $this->trigger(self::EVENT_BEFORE_SYNC, new DocumentEvent([
+                    'document' => [
+                        'index' => $index->indexName,
+                        'type' => 'Sync',
+                    ]
+                ]));
+            }
 
             Queue::push(new SyncDocumentsJob([
                 'criteria' => [

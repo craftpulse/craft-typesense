@@ -15,6 +15,7 @@ use craft\helpers\Queue;
 
 use craft\web\Controller;
 use Http\Client\Exception;
+use percipiolondon\typesense\events\DocumentEvent;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
 
@@ -51,6 +52,15 @@ use yii\web\Response;
  */
 class CollectionsController extends Controller
 {
+    // Events
+    // -------------------------------------------------------------------------
+
+    /**
+     * @event The event that is triggered before a flush / sync happens.
+     */
+    public const EVENT_BEFORE_FLUSH = 'beforeFlush';
+    public const EVENT_BEFORE_SYNC = 'beforeSync';
+
     // Protected Properties
     // =========================================================================
     protected array|int|bool $allowAnonymous = ['create-collection', 'drop-collection', 'list-collections', 'retrieve-collection', 'index-documents', 'list-documents', 'delete-documents'];
@@ -156,6 +166,15 @@ class CollectionsController extends Controller
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
+        if ($this->hasEventHandlers(self::EVENT_BEFORE_FLUSH)) {
+            $this->trigger(self::EVENT_BEFORE_FLUSH, new DocumentEvent([
+                'document' => [
+                    'index' => $index,
+                    'type' => 'Flush',
+                ]
+            ]));
+        }
+
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
                 'index' => $index,
@@ -181,6 +200,15 @@ class CollectionsController extends Controller
 
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
+
+        if ($this->hasEventHandlers(self::EVENT_BEFORE_SYNC)) {
+            $this->trigger(self::EVENT_BEFORE_SYNC, new DocumentEvent([
+                'document' => [
+                    'index' => $index,
+                    'type' => 'Sync',
+                ]
+            ]));
+        }
 
         Queue::push(new SyncDocumentsJob([
             'criteria' => [
