@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.3.0 - 2024-01-16
+
+### Added
+
+-   Check for null resolvers
+
 ## 5.2.0 - 2024-01-03 (Happy 2024)
 
 ### Added
