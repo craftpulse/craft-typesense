@@ -47,14 +47,14 @@ class SyncDocumentsJob extends BaseJob
     // Public Methods
     // =========================================================================
 
-    public function execute($queue) :void
+    public function execute($queue): void
     {
         $upsertIds = [];
         $collection = CollectionHelper::getCollection($this->criteria['index']);
         $collectionTypesense = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($this->criteria['index']);
         $client = Typesense::$plugin->getClient()->client();
 
-        if($client !== false && !is_null($collection)) {
+        if ($client !== false && !is_null($collection)) {
 
             // delete collections if the action is flush
             if ($collectionTypesense !== [] && $this->criteria['type'] === 'Flush') {
@@ -74,11 +74,15 @@ class SyncDocumentsJob extends BaseJob
                 //fetch each document of entry to update
                 foreach ($entries as $i => $entry) {
 
-                    $doc = $client->collections[$this->criteria['index']]
-                        ->documents
-                        ->upsert($collection->schema['resolver']($entry));
+                    $resolver = $collection->schema['resolver']($entry);
 
-                    $upsertIds[] = $doc['id'];
+                    if ($resolver) {
+                        $doc = $client->collections[$this->criteria['index']]
+                            ->documents
+                            ->upsert($resolver);
+
+                        $upsertIds[] = $doc['id'];
+                    }
 
                     $this->setProgress(
                         $queue,

@@ -147,7 +147,7 @@ class Typesense extends Plugin
     /**
      * @inheritdoc
      */
-//    public function getSettings()
+    //    public function getSettings()
 //    {
 //        return parent::getSettings();
 //    }
@@ -185,7 +185,7 @@ class Typesense extends Plugin
             ];
         }
 
-//        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
+        //        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
 //            $subNavs['documents'] = [
 //                'label' => Craft::t('typesense', 'Documents'),
 //                'url' => 'typesense/documents',
@@ -237,7 +237,7 @@ class Typesense extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function(RegisterUrlRulesEvent $event) {
+            function (RegisterUrlRulesEvent $event) {
                 Craft::debug(
                     'UrlManager::EVENT_REGISTER_CP_URL_RULES',
                     __METHOD__
@@ -254,7 +254,7 @@ class Typesense extends Plugin
         Event::on(
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function(RegisterUserPermissionsEvent $event) {
+            function (RegisterUserPermissionsEvent $event) {
                 Craft::debug(
                     'UserPermissions::EVENT_REGISTER_PERMISSIONS',
                     __METHOD__
@@ -349,7 +349,7 @@ class Typesense extends Plugin
             Event::on(
                 $event[0],
                 $event[1],
-                function(ElementEvent $event) {
+                function (ElementEvent $event) {
                     // Ignore any element that is not an entry
                     if (!($event->element instanceof Entry)) {
                         return;
@@ -392,8 +392,12 @@ class Typesense extends Plugin
                             Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
 
                             try {
-                                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($collection->schema['resolver']($entry));
-                            } catch(ObjectNotFound | ServerError $e) {
+                                $resolver = $collection->schema['resolver']($entry);
+
+                                if ($resolver) {
+                                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
+                                }
+                            } catch (ObjectNotFound | ServerError $e) {
                                 Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
                                 Craft::error($e->getMessage(), __METHOD__);
                             }
@@ -412,7 +416,7 @@ class Typesense extends Plugin
         Event::on(
             Elements::class,
             Elements::EVENT_AFTER_DELETE_ELEMENT,
-            function(ElementEvent $event) {
+            function (ElementEvent $event) {
                 $entry = $event->element;
                 $section = $entry->section->handle ?? null;
                 $id = $entry->id;
@@ -447,7 +451,7 @@ class Typesense extends Plugin
 
     private function _registerVariable(): void
     {
-        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $event) {
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function (Event $event) {
             /** @var CraftVariable $variable */
             $variable = $event->sender;
             $variable->set('typesense', [
