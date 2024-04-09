@@ -57,7 +57,7 @@ class TypesenseUtility extends Utility
      *
      * @return string|null The path to the utility SVG icon
      */
-    public static function iconPath(): string|null
+    public static function icon(): string|null
     {
         return Craft::getAlias("@percipiolondon/typesense/assetbundles/typesenseutility/dist/img/TypesenseUtility-icon.svg");
     }
