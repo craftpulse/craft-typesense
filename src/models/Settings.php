@@ -11,9 +11,7 @@
 namespace percipiolondon\typesense\models;
 
 use craft\base\Model;
-
 use craft\behaviors\EnvAttributeParserBehavior;
-use percipiolondon\typesense\Typesense;
 
 /**
  * Typesense Settings Model
@@ -102,9 +100,54 @@ class Settings extends Model
      * @var array Provide an array of collections that needs to be added.
      */
     public array $collections = [];
+    
 
     // Public Methods
     // =========================================================================
+    public function getCollections(): array {
+        return $this->collections;
+    }
+
+    public function getPluginName(): string {
+        return $this->pluginName;
+    }
+
+    public function serverType(): string {
+        return $this->serverType;
+    }
+
+    public function getCluster(): string {
+        return $this->cluster;
+    }
+
+    public function getNearestNode(): string {
+        return $this->nearestNode;
+    }
+
+    public function getClusterPort(): string {
+        return $this->clusterPort;
+    }
+
+    public function getServer(): string {
+        return $this->server;
+    }
+
+    public function getPort(): string {
+        return $this->port;
+    }
+
+    public function getProtocol(): string {
+        return $this->protocol;
+    }
+
+    public function getApiKey(): string {
+        return $this->apiKey;
+    }
+
+    public function getSearchOnlyApiKey(): string {
+        return $this->searchOnlyApiKey;
+    }
+
 
     /**
      * @inheritdoc
