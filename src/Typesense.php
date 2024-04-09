@@ -20,6 +20,7 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
+use craft\helpers\Queue;
 use craft\services\Elements;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
@@ -28,7 +29,6 @@ use craft\web\UrlManager;
 use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\FileLog;
-use percipiolondon\typesense\helpers\ProjectConfigDataHelper;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
 use percipiolondon\typesense\services\TypesenseService;
@@ -356,58 +356,68 @@ class Typesense extends Plugin
                     }
 
                     $entry = $event->element;
-                    $id = $entry->id;
-                    $sectionHande = $entry->section->handle ?? null;
-                    $type = $entry->type->handle ?? null;
-                    $collection = null;
+                    $sectionHandle = $entry->section->handle ?? null;
 
-                    if (ElementHelper::isDraftOrRevision($entry)) {
+                    if (ElementHelper::isDraftOrRevision($entry) || is_null($sectionHandle)) {
                         // don’t do anything with drafts or revisions
                         return;
                     }
 
-                    if ($sectionHande) {
-                        if ($type) {
-                            $section = $sectionHande . '.' . $type;
-                        }
+                    self::$plugin->getCollections()->updateDocument($entry->id);
 
-                        $collection = CollectionHelper::getCollectionBySection($section);
+                    // $entry = $event->element;
+                    // $id = $entry->id;
+                    // $sectionHande = $entry->section->handle ?? null;
+                    // $type = $entry->type->handle ?? null;
+                    // $collection = null;
 
-                        // get the generic type if specific doesn't exist
-                        if (is_null($collection)) {
-                            $section = $sectionHande . '.all';
-                            $collection = CollectionHelper::getCollectionBySection($section);
-                        }
+                    // if (ElementHelper::isDraftOrRevision($entry)) {
+                    //     // don’t do anything with drafts or revisions
+                    //     return;
+                    // }
 
-                        //create collection if it doesn't exist
-                        if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                            self::$plugin->getCollections()->saveCollections();
-                            $collection = CollectionHelper::getCollectionBySection($section);
-                        }
-                    }
+                    // if ($sectionHande) {
+                    //     if ($type) {
+                    //         $section = $sectionHande . '.' . $type;
+                    //     }
 
-                    if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
-                        // element is enabled --> save to Typesense
-                        if ($collection !== null) {
-                            Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
+                    //     $collection = CollectionHelper::getCollectionBySection($section);
 
-                            try {
-                                $resolver = $collection->schema['resolver']($entry);
+                    //     // get the generic type if specific doesn't exist
+                    //     if (is_null($collection)) {
+                    //         $section = $sectionHande . '.all';
+                    //         $collection = CollectionHelper::getCollectionBySection($section);
+                    //     }
 
-                                if ($resolver) {
-                                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
-                                }
-                            } catch (ObjectNotFound | ServerError $e) {
-                                Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
-                                Craft::error($e->getMessage(), __METHOD__);
-                            }
-                        }
-                    } else {
-                        // element is disabled --> delete from Typesense
-                        if ($collection !== null) {
-                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
-                        }
-                    }
+                    //     //create collection if it doesn't exist
+                    //     if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+                    //         self::$plugin->getCollections()->saveCollections();
+                    //         $collection = CollectionHelper::getCollectionBySection($section);
+                    //     }
+                    // }
+
+                    // if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
+                    //     // element is enabled --> save to Typesense
+                    //     if ($collection !== null) {
+                    //         Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
+
+                    //         try {
+                    //             $resolver = $collection->schema['resolver']($entry);
+
+                    //             if ($resolver) {
+                    //                 self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
+                    //             }
+                    //         } catch (ObjectNotFound | ServerError $e) {
+                    //             Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
+                    //             Craft::error($e->getMessage(), __METHOD__);
+                    //         }
+                    //     }
+                    // } else {
+                    //     // element is disabled --> delete from Typesense
+                    //     if ($collection !== null) {
+                    //         self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
+                    //     }
+                    // }
                 }
             );
         }
