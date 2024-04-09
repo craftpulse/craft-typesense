@@ -16,5 +16,9 @@ class DocumentEvent extends Event
     /**
      * @var CollectionModel|null The collection model associated with the event.
      */
+
+    /**
+     * @var array The document attached to the event
+     */
     public array|null $document = null;
 }

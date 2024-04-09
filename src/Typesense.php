@@ -367,6 +367,8 @@ class Typesense extends Plugin
                     }
 
                     if ($sectionHande) {
+                        $section = '';
+
                         if ($type) {
                             $section = $sectionHande . '.' . $type;
                         }

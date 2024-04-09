@@ -423,6 +423,7 @@ class CollectionsController extends Controller
         $variables['documents'] = [];
 
         $indexes = Typesense::$plugin->getSettings()->collections;
+        $templateTitle = '';
 
         foreach ($indexes as $index) {
             $entry = $index->criteria->one();
@@ -518,12 +519,12 @@ class CollectionsController extends Controller
         return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->retrieve());
     }
 
-    private function _sortDocuments($a, $b)
-    {
-        if ($a['post_date_timestamp'] == $b['post_date_timestamp']) {
-            return 0;
-        }
+    // private function _sortDocuments($a, $b)
+    // {
+    //     if ($a['post_date_timestamp'] == $b['post_date_timestamp']) {
+    //         return 0;
+    //     }
 
-        return ($a['post_date_timestamp'] < $b['post_date_timestamp']) ? -1 : 1;
-    }
+    //     return ($a['post_date_timestamp'] < $b['post_date_timestamp']) ? -1 : 1;
+    // }
 }

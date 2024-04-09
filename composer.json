@@ -2,7 +2,7 @@
     "name": "craftpulse/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "5.3.0",
+    "version": "5.4.0",
     "keywords": [
         "craft",
         "cms",
@@ -61,5 +61,12 @@
             "typesenseService": "percipiolondon\\typesense\\services\\TypesenseService"
         },
         "class": "percipiolondon\\typesense\\Typesense"
+    },
+    "config": {
+        "allow-plugins": {
+            "craftcms/plugin-installer": true,
+            "yiisoft/yii2-composer": true,
+            "php-http/discovery": true
+        }
     }
 }

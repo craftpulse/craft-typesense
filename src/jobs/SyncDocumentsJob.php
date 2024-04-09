@@ -58,7 +58,7 @@ class SyncDocumentsJob extends BaseJob
 
             // delete collections if the action is flush
             if ($collectionTypesense !== [] && $this->criteria['type'] === 'Flush') {
-                Typesense::$plugin->client->client()?->collections[$this->criteria['index']]->delete();
+                Typesense::$plugin->getClient()->client()?->collections[$this->criteria['index']]->delete();
                 $collectionTypesense = null;
             }
 

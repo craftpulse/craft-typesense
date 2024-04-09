@@ -124,8 +124,8 @@ class DefaultController extends Controller
         $this->stdout(PHP_EOL);
 
         // set timestamps to fetch todays entries
-        $morning = mktime(0, 0, 0, date('m'), date('d'), date('y'));
-        $evening = mktime(23, 59, 00, date('m'), date('d'), date('y'));
+        $morning = mktime(0, 0, 0, (int) date('m'), (int) date('d'), (int) date('y'));
+        $evening = mktime(23, 59, 00, (int) date('m'), (int) date('d'), (int) date('y'));
 
         // select entries of today's postDate where the dateUpdated is before the postDate gets out
         $todaysEntries = Entry::find()
