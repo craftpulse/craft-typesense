@@ -356,10 +356,10 @@ class Typesense extends Plugin
                     }
 
                     $entry = $event->element;
-                    $id = $entry->id;
                     $sectionHande = $entry->section->handle ?? null;
                     $type = $entry->type->handle ?? null;
                     $collection = null;
+                    $resolver = null;
 
                     if (ElementHelper::isDraftOrRevision($entry)) {
                         // don’t do anything with drafts or revisions
@@ -388,17 +388,17 @@ class Typesense extends Plugin
                         }
                     }
 
+                    if ($collection) {
+                        $resolver = $collection->schema['resolver']($entry);
+                    }
+
                     if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
                         // element is enabled --> save to Typesense
-                        if ($collection !== null) {
+                        if ($resolver) {
                             Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
 
                             try {
-                                $resolver = $collection->schema['resolver']($entry);
-
-                                if ($resolver) {
-                                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
-                                }
+                                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
                             } catch (ObjectNotFound | ServerError $e) {
                                 Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
                                 Craft::error($e->getMessage(), __METHOD__);
@@ -406,8 +406,9 @@ class Typesense extends Plugin
                         }
                     } else {
                         // element is disabled --> delete from Typesense
-                        if ($collection !== null) {
-                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
+                        if ($resolver) {
+                            Craft::info('Typesense delete document based of: ' . $entry->title, __METHOD__);
+                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
                         }
                     }
                 }
@@ -421,9 +422,9 @@ class Typesense extends Plugin
             function (ElementEvent $event) {
                 $entry = $event->element;
                 $section = $entry->section->handle ?? null;
-                $id = $entry->id;
                 $type = $entry->type->handle ?? null;
                 $collection = null;
+                $resolver = null;
 
                 if (ElementHelper::isDraftOrRevision($entry)) {
                     // don’t do anything with drafts or revisions
@@ -444,8 +445,12 @@ class Typesense extends Plugin
                     }
                 }
 
-                if ($collection !== null) {
-                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $id]);
+                if ($collection) {
+                    $resolver = $collection->schema['resolver']($entry);
+                }
+
+                if ($resolver) {
+                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
                 }
             }
         );
