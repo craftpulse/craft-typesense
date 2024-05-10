@@ -1,69 +1,27 @@
 <?php
 
-/** @noinspection RepetitiveMethodCallsInspection */
+namespace percipiolondon\typesense\records;
 
-namespace percipiolondon\typesense\migrations;
+use craft\db\ActiveRecord;
+use craft\base\Element;
 
-use craft\db\Migration;
-use craft\helpers\MigrationHelper;
-use craft\records\Element;
+use percipiolondon\typesense\db\Table;
 
-/**
- * Installation Migration
- *
- * @author Percipio Global Ltd. <support@percipio.london>
- * @since 1.0.0
- */
-class DeletionRecord extends Migration
+use yii\db\ActiveQueryInterface;
+
+class CollectionRecord extends ActiveRecord
 {
+
     /**
      * @inheritdoc
      */
-    public function safeUp()
+    public static function tableName(): string
     {
-        $this->createTables();
-        $this->addForeignKeys();
-
-        return true;
+        return Table::DELETIONS;
     }
 
-    public function safeDown()
+    public function getFieldLayout(): ActiveQueryInterface
     {
-        $this->dropTables();
-
-        return true;
-    }
-
-    public function addForeignKeys(): void {
-        $this->addForeignKey(null, DeletionRecord::tableName(), ['elementId'], Element::tableName(), ['id']);
-    }
-
-    /**
-     * Creates the tables.
-     */
-    public function createTables()
-    {
-        if (!$this->db->tableExists(DeletionRecord::tableName())) {
-            $this->createTable(DeletionRecord::tableName(), [
-                'id' => $this->primaryKey(),
-                'elementId' => $this->integer(),
-                'siteId' => $this->integer()->notNull(),
-                'typesenseId' => $this->string()->notNull(),
-            ]);
-        }
-    }
-
-    /**
-     * Drop the tables
-     */
-    public function dropTables()
-    {
-        if ($this->db->tableExists(DeletionRecord::tableName())) {
-            MigrationHelper::dropAllForeignKeysToTable(DeletionRecord::tableName(), $this);
-            MigrationHelper::dropAllForeignKeysOnTable(DeletionRecord::tableName(), $this);
-        }
-        
-        $this->dropTableIfExists(DeletionRecord::tableName());
-
+        return $this->hasMany(Element::class, ['id' => 'id']);
     }
 }
