@@ -9,7 +9,7 @@ use percipiolondon\typesense\db\Table;
 
 use yii\db\ActiveQueryInterface;
 
-class CollectionRecord extends ActiveRecord
+class DeletionRecord extends ActiveRecord
 {
 
     /**
@@ -20,7 +20,7 @@ class CollectionRecord extends ActiveRecord
         return Table::DELETIONS;
     }
 
-    public function getFieldLayout(): ActiveQueryInterface
+    public function getElement(): ActiveQueryInterface
     {
         return $this->hasMany(Element::class, ['id' => 'id']);
     }
