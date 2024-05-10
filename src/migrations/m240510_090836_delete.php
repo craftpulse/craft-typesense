@@ -9,9 +9,9 @@ use craft\records\Element;
 use percipiolondon\typesense\records\DeletionRecord;
 
 /**
- * m240510_085442_delete migration.
+ * m240510_090836_delete migration.
  */
-class m240510_085442_delete extends Migration
+class m240510_090836_delete extends Migration
 {
     /**
      * @inheritdoc
