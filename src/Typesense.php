@@ -19,6 +19,7 @@ use craft\events\ElementEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\ElementHelper;
+use craft\helpers\Queue;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
 use craft\services\UserPermissions;
@@ -28,17 +29,17 @@ use craft\web\UrlManager;
 use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\FileLog;
-use percipiolondon\typesense\helpers\ProjectConfigDataHelper;
+use percipiolondon\typesense\jobs\DeleteDocumentJob;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
 use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\variables\TypesenseVariable;
+use percipiolondon\typesense\records\DeletionRecord;
 
 
 use Typesense\Exceptions\ObjectNotFound;
 use Typesense\Exceptions\ServerError;
 use yii\base\Event;
-use yii\db\Expression;
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -355,60 +356,21 @@ class Typesense extends Plugin
                         return;
                     }
 
-                    $entry = $event->element;
-                    $sectionHande = $entry->section->handle ?? null;
-                    $type = $entry->type->handle ?? null;
-                    $collection = null;
-                    $resolver = null;
+                    $element = $event->element;
 
-                    if (ElementHelper::isDraftOrRevision($entry)) {
+                    if (ElementHelper::isDraftOrRevision($element)) {
                         // don’t do anything with drafts or revisions
                         return;
                     }
 
-                    if ($sectionHande) {
-                        $section = '';
+                    $this->_afterSave($element);
 
-                        if ($type) {
-                            $section = $sectionHande . '.' . $type;
-                        }
-
-                        $collection = CollectionHelper::getCollectionBySection($section);
-
-                        // get the generic type if specific doesn't exist
-                        if (is_null($collection)) {
-                            $section = $sectionHande . '.all';
-                            $collection = CollectionHelper::getCollectionBySection($section);
-                        }
-
-                        //create collection if it doesn't exist
-                        if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                            self::$plugin->getCollections()->saveCollections();
-                            $collection = CollectionHelper::getCollectionBySection($section);
-                        }
-                    }
-
-                    if ($collection) {
-                        $resolver = $collection->schema['resolver']($entry);
-                    }
-
-                    if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
-                        // element is enabled --> save to Typesense
-                        if ($resolver) {
-                            Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
-
-                            try {
-                                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
-                            } catch (ObjectNotFound | ServerError $e) {
-                                Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
-                                Craft::error($e->getMessage(), __METHOD__);
+                    if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT) {
+                        foreach($element->getSupportedSites() as $site) {
+                            if ($site['siteId'] ?? null) {
+                                $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
+                                $this->_afterSave($entry);
                             }
-                        }
-                    } else {
-                        // element is disabled --> delete from Typesense
-                        if ($resolver) {
-                            Craft::info('Typesense delete document based of: ' . $entry->title, __METHOD__);
-                            self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
                         }
                     }
                 }
@@ -418,42 +380,146 @@ class Typesense extends Plugin
         /* DELETE EVENT */
         Event::on(
             Elements::class,
-            Elements::EVENT_AFTER_DELETE_ELEMENT,
+            Elements::EVENT_BEFORE_DELETE_ELEMENT,
             function (ElementEvent $event) {
-                $entry = $event->element;
-                $section = $entry->section->handle ?? null;
-                $type = $entry->type->handle ?? null;
-                $collection = null;
-                $resolver = null;
+                $element = $event->element;
 
-                if (ElementHelper::isDraftOrRevision($entry)) {
+                if (ElementHelper::isDraftOrRevision($element)) {
                     // don’t do anything with drafts or revisions
                     return;
                 }
 
-                if ($section) {
-                    if ($type) {
-                        $section = $section . '.' . $type;
-                    }
-
-                    $collection = CollectionHelper::getCollectionBySection($section);
-
-                    //create collection if it doesn't exist
-                    if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                        self::$plugin->getCollections()->saveCollections();
-                        $collection = CollectionHelper::getCollectionBySection($section);
-                    }
+                if (!($event->element instanceof Entry)) {
+                    return;
                 }
 
-                if ($collection) {
-                    $resolver = $collection->schema['resolver']($entry);
-                }
+                foreach($element->getSupportedSites() as $site) {
+                    if ($site['siteId'] ?? null) {
+                        $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
+    
+                        if ($entry) {
+                            $section = $entry->section->handle ?? null;
+                            $type = $entry->type->handle ?? null;
+                            $collection = null;
+                            $resolver = null;
 
-                if ($resolver) {
-                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
+                            if ($section) {
+                                if ($type) {
+                                    $section = $section . '.' . $type;
+                                }
+            
+                                $collection = CollectionHelper::getCollectionBySection($section);
+                            }
+            
+                            if ($collection) {
+                                $resolver = $collection->schema['resolver']($entry);
+                            }
+            
+                            if ($resolver) {
+                                $record = DeletionRecord::findOne(['elementId' => $entry->id, 'siteId' => $site['siteId']]);
+
+                                if ($record) {
+                                    $record->id = $resolver['id'];
+                                } else {
+                                    $record = new DeletionRecord();
+                                    $record->elementId = $entry->id;
+                                    $record->siteId = $site['siteId'];
+                                    $record->typesenseId = $resolver['id'];
+                                    $record->save(false);
+                                }
+                                // Craft::info('Typesense delete document based of: ' . $entry->title . ' - ' . $entry->getSite()->handle, __METHOD__);
+                                // self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
+                            }
+                        }
+                    }
                 }
             }
         );
+
+        Event::on(
+            Elements::class,
+            Elements::EVENT_AFTER_DELETE_ELEMENT,
+            function (ElementEvent $event) {
+                $element = $event->element;
+
+                if (ElementHelper::isDraftOrRevision($element)) {
+                    // don’t do anything with drafts or revisions
+                    return;
+                }
+
+                if (!($event->element instanceof Entry)) {
+                    return;
+                }
+
+                $entry = $element;
+                $section = ($entry->section->handle ?? null) . '.' . ($entry->type->handle ?? null);
+                $documents = DeletionRecord::findAll(['elementId' => $entry->id]);
+
+                foreach($documents as $document) {
+                    Queue::push(new DeleteDocumentJob([
+                        'criteria' => [
+                            'section' => $section,
+                            'documentId' => $document->typesenseId,
+                        ]
+                    ]));
+                    $document->delete();
+                }
+            }
+        );
+    }
+
+    private function _afterSave(Entry $entry): void
+    {
+        $sectionHande = $entry->section->handle ?? null;
+        $type = $entry->type->handle ?? null;
+        $collection = null;
+        $resolver = null;
+
+        if ($sectionHande) {
+            $section = '';
+
+            if ($type) {
+                $section = $sectionHande . '.' . $type;
+            }
+
+            $collection = CollectionHelper::getCollectionBySection($section);
+
+            // get the generic type if specific doesn't exist
+            if (is_null($collection)) {
+                $section = $sectionHande . '.all';
+                $collection = CollectionHelper::getCollectionBySection($section);
+            }
+
+            //create collection if it doesn't exist
+            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+                self::$plugin->getCollections()->saveCollections();
+                $collection = CollectionHelper::getCollectionBySection($section);
+            }
+        }
+
+        if ($collection) {
+            $resolver = $collection->schema['resolver']($entry);
+        }
+
+        if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
+            // element is enabled --> save to Typesense
+            if ($resolver) {
+                Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
+
+                try {
+                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
+                } catch (ObjectNotFound | ServerError $e) {
+                    Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
+                    Craft::error($e->getMessage(), __METHOD__);
+                }
+            }
+        } else {
+            // element is disabled --> delete from Typesense
+            if ($resolver) {
+                Craft::info('Typesense delete document based of: ' . $entry->title, __METHOD__);
+                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
+            }
+        }
     }
 
     private function _registerVariable(): void

@@ -6,8 +6,11 @@ namespace percipiolondon\typesense\migrations;
 
 use Craft;
 use craft\db\Migration;
+use craft\helpers\MigrationHelper;
+use craft\records\Element;
 
 use percipiolondon\typesense\db\Table;
+use percipiolondon\typesense\records\DeletionRecord;
 
 /**
  * Installation Migration
@@ -23,6 +26,7 @@ class Install extends Migration
     public function safeUp()
     {
         $this->createTables();
+        $this->_addForeignKeys();
 
         return true;
     }
@@ -52,6 +56,15 @@ class Install extends Migration
                 'uid' => $this->uid(),
             ]);
         }
+
+        if (!$this->db->tableExists(DeletionRecord::tableName())) {
+            $this->createTable(DeletionRecord::tableName(), [
+                'id' => $this->primaryKey(),
+                'elementId' => $this->integer(),
+                'siteId' => $this->integer()->notNull(),
+                'typesenseId' => $this->string()->notNull(),
+            ]);
+        }
     }
 
     /**
@@ -60,6 +73,14 @@ class Install extends Migration
     public function dropTables()
     {
         $this->dropTableIfExists(Table::COLLECTIONS);
+
+        if ($this->db->tableExists(DeletionRecord::tableName())) {
+            MigrationHelper::dropAllForeignKeysToTable(DeletionRecord::tableName(), $this);
+            MigrationHelper::dropAllForeignKeysOnTable(DeletionRecord::tableName(), $this);
+        }
+        
+        $this->dropTableIfExists(DeletionRecord::tableName());
+
     }
 
     /**
@@ -68,5 +89,8 @@ class Install extends Migration
     public function dropProjectConfig()
     {
         Craft::$app->projectConfig->remove('typesense');
+    }
+    private function _addForeignKeys(): void {
+        $this->addForeignKey(null, DeletionRecord::tableName(), ['elementId'], Element::tableName(), ['id']);
     }
 }
