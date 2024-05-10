@@ -4,13 +4,9 @@
 
 namespace percipiolondon\typesense\migrations;
 
-use Craft;
 use craft\db\Migration;
 use craft\helpers\MigrationHelper;
 use craft\records\Element;
-
-use percipiolondon\typesense\db\Table;
-use percipiolondon\typesense\records\DeletionRecord;
 
 /**
  * Installation Migration
@@ -18,7 +14,7 @@ use percipiolondon\typesense\records\DeletionRecord;
  * @author Percipio Global Ltd. <support@percipio.london>
  * @since 1.0.0
  */
-class Install extends Migration
+class DeletionRecord extends Migration
 {
     /**
      * @inheritdoc
