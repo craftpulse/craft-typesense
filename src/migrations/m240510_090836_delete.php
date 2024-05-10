@@ -47,7 +47,7 @@ class m240510_090836_delete extends Migration
      */
     public function safeDown(): bool
     {
-        echo "m240510_085442_delete cannot be reverted.\n";
+        echo "m240510_090836_delete cannot be reverted.\n";
 
         if ($this->db->tableExists(DeletionRecord::tableName())) {
             MigrationHelper::dropAllForeignKeysToTable(DeletionRecord::tableName(), $this);
