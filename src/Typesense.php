@@ -29,12 +29,12 @@ use craft\web\UrlManager;
 use percipiolondon\typesense\base\PluginTrait;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\FileLog;
-use percipiolondon\typesense\jobs\DeleteDocumentJob;
+// use percipiolondon\typesense\jobs\DeleteDocumentJob;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
 use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\variables\TypesenseVariable;
-use percipiolondon\typesense\records\DeletionRecord;
+// use percipiolondon\typesense\records\DeletionRecord;
 
 
 use Typesense\Exceptions\ObjectNotFound;
@@ -380,89 +380,39 @@ class Typesense extends Plugin
         /* DELETE EVENT */
         Event::on(
             Elements::class,
-            Elements::EVENT_BEFORE_DELETE_ELEMENT,
-            function (ElementEvent $event) {
-                $element = $event->element;
-
-                if (ElementHelper::isDraftOrRevision($element)) {
-                    // don’t do anything with drafts or revisions
-                    return;
-                }
-
-                if (!($event->element instanceof Entry)) {
-                    return;
-                }
-
-                foreach($element->getSupportedSites() as $site) {
-                    if ($site['siteId'] ?? null) {
-                        $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-    
-                        if ($entry) {
-                            $section = $entry->section->handle ?? null;
-                            $type = $entry->type->handle ?? null;
-                            $collection = null;
-                            $resolver = null;
-
-                            if ($section) {
-                                if ($type) {
-                                    $section = $section . '.' . $type;
-                                }
-            
-                                $collection = CollectionHelper::getCollectionBySection($section);
-                            }
-            
-                            if ($collection) {
-                                $resolver = $collection->schema['resolver']($entry);
-                            }
-            
-                            if ($resolver) {
-                                $record = DeletionRecord::findOne(['elementId' => $entry->id, 'siteId' => $site['siteId']]);
-
-                                if ($record) {
-                                    $record->id = $resolver['id'];
-                                } else {
-                                    $record = new DeletionRecord();
-                                    $record->elementId = $entry->id;
-                                    $record->siteId = $site['siteId'];
-                                    $record->typesenseId = $resolver['id'];
-                                    $record->save(false);
-                                }
-                                // Craft::info('Typesense delete document based of: ' . $entry->title . ' - ' . $entry->getSite()->handle, __METHOD__);
-                                // self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
-                            }
-                        }
-                    }
-                }
-            }
-        );
-
-        Event::on(
-            Elements::class,
             Elements::EVENT_AFTER_DELETE_ELEMENT,
             function (ElementEvent $event) {
-                $element = $event->element;
+                $entry = $event->element;
+                $section = $entry->section->handle ?? null;
+                $type = $entry->type->handle ?? null;
+                $collection = null;
+                $resolver = null;
 
-                if (ElementHelper::isDraftOrRevision($element)) {
+                if (ElementHelper::isDraftOrRevision($entry)) {
                     // don’t do anything with drafts or revisions
                     return;
                 }
 
-                if (!($event->element instanceof Entry)) {
-                    return;
+                if ($section) {
+                    if ($type) {
+                        $section = $section . '.' . $type;
+                    }
+
+                    $collection = CollectionHelper::getCollectionBySection($section);
+
+                    //create collection if it doesn't exist
+                    if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+                        self::$plugin->getCollections()->saveCollections();
+                        $collection = CollectionHelper::getCollectionBySection($section);
+                    }
                 }
 
-                $entry = $element;
-                $section = ($entry->section->handle ?? null) . '.' . ($entry->type->handle ?? null);
-                $documents = DeletionRecord::findAll(['elementId' => $entry->id]);
+                if ($collection) {
+                    $resolver = $collection->schema['resolver']($entry);
+                }
 
-                foreach($documents as $document) {
-                    Queue::push(new DeleteDocumentJob([
-                        'criteria' => [
-                            'section' => $section,
-                            'documentId' => $document->typesenseId,
-                        ]
-                    ]));
-                    $document->delete();
+                if ($resolver) {
+                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
                 }
             }
         );

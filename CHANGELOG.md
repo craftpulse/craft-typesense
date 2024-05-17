@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.4.2 - 2024-05-17
+
+### Fixed
+- Removed the deletion method with the table
+
 ## 5.4.1 - 2024-05-10
 
 ### Added
