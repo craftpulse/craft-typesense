@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### 5.5.2 - 2024-08-02
+
+### Fixed
+- Added section.all fallback for the deletion of documents
+
 ### 5.5.1 - 2024-07-15
 
 ### Fixed
