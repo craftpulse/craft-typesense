@@ -391,16 +391,22 @@ class Typesense extends Plugin
                         $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
     
                         if ($entry) {
-                            $section = $entry->section->handle ?? null;
+                            $sectionHandle = $entry->section->handle ?? null;
                             $type = $entry->type->handle ?? null;
                             $collection = null;
                             $resolver = null;
-                            if ($section) {
+
+                            if ($sectionHandle) {
                                 if ($type) {
-                                    $section = $section . '.' . $type;
+                                    $section = $sectionHandle . '.' . $type;
+                                    $collection = CollectionHelper::getCollectionBySection($section);
                                 }
-            
-                                $collection = CollectionHelper::getCollectionBySection($section);
+
+                                // get the generic type if specific doesn't exist
+                                if (is_null($collection)) {
+                                    $section = $sectionHandle . '.all';
+                                    $collection = CollectionHelper::getCollectionBySection($section);
+                                }
                             }
             
                             if ($collection) {
