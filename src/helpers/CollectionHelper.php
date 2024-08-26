@@ -38,7 +38,7 @@ class CollectionHelper
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
-            if ($index->section === $name) {
+            if ($index->section === $name || (is_array($index->section) && in_array($name, $index->section))) {
                 return $index;
             }
         }
