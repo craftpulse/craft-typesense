@@ -4,8 +4,15 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
-### 5.5.2 - 2024-08-02
+### 5.5.3 - 2024-08-26
+### Added
+- Added the possibility to allow indexing multiple sections in a single collection [#35](https://github.com/craftpulse/craft-typesense/issues/35)
+- Added code analysis and auto release scripts
 
+### Fixed
+- Removed composer.lock so latest versions of dependencies can be installed as defined in composer.json
+
+### 5.5.2 - 2024-08-02
 ### Fixed
 - Added section.all fallback for the deletion of documents
 
