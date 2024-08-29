@@ -33,7 +33,6 @@ class TypesenseCollectionIndex
         $this->indexName = $schema['name'];
         $this->section = $schema['section'];
         $this->schema = $schema;
-        $this->criteria = $this->elementType::find();
     }
 
     public static function create(array $schema): self
@@ -54,17 +53,33 @@ class TypesenseCollectionIndex
 
     public function criteria(callable $criteria): self
     {
-        $elementQuery = $criteria($this->elementType::find());
+        $this->criteria = $criteria;
 
-        if (!$elementQuery instanceof ElementQuery) {
-            throw new Exception('You must return a valid ElementQuery from the criteria function.');
+        return $this;
+    }
+
+    public function getCriteria(): ElementQuery|array
+    {
+        if (!isset($this->criteria)) {
+            return $this->criteria = $this->elementType::find();
         }
 
-        if (is_null($elementQuery->siteId)) {
-            $elementQuery->siteId = Craft::$app->getSites()->getPrimarySite()->id;
-        }
+        if (is_callable($this->criteria)) {
+            $elementQuery = call_user_func(
+                $this->criteria,
+                $this->elementType::find()
+            );
 
-        $this->criteria = $elementQuery;
+            if (!$elementQuery instanceof ElementQuery) {
+                throw new Exception('You must return a valid ElementQuery from the criteria function.');
+            }
+
+            if (is_null($elementQuery->siteId)) {
+                $elementQuery->siteId = "*";
+            }
+
+            $this->criteria = $elementQuery;
+        }
 
         return $this;
     }
