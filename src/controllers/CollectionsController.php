@@ -133,6 +133,21 @@ class CollectionsController extends Controller
                         ];
                     }
                     break;
+
+                case 'craft\commerce\elements\Product':
+                    $type = $element->type ?? null;
+
+                    if ($type) {
+                        $variables['sections'][] = [
+                            'id' => $type->id,
+                            'name' => $type->name,
+                            'handle' => $type->handle,
+                            'type' => 'Type: ' . $element->type->handle,
+                            'entryCount' => $index->criteria->count(),
+                            'index' => $index->indexName,
+                        ];
+                    }
+                    break;
             }
 
             // Craft::dd($element);
