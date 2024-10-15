@@ -115,10 +115,31 @@ class DocumentsController extends Controller
         if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
             // element is enabled --> save to Typesense
             if ($resolver) {
-                Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
+                // Trigger the before upsert event
+                if ($this->hasEventHandlers(self::EVENT_BEFORE_UPSERT)) {
+                    $this->trigger(self::EVENT_BEFORE_UPSERT, new DocumentEvent([
+                        'document' => [
+                            'index' => $collection->indexName,
+                            'type' => 'Upsert',
+                            'id' => $resolver['id'],
+                        ]
+                    ]));
+                }
+                Craft::info('Typesense edit / add document based of: ' . $entry->title, __METHOD__);
 
                 try {
                     Typesense::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
+
+                    // Trigger the after upsert event
+                    if ($this->hasEventHandlers(self::EVENT_AFTER_UPSERT)) {
+                        $this->trigger(self::EVENT_AFTER_UPSERT, new DocumentEvent([
+                            'document' => [
+                                'index' => $collection->indexName,
+                                'type' => 'Upsert',
+                                'id' => $resolver['id'],
+                            ]
+                        ]));
+                    }
                 } catch (ObjectNotFound | ServerError $e) {
                     Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
                     Craft::error($e->getMessage(), __METHOD__);
