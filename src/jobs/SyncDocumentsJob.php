@@ -13,7 +13,6 @@ namespace percipiolondon\typesense\jobs;
 use Craft;
 use craft\queue\BaseJob;
 
-use percipiolondon\typesense\controllers\DocumentsController;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\Typesense;
 
@@ -54,7 +53,6 @@ class SyncDocumentsJob extends BaseJob
         $collection = CollectionHelper::getCollection($this->criteria['index']);
         $collectionTypesense = Typesense::$plugin->getCollections()->getCollectionByCollectionRetrieve($this->criteria['index']);
         $client = Typesense::$plugin->getClient()->client();
-        $documentsController = new DocumentsController('documents-controller', Craft::$app);
 
         if ($client !== false && !is_null($collection)) {
 
@@ -79,19 +77,10 @@ class SyncDocumentsJob extends BaseJob
                     $resolver = $collection->schema['resolver']($entry);
 
                     if ($resolver) {
-
-                        // Trigger the before upsert event
-                        $documentsController->triggerBeforeUpsert($this->criteria['index'], $resolver['id']);
-
-                        // upsert
                         $doc = $client->collections[$this->criteria['index']]
                             ->documents
                             ->upsert($resolver);
 
-                        // Trigger the after upsert event
-                        $documentsController->triggerAfterUpsert($this->criteria['index'], $resolver['id']);
-
-                        // add to array to show queue progress
                         $upsertIds[] = $doc['id'];
                     }
 
