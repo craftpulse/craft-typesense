@@ -26,6 +26,8 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use percipiolondon\typesense\base\PluginTrait;
+use percipiolondon\typesense\controllers\CollectionsController;
+use percipiolondon\typesense\controllers\DocumentsController;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\FileLog;
 use percipiolondon\typesense\models\Settings;
@@ -121,7 +123,6 @@ class Typesense extends Plugin
 
         $this->_registerComponents();
         $this->installEventListeners();
-        $this->_registerEventHandlers();
         $this->_registerVariable();
 
         // Add in our console commands
@@ -132,6 +133,10 @@ class Typesense extends Plugin
         // Create endpoint for custom logs
         FileLog::create('typesense', 'percipiolondon\craft-typesense\*');
 
+        // Captures event handlers inside of the CollectionsController
+        $documentsController = new DocumentsController('documents-controller', Craft::$app);
+
+        // init log
         Craft::info(
             Craft::t(
                 'typesense',
@@ -329,152 +334,6 @@ class Typesense extends Plugin
         // Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
         //     $event->config['typesense'] = ProjectConfigDataHelper::rebuildProjectConfig();
         // });
-    }
-
-    /**
-     * Set all the after events to upsert/delete the documents
-     */
-    private function _registerEventHandlers(): void
-    {
-        /* SAVE EVENTS */
-        $events = [
-            [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
-            [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
-            [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
-        ];
-
-        foreach ($events as $event) {
-            Event::on(
-                $event[0],
-                $event[1],
-                function (ElementEvent $event) {
-                    // Ignore any element that is not an entry
-                    if (!($event->element instanceof Entry)) {
-                        return;
-                    }
-
-                    $element = $event->element;
-
-                    if (ElementHelper::isDraftOrRevision($element)) {
-                        // don’t do anything with drafts or revisions
-                        return;
-                    }
-
-                    $this->_afterSave($element);
-
-                    if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT) {
-                        foreach($element->getSupportedSites() as $site) {
-                            if ($site['siteId'] ?? null) {
-                                $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-                                $this->_afterSave($entry);
-                            }
-                        }
-                    }
-                }
-            );
-        }
-
-        /* DELETE EVENT */
-        Event::on(
-            Elements::class,
-            Elements::EVENT_BEFORE_DELETE_ELEMENT,
-            function (ElementEvent $event) {
-                $element = $event->element;
-
-                if (ElementHelper::isDraftOrRevision($element)) {
-                    // don’t do anything with drafts or revisions
-                    return;
-                }
-
-                foreach($element->getSupportedSites() as $site) {
-                    if ($site['siteId'] ?? null) {
-                        $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-    
-                        if ($entry) {
-                            $sectionHandle = $entry->section->handle ?? null;
-                            $type = $entry->type->handle ?? null;
-                            $collection = null;
-                            $resolver = null;
-
-                            if ($sectionHandle) {
-                                if ($type) {
-                                    $section = $sectionHandle . '.' . $type;
-                                    $collection = CollectionHelper::getCollectionBySection($section);
-                                }
-
-                                // get the generic type if specific doesn't exist
-                                if (is_null($collection)) {
-                                    $section = $sectionHandle . '.all';
-                                    $collection = CollectionHelper::getCollectionBySection($section);
-                                }
-                            }
-            
-                            if ($collection) {
-                                $resolver = $collection->schema['resolver']($entry);
-                            }
-            
-                            if ($resolver) {
-                                Craft::info('Typesense delete document based of: ' . $entry->title . ' - ' . $entry->getSite()->handle, __METHOD__);
-                                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
-                            }
-                        }
-                    }
-                }
-            }
-        );
-    }
-    private function _afterSave(Entry $entry): void
-    {
-        $sectionHande = $entry->section->handle ?? null;
-        $type = $entry->type->handle ?? null;
-        $collection = null;
-        $resolver = null;
-
-        if ($sectionHande) {
-            $section = '';
-
-            if ($type) {
-                $section = $sectionHande . '.' . $type;
-            }
-
-            $collection = CollectionHelper::getCollectionBySection($section);
-
-            // get the generic type if specific doesn't exist
-            if (is_null($collection)) {
-                $section = $sectionHande . '.all';
-                $collection = CollectionHelper::getCollectionBySection($section);
-            }
-
-            //create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                self::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection($section);
-            }
-        }
-
-        if ($collection) {
-            $resolver = $collection->schema['resolver']($entry);
-        }
-
-        if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
-            // element is enabled --> save to Typesense
-            if ($resolver) {
-                Craft::info('Typesense edit / add / delete document based of: ' . $entry->title, __METHOD__);
-
-                try {
-                    self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->upsert($resolver);
-                } catch (ObjectNotFound | ServerError $e) {
-                    Craft::$app->session->setFlash('error', Craft::t('typesense', 'There was an issue saving your action, check the logs for more info'));
-                    Craft::error($e->getMessage(), __METHOD__);
-                }
-            }
-        } else {
-            // element is disabled --> delete from Typesense
-            if ($resolver) {
-                Craft::info('Typesense delete document based of: ' . $entry->title, __METHOD__);
-                self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
-            }
-        }
     }
 
     private function _registerVariable(): void

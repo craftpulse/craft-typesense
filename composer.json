@@ -2,7 +2,7 @@
     "name": "craftpulse/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "5.5.3.1",
+    "version": "5.5.4",
     "keywords": [
         "craft",
         "cms",
