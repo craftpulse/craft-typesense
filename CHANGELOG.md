@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+### 5.5.3.1 - 2024-08-26
+### Fixed
+- Composer version of craft vite
+
 ### 5.5.3 - 2024-08-26
 ### Added
 - Added the possibility to allow indexing multiple sections in a single collection [#35](https://github.com/craftpulse/craft-typesense/issues/35)
