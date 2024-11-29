@@ -389,7 +389,7 @@ class Typesense extends Plugin
                 foreach($element->getSupportedSites() as $site) {
                     if ($site['siteId'] ?? null) {
                         $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-    
+
                         if ($entry) {
                             $sectionHandle = $entry->section->handle ?? null;
                             $type = $entry->type->handle ?? null;
@@ -408,11 +408,11 @@ class Typesense extends Plugin
                                     $collection = CollectionHelper::getCollectionBySection($section);
                                 }
                             }
-            
+
                             if ($collection) {
                                 $resolver = $collection->schema['resolver']($entry);
                             }
-            
+
                             if ($resolver) {
                                 Craft::info('Typesense delete document based of: ' . $entry->title . ' - ' . $entry->getSite()->handle, __METHOD__);
                                 self::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);

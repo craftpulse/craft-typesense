@@ -1,14 +1,14 @@
-# Typesense plugin for Craft CMS 4.x
+# Typesense plugin for Craft CMS 5.x
 
 Craft Plugin that synchronises with Typesense.
 
 <!-- Visit our [Demo](https://typesense.percipio.london/demo) to see the Craft Typesense plugin in action. You can read our [docs](https://typesense.percipio.london/docs/about) to setup your project. Need more help with the setup? Follow our blogpost "[Setup the Typsesense plugin with Typesense Cloud with javascript](https://percipio.london/blog/craftcms-plugin-typsesense)" -->
 
-![Screenshot](resources/img/plugin-logo.png)
+![Screenshot](resources/img/banner.jpg)
 
 ## Requirements
 
-This plugin requires Craft CMS 4.0.0 or later.
+This plugin requires Craft CMS 5.0.0 or later.
 
 ## Installation
 

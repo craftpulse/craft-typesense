@@ -1,15 +1,73 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Generator: Adobe Illustrator 26.0.1, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
-<svg version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
-	 viewBox="0 0 99 99" enable-background="new 0 0 99 99" xml:space="preserve">
-<g>
-	<polygon points="59.9,35.6 51.7,48.9 30.5,83.4 38.5,49.2 25.4,49.6 33.5,36.3 54.7,1.8 46.7,36 49.3,35.9 	"/>
-</g>
-<g>
-	<path d="M67.4,66.5c-0.3,0.3-0.6,0.6-0.9,0.9c0.1-0.2,0.3-0.4,0.4-0.5C67.1,66.8,67.3,66.6,67.4,66.5z"/>
-	<path d="M96.1,84.5c-2.1-2.1-5.2-2.8-7.9-2.1L75.5,69.7c6.1-7.4,9.8-16.8,9.8-27.1C85.2,19.1,66.1,0,42.6,0C19.1,0,0,19.1,0,42.6
-		c0,23.5,19.1,42.6,42.6,42.6c10.3,0,19.7-3.7,27.1-9.8l12.7,12.7c-0.7,2.7,0,5.7,2.1,7.9l2.9,2.9L99,87.5L96.1,84.5z M67.4,66.5
-		c-0.3,0.3-0.6,0.6-0.9,0.9c-6.2,6-14.6,9.6-23.9,9.6c-19,0-34.5-15.5-34.5-34.5c0-19,15.5-34.5,34.5-34.5c19,0,34.5,15.5,34.5,34.5
-		C77.1,51.9,73.4,60.3,67.4,66.5z"/>
-</g>
+<svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect x="9" y="1" width="1" height="1" transform="rotate(180 9 1)" fill="#3F4D5A"/>
+<rect x="9" y="15" width="1" height="1" transform="rotate(-180 9 15)" fill="#3F4D5A"/>
+<rect x="6" y="1" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="16" width="1" height="1" transform="rotate(-180 9 16)" fill="#3F4D5A"/>
+<rect x="7" y="1" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="1" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="2" width="1" height="3" fill="#3F4D5A"/>
+<rect x="10" y="15" width="1" height="1" transform="rotate(-180 10 15)" fill="#3F4D5A"/>
+<rect x="6" y="2" width="1" height="1" fill="#3F4D5A"/>
+<rect x="10" y="14" width="1" height="1" transform="rotate(-180 10 14)" fill="#3F4D5A"/>
+<rect x="5" y="2" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="2" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="1" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="3" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="4" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="5" width="1" height="1" fill="#3F4D5A"/>
+<rect x="7" y="5" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="6" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="6" width="1" height="1" fill="#3F4D5A"/>
+<rect x="10" y="7" width="3" height="1" fill="#3F4D5A"/>
+<rect x="6" y="12" width="1" height="1" fill="#3F4D5A"/>
+<rect x="6" y="11" width="1" height="1" fill="#3F4D5A"/>
+<rect x="7" y="10" width="1" height="1" fill="#3F4D5A"/>
+<rect x="12" y="9" width="1" height="1" fill="#3F4D5A"/>
+<rect x="11" y="10" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="10" width="1" height="1" fill="#3F4D5A"/>
+<rect x="7" y="9" width="1" height="1" fill="#3F4D5A"/>
+<rect x="6" y="9" width="1" height="1" fill="#3F4D5A"/>
+<rect x="3" y="6" width="1" height="1" fill="#3F4D5A"/>
+<rect x="4" y="5" width="1" height="1" fill="#3F4D5A"/>
+<rect x="5" y="4" width="1" height="1" fill="#3F4D5A"/>
+<rect x="6" y="3" width="1" height="1" fill="#3F4D5A"/>
+<rect x="7" y="2" width="1" height="1" fill="#3F4D5A"/>
+<rect x="3" y="8" width="3" height="1" fill="#3F4D5A"/>
+<rect x="10" y="11" width="1" height="1" fill="#3F4D5A"/>
+<rect x="9" y="12" width="1" height="1" fill="#3F4D5A"/>
+<rect x="8" y="13" width="1" height="1" fill="#3F4D5A"/>
+<rect x="7" y="11" width="1" height="4" fill="#3F4D5A"/>
+<rect x="6" y="13" width="1" height="1" fill="#3F4D5A"/>
+<rect x="6" y="14" width="1" height="1" fill="#3F4D5A"/>
+<rect x="11" y="13" width="1" height="1" transform="rotate(-180 11 13)" fill="#3F4D5A"/>
+<rect x="5" y="3" width="1" height="1" fill="#3F4D5A"/>
+<rect x="12" y="13" width="1" height="1" transform="rotate(-180 12 13)" fill="#3F4D5A"/>
+<rect x="12" y="12" width="1" height="1" transform="rotate(-180 12 12)" fill="#3F4D5A"/>
+<rect x="13" y="12" width="1" height="1" transform="rotate(-180 13 12)" fill="#3F4D5A"/>
+<rect x="13" y="11" width="1" height="1" transform="rotate(-180 13 11)" fill="#3F4D5A"/>
+<rect x="14" y="11" width="1" height="1" transform="rotate(-180 14 11)" fill="#3F4D5A"/>
+<rect x="2" y="6" width="1" height="1" fill="#3F4D5A"/>
+<rect x="2" y="7" width="1" height="1" fill="#3F4D5A"/>
+<rect x="1" y="6" width="1" height="1" fill="#3F4D5A"/>
+<rect x="1" y="7" width="1" height="1" fill="#3F4D5A"/>
+<rect y="8" width="1" height="1" fill="#3F4D5A"/>
+<rect x="2" y="5" width="1" height="1" fill="#3F4D5A"/>
+<rect x="3" y="5" width="1" height="1" fill="#3F4D5A"/>
+<rect x="3" y="4" width="1" height="1" fill="#3F4D5A"/>
+<rect x="4" y="4" width="1" height="1" fill="#3F4D5A"/>
+<rect x="14" y="10" width="1" height="1" transform="rotate(-180 14 10)" fill="#3F4D5A"/>
+<rect x="11" y="14" width="1" height="1" transform="rotate(-180 11 14)" fill="#3F4D5A"/>
+<rect x="4" y="3" width="1" height="1" fill="#3F4D5A"/>
+<rect x="14" y="8" width="1" height="1" transform="rotate(-180 14 8)" fill="#3F4D5A"/>
+<rect x="1" y="8" width="1" height="1" fill="#3F4D5A"/>
+<rect x="15" y="8" width="1" height="1" transform="rotate(-180 15 8)" fill="#3F4D5A"/>
+<rect x="15" y="9" width="1" height="1" transform="rotate(-180 15 9)" fill="#3F4D5A"/>
+<rect x="16" y="8" width="1" height="1" transform="rotate(-180 16 8)" fill="#3F4D5A"/>
+<rect x="14" y="9" width="1" height="1" transform="rotate(-180 14 9)" fill="#3F4D5A"/>
+<rect x="2" y="8" width="1" height="1" fill="#3F4D5A"/>
+<rect x="10" y="6" width="6" height="1" fill="#3F4D5A"/>
+<rect x="6" y="10" width="6" height="1" transform="rotate(180 6 10)" fill="#3F4D5A"/>
+<rect x="8" y="16" width="1" height="1" transform="rotate(-180 8 16)" fill="#3F4D5A"/>
+<rect x="7" width="1" height="1" fill="#3F4D5A"/>
 </svg>
