@@ -1,4 +1,4 @@
-# Typesense plugin for Craft CMS 4.x
+# Typesense plugin for Craft CMS 5.x
 
 Craft Plugin that synchronises with Typesense.
 
@@ -8,7 +8,7 @@ Craft Plugin that synchronises with Typesense.
 
 ## Requirements
 
-This plugin requires Craft CMS 4.0.0 or later.
+This plugin requires Craft CMS 5.0.0 or later.
 
 ## Installation
 
@@ -28,4 +28,4 @@ To install the plugin, follow these instructions.
 
 In our [Github Wiki](https://github.com/craftpulse/craft-typesense/wiki) where you can find the information and documentation about the plugin.
 
-Brought to you by [craftpulse](https://github.com/craftpulse)
+Brought to you by [craftpulse](https://craft-pulse.com/)

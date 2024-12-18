@@ -11,6 +11,8 @@ bower_components
 node_modules
 yarn-error.log
 npm-error.log
+composer.lock
+package-lock.json
 
 # MISC FILES
 .cache

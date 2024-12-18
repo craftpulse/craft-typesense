@@ -51,6 +51,16 @@ class Install extends Migration
                 'dateSynced' => $this->dateTime(),
                 'uid' => $this->uid(),
             ]);
+
+            $this->createTable(Table::SYNONYMS, [
+                'id' => $this->primaryKey(),
+                'dateCreated' => $this->dateTime()->notNull(),
+                'dateUpdated' => $this->dateTime()->notNull(),
+                'uid' => $this->uid(),
+
+                'index' => $this->string()->unique()->notNull(),
+                'synonyms' => $this->json()->notNull(),
+            ]);
         }
     }
 

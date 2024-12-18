@@ -4,18 +4,26 @@
     "src": "src/js/typesense.ts",
     "isEntry": true,
     "css": [
-      "assets/typesense.e0a07466.css"
+      "assets/typesense.471098d9.css"
     ]
   },
   "src/js/typesense-collections.ts": {
-    "file": "assets/typesense-collections.78c961d3.js",
+    "file": "assets/typesense-collections.f4cfb80b.js",
     "src": "src/js/typesense-collections.ts",
     "isEntry": true,
     "imports": [
-      "_vendor.68b06e04.js"
+      "_plugin-vue_export-helper.d4d03878.js"
     ]
   },
-  "_vendor.68b06e04.js": {
-    "file": "assets/vendor.68b06e04.js"
+  "src/js/typesense-synonyms.ts": {
+    "file": "assets/typesense-synonyms.e0eecc69.js",
+    "src": "src/js/typesense-synonyms.ts",
+    "isEntry": true,
+    "imports": [
+      "_plugin-vue_export-helper.d4d03878.js"
+    ]
+  },
+  "_plugin-vue_export-helper.d4d03878.js": {
+    "file": "assets/plugin-vue_export-helper.d4d03878.js"
   }
 }

@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 4.x
+ * Typesense plugin for Craft CMS 5.x
  *
  * Craft Plugin that synchronises with Typesense
  *
