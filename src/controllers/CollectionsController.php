@@ -162,20 +162,6 @@ class CollectionsController extends Controller
                     }
                     break;
             }
-
-            // Craft::dd($element);
-            // $section = $entry->section ?? null;
-
-            // if ($section) {
-            //     $variables['sections'][] = [
-            //         'id' => $section->id,
-            //         'name' => $section->name,
-            //         'handle' => $section->handle,
-            //         'type' => $entry->type->handle,
-            //         'entryCount' => $index->criteria->count(),
-            //         'index' => $index->indexName,
-            //     ];
-            // }
         }
 
         $variables['csrf'] = [
