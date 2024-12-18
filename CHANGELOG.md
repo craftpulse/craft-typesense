@@ -3,9 +3,10 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
-## 5.6.0 - 2024-12-xx
+## 5.6.0 - 2025-01-06
 ### Added
 - Added support for synonyms
+- Added support for Craft Commerce (Products and Variants) thanks to [samuelbirch](https://github.com/samuelbirch)
 
 ## 5.5.4 - 2024-10-16
 ### Added
