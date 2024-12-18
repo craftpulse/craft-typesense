@@ -31,6 +31,14 @@ export default defineComponent({
         {{ section.name }}
     </div>
 
+    <div class="px-6 py-4 whitespace-nowrap flex items-center">
+        {{ section.synonyms.count }}
+    </div>
+
+    <div class="px-6 py-4 whitespace-nowrap flex items-center">
+        {{ section.synonyms.direction }}
+    </div>
+
     <div class="px-6 py-2 space-x-2">
         <a
             :href="`${getUrl()}/${section.index}`"

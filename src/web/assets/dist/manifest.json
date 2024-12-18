@@ -4,7 +4,7 @@
     "src": "src/js/typesense.ts",
     "isEntry": true,
     "css": [
-      "assets/typesense.471098d9.css"
+      "assets/typesense.eff62e63.css"
     ]
   },
   "src/js/typesense-collections.ts": {
@@ -16,7 +16,7 @@
     ]
   },
   "src/js/typesense-synonyms.ts": {
-    "file": "assets/typesense-synonyms.e0eecc69.js",
+    "file": "assets/typesense-synonyms.ba7950cc.js",
     "src": "src/js/typesense-synonyms.ts",
     "isEntry": true,
     "imports": [

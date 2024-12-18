@@ -38,6 +38,11 @@ class SynonymController extends Controller
 
         foreach ($indexes as $index) {
             $element = $index->criteria->one();
+            $synonyms = Typesense::$plugin->synonyms->getSynonymsByIndex($index->indexName);
+            $synonyms = [
+                'count' => $synonyms ? count($synonyms) : 0,
+                'direction' => $index?->schema['synonym_direction'] ?? 'multi-way',
+            ];
 
             switch ($index->elementType) {
                 case 'craft\elements\Asset':
@@ -50,6 +55,7 @@ class SynonymController extends Controller
                             'handle' => $volume->handle,
                             'type' => $volume->handle,
                             'index' => $index->indexName,
+                            'synonyms' => $synonyms,
                         ];
                     }
                     break;
@@ -64,6 +70,7 @@ class SynonymController extends Controller
                             'handle' => $section->handle,
                             'type' => $element->type->handle,
                             'index' => $index->indexName,
+                            'synonyms' => $synonyms,
                         ];
                     }
                     break;

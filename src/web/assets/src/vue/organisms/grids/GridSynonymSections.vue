@@ -23,7 +23,7 @@ export default defineComponent({
 <template>
 
     <section class="rounded-tr-sm rounded-tl-sm">
-        <div class="grid grid-cols-3 rounded-tr-md rounded-tl-md bg-gray-100">
+        <div class="grid grid-cols-5 rounded-tr-md rounded-tl-md bg-gray-100">
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Index
@@ -34,12 +34,20 @@ export default defineComponent({
             </div>
 
             <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Synonyms count
+            </div>
+
+            <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                Synonyms direction
+            </div>
+
+            <div class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Action(s)
             </div>
 
         </div>
 
-        <div class="grid grid-cols-3">
+        <div class="grid grid-cols-5">
 
             <list-item-section
                 v-for="section in sections"
