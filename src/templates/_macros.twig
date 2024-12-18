@@ -1,0 +1,8 @@
+{% macro instructions(instructionText, infoText) -%}
+    <div>
+        {{ instructionText|t('typesense') }}
+        <div class="info">
+            {{ infoText }}
+        </div>
+    </div>
+{%- endmacro %}
