@@ -25,7 +25,6 @@
 {% set tabs = {
     server: {label: "Server"|t('typesense'), url: "#server"},
     api: {label: "API"|t('typesense'), url: "#api"},
-    synonyms: {label: "Synonyms"|t('typesense'), url: "#synonyms"},
 } %}
 
 {%- block content -%}
@@ -128,32 +127,6 @@
             name: 'searchOnlyApiKey',
             value: settings.searchOnlyApiKey,
         }) }}
-    </div>
-
-    <div id="synonyms" class="hidden">
-        {%- set info -%}
-            <b>{{- 'Typesense supports two types of synonyms:'|t('typsense') -}}</b>
-            <ol style="max-width:500px;">
-                <li>
-                    {{- 'One-way synonyms: Defining the words iphone and android as one-way synonyms of smart phone will cause searches for smart phone to return documents containing iphone or android or both.'|t('typsense') -}}
-                </li>
-                <li>
-                    {{- 'Multi-way synonyms: Defining the words blazer, coat and jacket as multi-way synonyms will cause searches for any one of those words (eg: coat) to return documents containing at least one of the words in the synonym set (eg: records with blazer or coat or jacket are returned).'|t('typesense') -}}
-                </li>
-            </ol>
-        {%- endset -%}
-        {{ forms.selectField({
-            label: "Direction of the synonyms"|t('typesense'),
-            instructions: instructions("Whether to go one-way or multi-way sync for the synonyms", info),
-            name: 'synonymsDirection',
-            value: settings.synonymsDirection,
-            options: {
-                'one-way': 'One-way'|t('typesense'),
-                'multi-way': 'Multi-way'|t('typesense'),
-            },
-            required: true,
-        }) }}
-
     </div>
 
 {%- endblock -%}

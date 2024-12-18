@@ -113,7 +113,6 @@ class SettingsController extends Controller
             'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
             'server' => Craft::$app->getRequest()->getBodyParam('server'),
             'serverType' => Craft::$app->getRequest()->getBodyParam('serverType'),
-            'synonymsDirection' => Craft::$app->getRequest()->getBodyParam('synonymsDirection'),
         ];
 
         if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {

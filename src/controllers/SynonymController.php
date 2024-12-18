@@ -83,6 +83,7 @@ class SynonymController extends Controller
             'label' => $index,
         ]);
 
+
         try {
             $collection = CollectionHelper::getCollection($index);
         } catch(\Exception $e) {

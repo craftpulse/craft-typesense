@@ -5,6 +5,7 @@ use Craft;
 use craft\db\Query;
 use craft\helpers\Queue;
 use Illuminate\Support\Collection;
+use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncSynonymsJob;
 use percipiolondon\typesense\db\Table;
 use percipiolondon\typesense\models\SynonymModel;
@@ -29,6 +30,7 @@ class SynonymService extends Component
     {
         // Retrieve the synonyms from Typesense
         $query = Collection::make(Typesense::$plugin->getClient()->client()->collections[$collection]->synonyms->retrieve());
+        $synonyms = collect([]);
 
         // Check if synonyms exist and have records
         if ($query->get('synonyms') && $query->count() > 0) {
@@ -60,14 +62,16 @@ class SynonymService extends Component
      */
     public function saveTypesenseSynonym(string $index, array $data): bool
     {
-        if (Typesense::$plugin->getSettings()->synonymsDirection == 'one-way') {
-            $synonyms = $this->createOneWaySynonyms($data);
-        } else {
-            $synonyms = $this->createMultiWaySynonyms($data);
-        }
-
-
         try {
+            $collection = CollectionHelper::getCollection($index);
+            $synonymDirection = $collection?->schema['synonym_direction'] ?? 'multi-way';
+
+            if ($synonymDirection == 'one-way') {
+                $synonyms = $this->createOneWaySynonyms($data);
+            } else {
+                $synonyms = $this->createMultiWaySynonyms($data);
+            }
+
             Typesense::$plugin->getClient()->client()->collections[$index]->synonyms->upsert($data['id'], $synonyms);
         } catch(Exception $exception) {
             Craft::error($exception->getMessage(), __METHOD__);
@@ -186,7 +190,7 @@ class SynonymService extends Component
         array_push($arrSynonyms['synonyms'], $data['root']);
 
         $typesenseModel = [];
-        $typesenseModel['synonyms'] = $arrSynonyms['synonyms'];
+        $typesenseModel['synonyms'] = array_unique($arrSynonyms['synonyms']);
 
         return $typesenseModel;
     }

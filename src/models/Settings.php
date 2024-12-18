@@ -97,11 +97,6 @@ class Settings extends Model
     public ?string $searchOnlyApiKey = null;
 
     /**
-     * @var string|null The direction of the synonym (one-way / multi-way)
-     */
-    public ?string $synonymsDirection = 'multi-way';
-
-    /**
      * @var array Provide an array of collections that needs to be added.
      */
     public array $collections = [];
@@ -151,10 +146,6 @@ class Settings extends Model
 
     public function getSearchOnlyApiKey(): string {
         return $this->searchOnlyApiKey;
-    }
-
-    public function getSynonymsDirection(): bool {
-        return $this->synonymsDirection;
     }
 
 

@@ -50,6 +50,6 @@ class SyncSynonymsJob extends BaseJob
 
     protected function defaultDescription(): string
     {
-        return Craft::t('typesense', 'Upsert synonyms for ' . $this->criteria['index']);
+        return Craft::t('typesense', 'Sync synonyms for ' . $this->criteria['index']);
     }
 }
