@@ -190,7 +190,7 @@ class SynonymService extends Component
         array_push($arrSynonyms['synonyms'], $data['root']);
 
         $typesenseModel = [];
-        $typesenseModel['synonyms'] = array_unique($arrSynonyms['synonyms']);
+        $typesenseModel['synonyms'] = $this->cleanSynonymData($arrSynonyms['synonyms']);
 
         return $typesenseModel;
     }
@@ -206,8 +206,23 @@ class SynonymService extends Component
 
         $typesenseModel = [];
         $typesenseModel['root'] = $data['root'];
-        $typesenseModel['synonyms'] = $arrSynonyms;
+        $typesenseModel['synonyms'] = $this->cleanSynonymData($arrSynonyms);
 
         return $typesenseModel;
+    }
+
+    /**
+     * Cleans out the duplicates or empty values
+     * @param array $data
+     * @return array
+     */
+    public function cleanSynonymData(array $data): array
+    {
+        return collect($data)
+            ->map(fn($value) => trim($value))
+            ->filter(fn($value) => $value !== '')
+            ->unique()
+            ->values()
+            ->toArray();
     }
 }

@@ -127,6 +127,17 @@ class SynonymController extends Controller
             $hasErrors = true;
         } else {
             foreach ($synonyms as $i => &$row) {
+
+                // clean the synonyms
+                $arrSynonyms = explode(',',$row['synonyms']);
+                $row['synonyms'] = implode(',', Typesense::$plugin->synonyms->cleanSynonymData($arrSynonyms));
+
+                // generate ID based on root
+                if (empty($row['id']) && !empty($row['root'])) {
+                    $row['id'] = "synonyms-" . strtolower($row['root']) . '-' . $i;
+                }
+
+                // validate
                 if (empty($row['root'])) {
                     Craft::$app->getSession()->setError(Craft::t('typesense', "Errors saving the synonyms"));
                     array_push($errors, "The 'Root' field in row " . ($i + 1) . " is required.");
@@ -137,11 +148,6 @@ class SynonymController extends Controller
                     Craft::$app->getSession()->setError(Craft::t('typesense', "Errors saving the synonyms"));
                     array_push($errors, "The 'Synonyms' field in row " . ($i + 1) . " is required.");
                     $hasErrors = true;
-                }
-
-                // generate ID based on root
-                if (empty($row['id']) && !empty($row['root'])) {
-                    $row['id'] = "synonyms-" . strtolower($row['root']) . '-' . $i;
                 }
             }
         }
