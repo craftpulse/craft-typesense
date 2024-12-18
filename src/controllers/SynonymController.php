@@ -91,7 +91,7 @@ class SynonymController extends Controller
         }
 
         if ($collection) {
-            $variables['synonyms'] = Typesense::$plugin->synonyms->getSynonyms($index);
+            $variables['synonyms'] = Typesense::$plugin->synonyms->getSynonymsByIndex($index);
         }
 
         $variables['title'] = $templateTitle;
@@ -163,13 +163,6 @@ class SynonymController extends Controller
         $variables['title'] = Craft::t('typesense', "Synonyms for ${index}");
 
         return $this->renderTemplate('typesense/synonyms/detail', $variables);
-//            PermissionHelper::controllerPermissionCheck('ats:synonyms');
-//            $this->requirePostRequest();
-//            $synonyms['synonyms'] = Craft::$app->getRequest()->getRequiredParam('synonyms');
-//
-//            Ats::$plugin->synonyms->saveSynonyms($synonyms);
-//
-//            return $this->redirectToPostedUrl();
     }
 
     private function _getInfo(): array
