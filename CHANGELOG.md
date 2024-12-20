@@ -6,7 +6,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ## 5.6.0 - 2025-01-06
 ### Added
 - Added support for synonyms
-- Added support for Craft Commerce (Products and Variants) thanks to [samuelbirch](https://github.com/samuelbirch)
+- Added support for Craft Commerce (Products and Variants) thanks to [samuelbirch](https://github.com/samuelbirch) and [dezeweetjeniet](https://github.com/dezeweetjeniet) [PR #36](https://github.com/craftpulse/craft-typesense/pull/36)
+- Added support for Shopify products thanks to [sidoneill](https://github.com/sidoneill) [issue #43](https://github.com/craftpulse/craft-typesense/issues/43)
 
 ## 5.5.4 - 2024-10-16
 ### Added

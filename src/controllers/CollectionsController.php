@@ -161,6 +161,17 @@ class CollectionsController extends Controller
                         ];
                     }
                     break;
+
+                case 'craft\shopify\elements\Product':
+                    $variables['sections'][] = [
+                        'id' => 'shopify-products',
+                        'name' => 'Products',
+                        'handle' => 'prodcuts',
+                        'type' => 'Shopify: Products',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
             }
 
             // Craft::dd($element);
