@@ -94,7 +94,7 @@ export default defineComponent({
         </button>
         <button
             type="button"
-            class="cursor-pointer inline-flex items-center px-4 py-2 border-transparent shadow-sm text-sm font-medium rounded-md text-indigo-700 border border-solid border-indigo-700 hover:text-white hover:bg-indigo-900"
+            class="cursor-pointer inline-flex items-center px-4 py-2 shadow-sm text-sm font-medium rounded-md text-indigo-700 border border-solid border-indigo-700 hover:text-white hover:bg-indigo-900"
             @click="flushCollection()"
         >
             <span>Flush</span>

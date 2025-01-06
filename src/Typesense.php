@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 4.x
+ * Typesense plugin for Craft CMS 5.x
  *
  * Craft Plugin that synchronises with Typesense
  *
@@ -32,6 +32,7 @@ use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\helpers\FileLog;
 use percipiolondon\typesense\models\Settings;
 use percipiolondon\typesense\services\CollectionService;
+use percipiolondon\typesense\services\SynonymService;
 use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\variables\TypesenseVariable;
 
@@ -56,6 +57,8 @@ use yii\base\Event;
  *
  * @property  TypesenseService $typesenseService
  * @property  CollectionService $collectionService
+ * @property  SynonymService $synonymService
+ *
  * @property  Settings $settings
  */
 class Typesense extends Plugin
@@ -128,6 +131,8 @@ class Typesense extends Plugin
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
             $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
+        } else {
+            $this->controllerNamespace = 'percipiolondon\typesense\controllers';
         }
 
         // Create endpoint for custom logs
@@ -185,6 +190,12 @@ class Typesense extends Plugin
             $subNavs['collections'] = [
                 'label' => Craft::t('typesense', 'Collections'),
                 'url' => 'typesense/collections',
+            ];
+        }
+        if (Craft::$app->getUser()->checkPermission('typesense:synonyms')) {
+            $subNavs['synonyms'] = [
+                'label' => Craft::t('typesense', 'Synonyms'),
+                'url' => 'typesense/synonyms',
             ];
         }
 
@@ -289,6 +300,8 @@ class Typesense extends Plugin
             'typesense/dashboard' => 'typesense/settings/dashboard',
             'typesense/plugin' => 'typesense/settings/plugin',
             'typesense/collections' => 'typesense/collections/collections',
+            'typesense/synonyms' => 'typesense/synonym/index',
+            'typesense/synonyms/<index:\w+>' => 'typesense/synonym/synonyms',
             'typesense/documents' => 'typesense/collections/documents',
             'typesense/documents/<sectionId:\d+>' => 'typesense/collections/document',
             'typesense/save-collection' => 'typesense/collections/save-collection',
@@ -308,6 +321,9 @@ class Typesense extends Plugin
             ],
             'typesense:collections' => [
                 'label' => Craft::t('typesense', 'Collections'),
+            ],
+            'typesense:synonyms' => [
+                'label' => Craft::t('typesense', 'Synonyms'),
             ],
             'typesense:manage-collections' => [
                 'label' => Craft::t('typesense', 'Manage Collections'),
