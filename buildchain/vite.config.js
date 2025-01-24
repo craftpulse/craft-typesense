@@ -14,6 +14,7 @@ export default ({ command }) => ({
             input: {
                 typesense: '/src/js/typesense.ts',
                 'typesense-collections': '/src/js/typesense-collections.ts',
+                'typesense-synonyms': '/src/js/typesense-synonyms.ts',
             },
             output: {
                 sourcemap: true
@@ -46,8 +47,8 @@ export default ({ command }) => ({
             strict: false
         },
         host: '0.0.0.0',
-        origin: 'http://localhost:3001/',
-        port: 3001,
+        origin: 'https://plugin-playground.ddev.site/3000',
+        port: 3000,
         strictPort: true,
     }
 })

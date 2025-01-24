@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 4.x
+ * Typesense plugin for Craft CMS 5.x
  *
  * Craft Plugin that synchronises with Typesense
  *
@@ -100,7 +100,7 @@ class Settings extends Model
      * @var array Provide an array of collections that needs to be added.
      */
     public array $collections = [];
-    
+
 
     // Public Methods
     // =========================================================================

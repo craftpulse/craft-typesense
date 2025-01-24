@@ -1,0 +1,28 @@
+{%- requirePermission "typesense:synonyms" -%}
+
+{%- extends 'typesense/_layouts/typesense-cp.twig' -%}
+
+{%- set tagOptions = {
+    'depends': [
+        'percipiolondon\\typesense\\assetbundles\\typesense\\TypesenseAsset'
+    ]
+} -%}
+
+{%- set content -%}
+
+    {{- craft.typesense.register('src/js/typesense-synonyms.ts', false, tagOptions ,tagOptions) -}}
+    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
+
+    <div class="-m-6" id="typesense-synonyms">
+        {%- if sections ?? null -%}
+            <grid-synonym-sections
+                :sections="{{- sections|json_encode -}}"
+            />
+        {%- else -%}
+
+            <p class="pt-4 pl-4">There are currently no collections defined or no collections with entries. Please provide the collections in config/typesense.php</p>
+
+        {%- endif -%}
+
+    </div>
+{%- endset -%}

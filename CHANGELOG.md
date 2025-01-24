@@ -3,12 +3,21 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
+## 5.6.0 - 2025-01-06
+### Added
+- Added support for synonyms
+- Added support for Craft Commerce (Products and Variants) thanks to [samuelbirch](https://github.com/samuelbirch) and [dezeweetjeniet](https://github.com/dezeweetjeniet) [PR #36](https://github.com/craftpulse/craft-typesense/pull/36)
+- Added support for Shopify products thanks to [sidoneill](https://github.com/sidoneill) [issue #43](https://github.com/craftpulse/craft-typesense/issues/43)
 
-### 5.5.3.1 - 2024-08-26
+## 5.5.4 - 2024-10-16
+### Added
+- Added event hooks to capture changes on the Typesense document (EVENT_AFTER_DELETE/EVENT_AFTER_UPSERT/EVENT_BEFORE_DELETE/EVENT_BEFORE_UPSERT)
+
+## 5.5.3.1 - 2024-08-26
 ### Fixed
 - Composer version of craft vite
 
-### 5.5.3 - 2024-08-26
+## 5.5.3 - 2024-08-26
 ### Added
 - Added the possibility to allow indexing multiple sections in a single collection [#35](https://github.com/craftpulse/craft-typesense/issues/35)
 - Added code analysis and auto release scripts
@@ -16,16 +25,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 ### Fixed
 - Removed composer.lock so latest versions of dependencies can be installed as defined in composer.json
 
-### 5.5.2 - 2024-08-02
+## 5.5.2 - 2024-08-02
 ### Fixed
 - Added section.all fallback for the deletion of documents
 
-### 5.5.1 - 2024-07-15
+## 5.5.1 - 2024-07-15
 
 ### Fixed
 - Check for the deletion on the documents
 
-### 5.5.0 - 2024-04-09
+## 5.5.0 - 2024-04-09
 
 ### Changed
 - Craft 5 release
