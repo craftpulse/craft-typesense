@@ -3,6 +3,14 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
+## 5.6.2 - 2025-02-03
+### Added
+- Fixed an issue where choosing "single" would end up in validation errors [#47](https://github.com/craftpulse/craft-typesense/issues/47)
+
+## 5.6.1 - 2025-01-24
+### Fixed
+- Fixed an issue where the settings wouldn't display if "Single" was selected as an option [#46](https://github.com/craftpulse/craft-typesense/issues/46)
+
 ## 5.6.0 - 2025-01-06
 ### Added
 - Added support for synonyms

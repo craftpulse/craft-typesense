@@ -42,7 +42,7 @@ class TypesenseService extends Component
         $client = null;
 
         try {
-            if (Typesense::$plugin->getSettings()->serverType === 'server' && App::parseEnv(Typesense::$plugin->getSettings()->apiKey)) {
+            if (Typesense::$plugin->getSettings()->serverType === 'single' && App::parseEnv(Typesense::$plugin->getSettings()->apiKey)) {
                 $client = new TypesenseClient([
                     'api_key' => App::parseEnv(Typesense::$plugin->getSettings()->apiKey),
                     'nodes' => [

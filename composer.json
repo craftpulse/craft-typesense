@@ -2,7 +2,7 @@
     "name": "craftpulse/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "5.6.1",
+    "version": "5.6.2",
     "keywords": [
         "craft",
         "cms",
@@ -11,16 +11,16 @@
         "typesense"
     ],
     "support": {
-        "email": "support@percipio.london",
-        "docs": "https://github.com/percipioglobal/craft-typesense/blob/master/README.md",
-        "issues": "https://github.com/percipioglobal/craft-typesense/issues",
-        "source": "https://github.com/percipioglobal/craft-typesense"
+        "email": "support@craft-pulse.com",
+        "docs": "https://github.com/craftpulse/craft-typesense/blob/master/README.md",
+        "issues": "https://github.com/craftpulse/craft-typesense/issues",
+        "source": "https://github.com/craftpulse/craft-typesense"
     },
     "license": "MIT",
     "authors": [
         {
-            "name": "percipiolondon",
-            "homepage": "https://percipio.london"
+            "name": "CraftPulse",
+            "homepage": "https://craft-pulse.com"
         }
     ],
     "require": {
@@ -53,10 +53,10 @@
     "extra": {
         "name": "Typesense",
         "handle": "typesense",
-        "developer": "percipiolondon",
-        "developerUrl": "https://percipio.london",
-        "documentationUrl": "https://github.com/percipioglobal/craft-typesense/blob/master/README.md",
-        "changelogUrl": "https://raw.githubusercontent.com/percipioglobal/craft-typesense/master/CHANGELOG.md",
+        "developer": "craftpulse",
+        "developerUrl": "https://craft-pulse.com",
+        "documentationUrl": "https://github.com/craftpulse/craft-typesense/blob/v5/README.md",
+        "changelogUrl": "https://raw.githubusercontent.com/craftpulse/craft-typesense/v5/CHANGELOG.md",
         "components": {
             "typesenseService": "percipiolondon\\typesense\\services\\TypesenseService"
         },
