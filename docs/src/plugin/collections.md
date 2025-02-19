@@ -36,6 +36,7 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
             ],
         ],
         'default_sorting_field' => 'post_date_timestamp', // can only be an integer,
+        'synonym_direction' => 'one-way', // 'one-way' or 'multi-way' #optional
         'resolver' => static function(\craft\elements\Entry $entry) {
             return [
                 'id' => (string)$entry->id,

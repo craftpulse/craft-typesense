@@ -1,6 +1,6 @@
 <?php
 /**
- * Typesense plugin for Craft CMS 4.x
+ * Typesense plugin for Craft CMS 5.x
  *
  * Craft Plugin that synchronises with Typesense
  *
@@ -136,17 +136,41 @@ class CollectionsController extends Controller
 
                 case 'craft\commerce\elements\Product':
                     $type = $element->type ?? null;
-
                     if ($type) {
                         $variables['sections'][] = [
                             'id' => $type->id,
                             'name' => $type->name,
                             'handle' => $type->handle,
-                            'type' => 'Type: ' . $element->type->handle,
+                            'type' => 'Product: ' . $element->type->handle,
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
                     }
+                    break;
+
+                case 'craft\commerce\elements\Variant':
+                    $type = $element->product->type ?? null;
+                    if ($type) {
+                        $variables['sections'][] = [
+                            'id' => $type->id,
+                            'name' => $type->name,
+                            'handle' => $type->handle,
+                            'type' => 'Variant: ' . $type->handle,
+                            'entryCount' => $index->criteria->count(),
+                            'index' => $index->indexName,
+                        ];
+                    }
+                    break;
+
+                case 'craft\shopify\elements\Product':
+                    $variables['sections'][] = [
+                        'id' => 'shopify-products',
+                        'name' => 'Products',
+                        'handle' => 'prodcuts',
+                        'type' => 'Shopify: Products',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
                     break;
             }
 

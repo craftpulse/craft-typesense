@@ -1,0 +1,49 @@
+{%- requirePermission "typesense:synonyms" -%}
+
+{% extends '_layouts/cp' %}
+
+{% import '_includes/forms' as forms %}
+
+{% block actionButton %}
+    <input type="submit" class="btn submit" value="{{ 'Save'|t('app') }}">
+{% endblock %}
+
+{% block content %}
+    <input type="hidden" name="action" value="typesense/synonym/save">
+    <input type="hidden" name="index" value="{{- index -}}">
+
+    <div>
+        <div class="flex field">
+            <div class="flex-grow">
+                {% set cols = {
+                    root: {
+                        type: 'singleline',
+                        heading: 'Root'|t('typesense'),
+                        placeholder: "Baker"|t('typesense'),
+                        required: true,
+                    },
+                    synonyms: {
+                        type: 'singleline',
+                        heading: 'Synonyms'|t('typesense'),
+                        placeholder: "Patisier, Breadmaker, Bread maker"|t('typesense'),
+                        required: true,
+                    },
+                } %}
+
+                {{ forms.editableTableField({
+                    label: "Synonyms"|t('typesense'),
+                    instructions: "Provide the synonyms comma seperated inside of the field.",
+                    name: 'synonyms',
+                    id: 'synonyms',
+                    cols: cols,
+                    rows: synonyms ?? [],
+                    allowAdd: true,
+                    allowDelete: true,
+                    allowReorder: true,
+                    errors: errors ?? null,
+                    addRowLabel: "Add a synonym"|t('typesense'),
+                }) }}
+            </div>
+        </div>
+    </div>
+{% endblock %}

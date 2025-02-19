@@ -5,6 +5,7 @@ namespace percipiolondon\typesense\base;
 use nystudio107\pluginvite\services\VitePluginService;
 use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
 use percipiolondon\typesense\services\CollectionService;
+use percipiolondon\typesense\services\SynonymService;
 use percipiolondon\typesense\services\TypesenseService;
 use percipiolondon\typesense\Typesense;
 
@@ -42,6 +43,7 @@ trait PluginTrait
         $this->setComponents([
             'typesense' => Typesense::class,
             'collections' => CollectionService::class,
+            'synonyms' => SynonymService::class,
             'client' => TypesenseService::class,
             // Register the vite service
             'vite' => [
