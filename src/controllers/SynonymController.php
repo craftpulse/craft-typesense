@@ -86,6 +86,7 @@ class SynonymController extends Controller
                             'type' => 'Category: ' . $element->group->handle,
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
+                            'synonyms' => $synonyms,
                         ];
                     }
                     break;
@@ -124,7 +125,7 @@ class SynonymController extends Controller
                     $variables['sections'][] = [
                         'id' => 'shopify-products',
                         'name' => 'Products',
-                        'handle' => 'prodcuts',
+                        'handle' => 'products',
                         'type' => 'Shopify: Products',
                         'entryCount' => $index->criteria->count(),
                         'index' => $index->indexName,
