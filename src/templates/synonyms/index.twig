@@ -11,7 +11,7 @@
 {%- set content -%}
 
     {{- craft.typesense.register('src/js/typesense-synonyms.ts', false, tagOptions ,tagOptions) -}}
-    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
+    {%- set apiBaseUrl = cpUrl()|split('?')[0] -%}
 
     <div class="-m-6" id="typesense-synonyms">
         {%- if sections ?? null -%}

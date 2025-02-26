@@ -62,14 +62,14 @@ class TypesenseService extends Component
                     'connection_timeout_seconds' => 2,
                 ]);
             } else {
-                if (Craft::$app->getRequest()->getIsConsoleRequest()) {
+                if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
                     Craft::$app->getSession()->setNotice(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'));
                 }
 
                 Craft::error(Craft::t('typesense', 'Please provide your typesense API key in the settings to get started'), 'typesense');
             }
         } catch (\Exception $exception) {
-            if (Craft::$app->getRequest()->getIsConsoleRequest()) {
+            if (!Craft::$app->getRequest()->getIsConsoleRequest()) {
                 Craft::$app->getSession()->setNotice(Craft::t('typesense', 'There was an error with the Typesense Client Connection, check the logs'));
             }
 
