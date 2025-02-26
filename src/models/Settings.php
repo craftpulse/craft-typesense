@@ -28,7 +28,7 @@ class Settings extends Model
      * @const int
      * @var string
      */
-    public const TYPESENSE_SERVER = 'server';
+    public const TYPESENSE_SERVER = 'single';
 
     /**
      * @const int

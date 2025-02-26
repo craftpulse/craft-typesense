@@ -4,8 +4,8 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2025 CraftPulse
  */
 
 namespace percipiolondon\typesense;
@@ -51,7 +51,7 @@ use yii\base\Event;
  *
  * https://docs.craftcms.com/v3/extend/
  *
- * @author    percipiolondon
+ * @author    CraftPulse
  * @package   Typesense
  * @since     1.0.0
  *
