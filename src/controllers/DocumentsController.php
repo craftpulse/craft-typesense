@@ -2,6 +2,7 @@
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
+use craft\services\Structures;
 use craft\web\Controller;
 use craft\elements\Entry;
 use craft\helpers\ElementHelper;
@@ -36,6 +37,7 @@ class DocumentsController extends Controller
             [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
             [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
+            [Structures::class, Structures::EVENT_AFTER_MOVE_ELEMENT],
         ];
 
         foreach ($events as $event) {
@@ -57,7 +59,7 @@ class DocumentsController extends Controller
 
                     $this->handleSave($element);
 
-                    if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT) {
+                    if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT || $event->name === Structures::EVENT_AFTER_MOVE_ELEMENT) {
                         foreach($element->getSupportedSites() as $site) {
                             if ($site['siteId'] ?? null) {
                                 $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
@@ -162,11 +164,11 @@ class DocumentsController extends Controller
             }
         }
 
-        if ($collection) {
-            $resolver = $collection->schema['resolver']($entry);
-        }
+        if (is_null($collection)) return;
 
-        if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live') {
+        $resolver = $collection->schema['resolver']($entry);
+
+        if (($entry->enabled && $entry->getEnabledForSite()) && $entry->getStatus() === 'live' && in_array($entry->id, $collection->criteria->ids())) {
             // element is enabled --> save to Typesense
             if ($resolver) {
                 // Trigger the before upsert event
