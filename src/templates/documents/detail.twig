@@ -11,7 +11,7 @@
 {%- set content -%}
 
     {{- craft.typesense.register('src/js/typesense-collections.ts', false, tagOptions ,tagOptions) -}}
-    {%- set apiBaseUrl = (siteUrl ~ craft.app.request.generalConfig.cpTrigger) -%}
+    {%- set apiBaseUrl = cpUrl()|split('?')[0] -%}
 
     <section class="rounded-tr-sm rounded-tl-sm">
         {%- for document in documents -%}

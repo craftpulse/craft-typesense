@@ -75,6 +75,22 @@ class SynonymController extends Controller
                     }
                     break;
 
+                case 'craft\elements\Category':
+                    $group = $element->group ?? null;
+
+                    if ($group) {
+                        $variables['sections'][] = [
+                            'id' => $group->id,
+                            'name' => $group->name,
+                            'handle' => $group->handle,
+                            'type' => 'Category: ' . $element->group->handle,
+                            'entryCount' => $index->criteria->count(),
+                            'index' => $index->indexName,
+                            'synonyms' => $synonyms,
+                        ];
+                    }
+                    break;
+
                 case 'craft\commerce\elements\Product':
                     $type = $element->type ?? null;
                     if ($type) {
@@ -109,7 +125,7 @@ class SynonymController extends Controller
                     $variables['sections'][] = [
                         'id' => 'shopify-products',
                         'name' => 'Products',
-                        'handle' => 'prodcuts',
+                        'handle' => 'products',
                         'type' => 'Shopify: Products',
                         'entryCount' => $index->criteria->count(),
                         'index' => $index->indexName,
