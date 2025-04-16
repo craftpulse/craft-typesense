@@ -4,10 +4,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+<<<<<<< HEAD
 
 ## 5.7.1 - 2025-04-16
 ### Fixed
 - Fixed an issue that could occur when upgrading the project but not having client settings.
+
+## 5.7.1 - 2025-03-31
+### Added
+- Added the structure after move event inside the after save method
+
+### Fixed
+- Fixed the unwanted entries in an index in after save, because criteria were skipped. Thanks to [scholejo](https://github.com/scholejo)
 
 ## 5.7.0 - 2025-02-26
 ### Added
