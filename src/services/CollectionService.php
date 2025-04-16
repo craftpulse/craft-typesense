@@ -25,10 +25,9 @@ class CollectionService extends Component
 
     public function getCollectionByCollectionRetrieve(string $indexName): ?array
     {
-
         $collections = null;
         if ($this->_verifyClient()) {
-            $collections = $collectionClient->collections->retreive();
+            $collections = Typesense::$plugin->getClient()->client()->collections->retrieve();
         }
 
         $retrievedCollection = [];
