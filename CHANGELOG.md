@@ -3,6 +3,11 @@
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## 5.6.3 - 2025-04-16
+### Fixed
+- Fixed an issue that could occur when upgrading the project but not having client settings.
+
 ## 5.6.2 - 2025-02-03
 ### Added
 - Fixed an issue where choosing "single" would end up in validation errors [#47](https://github.com/craftpulse/craft-typesense/issues/47)

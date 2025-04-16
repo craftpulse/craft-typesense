@@ -166,7 +166,7 @@ class CollectionsController extends Controller
                     $variables['sections'][] = [
                         'id' => 'shopify-products',
                         'name' => 'Products',
-                        'handle' => 'prodcuts',
+                        'handle' => 'products',
                         'type' => 'Shopify: Products',
                         'entryCount' => $index->criteria->count(),
                         'index' => $index->indexName,

@@ -1,13 +1,14 @@
 <?php
 /**
- * @author Percipio Global Ltd. <support@percipio.london>
- * @since 1.0.0
+ * @author CraftPulse
+ * @since 4.0.0
  */
 
 namespace percipiolondon\typesense\services;
 
 use craft\base\MemoizableArray;
 use craft\db\Query;
+use Craft;
 
 use percipiolondon\typesense\models\CollectionModel as Collection;
 
@@ -24,12 +25,19 @@ class CollectionService extends Component
 
     public function getCollectionByCollectionRetrieve(string $indexName): ?array
     {
-        $collections = Typesense::$plugin->getClient()->client()->collections->retrieve();
+
+        $collections = null;
+        if ($this->_verifyClient()) {
+            $collections = $collectionClient->collections->retreive();
+        }
+
         $retrievedCollection = [];
 
-        foreach ($collections as $collection) {
-            if ($collection['name'] === $indexName) {
-                $retrievedCollection = $collection;
+        if ($collections) {
+            foreach ($collections as $collection) {
+                if ($collection['name'] === $indexName) {
+                    $retrievedCollection = $collection;
+                }
             }
         }
 
@@ -40,10 +48,23 @@ class CollectionService extends Component
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
 
-        foreach ($indexes as $index) {
-            if (!$this->getCollectionByCollectionRetrieve($index->indexName)) {
-                Typesense::$plugin->getClient()->client()->collections->create($index->schema);
+        if ($this->_verifyClient()) {
+            foreach ($indexes as $index) {
+                if (!$this->getCollectionByCollectionRetrieve($index->indexName)) {
+                    Typesense::$plugin->getClient()->client()->collections->create($index->schema);
+                }
             }
         }
+    }
+
+
+    private function _verifyClient(): bool
+    {
+        $client = Typesense::$plugin->getClient()->client();
+        if (!$client) {
+            return false;
+        }
+
+        return true;
     }
 }
