@@ -1,7 +1,9 @@
 <?php
+
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
+use craft\helpers\App;
 use craft\services\Structures;
 use craft\web\Controller;
 use craft\elements\Entry;
@@ -32,53 +34,56 @@ class DocumentsController extends Controller
     {
         parent::init();
 
-        /* SAVE EVENTS */
-        $events = [
-            [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
-            [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
-            [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
-            [Structures::class, Structures::EVENT_AFTER_MOVE_ELEMENT],
-        ];
+        // Only attach events to elements if the API key is configured
+        if (!is_null(App::parseEnv(Typesense::$plugin->getSettings()->apiKey))) {
+            /* SAVE EVENTS */
+            $events = [
+                [Elements::class, Elements::EVENT_AFTER_SAVE_ELEMENT],
+                [Elements::class, Elements::EVENT_AFTER_RESTORE_ELEMENT],
+                [Elements::class, Elements::EVENT_AFTER_UPDATE_SLUG_AND_URI],
+                [Structures::class, Structures::EVENT_AFTER_MOVE_ELEMENT],
+            ];
 
-        foreach ($events as $event) {
-            Event::on(
-                $event[0],
-                $event[1],
-                function (ElementEvent $event) {
-                    // Ignore any element that is not an entry
-                    if (!($event->element instanceof Entry)) {
-                        return;
-                    }
+            foreach ($events as $event) {
+                Event::on(
+                    $event[0],
+                    $event[1],
+                    function (ElementEvent $event) {
+                        // Ignore any element that is not an entry
+                        if (!($event->element instanceof Entry)) {
+                            return;
+                        }
 
-                    $element = $event->element;
+                        $element = $event->element;
 
-                    if (ElementHelper::isDraftOrRevision($element)) {
-                        // don’t do anything with drafts or revisions
-                        return;
-                    }
+                        if (ElementHelper::isDraftOrRevision($element)) {
+                            // don’t do anything with drafts or revisions
+                            return;
+                        }
 
-                    $this->handleSave($element);
+                        $this->handleSave($element);
 
-                    if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT || $event->name === Structures::EVENT_AFTER_MOVE_ELEMENT) {
-                        foreach($element->getSupportedSites() as $site) {
-                            if ($site['siteId'] ?? null) {
-                                $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-                                $this->handleSave($entry);
+                        if ($event->name === Elements::EVENT_AFTER_RESTORE_ELEMENT || $event->name === Structures::EVENT_AFTER_MOVE_ELEMENT) {
+                            foreach ($element->getSupportedSites() as $site) {
+                                if ($site['siteId'] ?? null) {
+                                    $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
+                                    $this->handleSave($entry);
+                                }
                             }
                         }
                     }
+                );
+            }
+
+            /* DELETE EVENT */
+            Event::on(
+                Elements::class,
+                Elements::EVENT_BEFORE_DELETE_ELEMENT,
+                function (ElementEvent $event) {
+                    $this->handleDelete($event);
                 }
             );
         }
-
-        /* DELETE EVENT */
-        Event::on(
-            Elements::class,
-            Elements::EVENT_BEFORE_DELETE_ELEMENT,
-            function (ElementEvent $event) {
-                $this->handleDelete($event);
-            }
-        );
     }
 
     public function triggerAfterDelete(string $index, string $id): void
@@ -164,7 +169,9 @@ class DocumentsController extends Controller
             }
         }
 
-        if (is_null($collection)) return;
+        if (is_null($collection)) {
+            return;
+        }
 
         $resolver = $collection->schema['resolver']($entry);
 
