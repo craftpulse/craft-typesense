@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *
@@ -12,7 +13,6 @@ namespace percipiolondon\typesense\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
-
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\Typesense;
 
@@ -118,6 +118,6 @@ class SyncDocumentsJob extends BaseJob
      */
     protected function defaultDescription(): string
     {
-        return Craft::t('typesense', ($this->criteria['type'] ?? 'Unkown') . ' documents for ' . $this->criteria['index']);
+        return Craft::t('typesense', ($this->criteria['type'] ?? 'Unknown') . ' documents for ' . $this->criteria['index']);
     }
 }

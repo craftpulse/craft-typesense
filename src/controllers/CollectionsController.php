@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *
@@ -12,16 +13,12 @@ namespace percipiolondon\typesense\controllers;
 
 use Craft;
 use craft\helpers\Queue;
-
 use craft\web\Controller;
 use Http\Client\Exception;
 use percipiolondon\typesense\events\DocumentEvent;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
-
 use percipiolondon\typesense\Typesense;
-
-
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;
 use yii\di\NotInstantiableException;
@@ -101,6 +98,12 @@ class CollectionsController extends Controller
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
+
+            $nameOverride = false;
+            if (is_array($index->section)) {
+                $nameOverride = 'Multiple';
+            }
+
             $element = $index->criteria->one();
 
             switch ($index->elementType) {
@@ -110,9 +113,9 @@ class CollectionsController extends Controller
                     if ($volume) {
                         $variables['sections'][] = [
                             'id' => 1,
-                            'name' => $volume->name,
+                            'name' => ($nameOverride ? $nameOverride : $volume->name),
                             'handle' => $volume->handle,
-                            'type' => 'Asset: ' . $volume->handle,
+                            'type' => 'Asset: ' . ($nameOverride ? $nameOverride : $volume->handle),
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
@@ -125,9 +128,9 @@ class CollectionsController extends Controller
                     if ($section) {
                         $variables['sections'][] = [
                             'id' => $section->id,
-                            'name' => $section->name,
+                            'name' => ($nameOverride ? $nameOverride : $section->name),
                             'handle' => $section->handle,
-                            'type' => 'Entry: ' . $element->type->handle,
+                            'type' => 'Entry: ' . ($nameOverride ? $nameOverride : $element->type->handle),
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
@@ -140,9 +143,9 @@ class CollectionsController extends Controller
                     if ($group) {
                         $variables['sections'][] = [
                             'id' => $group->id,
-                            'name' => $group->name,
+                            'name' => ($nameOverride ? $nameOverride : $group->name),
                             'handle' => $group->handle,
-                            'type' => 'Category: ' . $element->group->handle,
+                            'type' => 'Category: ' . ($nameOverride ? $nameOverride : $element->group->handle),
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
@@ -154,9 +157,9 @@ class CollectionsController extends Controller
                     if ($type) {
                         $variables['sections'][] = [
                             'id' => $type->id,
-                            'name' => $type->name,
+                            'name' => ($nameOverride ? $nameOverride : $type->name),
                             'handle' => $type->handle,
-                            'type' => 'Product: ' . $element->type->handle,
+                            'type' => 'Product: ' . ($nameOverride ? $nameOverride : $element->type->handle),
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
@@ -168,9 +171,9 @@ class CollectionsController extends Controller
                     if ($type) {
                         $variables['sections'][] = [
                             'id' => $type->id,
-                            'name' => $type->name,
+                            'name' => ($nameOverride ? $nameOverride : $type->name),
                             'handle' => $type->handle,
-                            'type' => 'Variant: ' . $type->handle,
+                            'type' => 'Variant: ' . ($nameOverride ? $nameOverride : $type->handle),
                             'entryCount' => $index->criteria->count(),
                             'index' => $index->indexName,
                         ];
@@ -180,9 +183,9 @@ class CollectionsController extends Controller
                 case 'craft\shopify\elements\Product':
                     $variables['sections'][] = [
                         'id' => 'shopify-products',
-                        'name' => 'Products',
+                        'name' => ($nameOverride ? $nameOverride : 'Products'),
                         'handle' => 'products',
-                        'type' => 'Shopify: Products',
+                        'type' => 'Shopify: ' . ($nameOverride ? $nameOverride : 'Products'),
                         'entryCount' => $index->criteria->count(),
                         'index' => $index->indexName,
                     ];
@@ -454,13 +457,13 @@ class CollectionsController extends Controller
         // Render the template
         return $this->renderTemplate('typesense/documents/index', $variables);
         //        $request = Craft::$app->getRequest();
-//        $index = $request->getBodyParam('index');
-//
-//        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
-//            return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->documents->export());
-//        }
-//
-//        return "this index doesn't exist";
+        //        $index = $request->getBodyParam('index');
+        //
+        //        if (isset(Typesense::$plugin->getClient()->client()->collections[$index])) {
+        //            return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->documents->export());
+        //        }
+        //
+        //        return "this index doesn't exist";
     }
 
     /**
