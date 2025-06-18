@@ -281,6 +281,12 @@ class DocumentsController extends Controller
                         $collection = CollectionHelper::getCollectionBySection($section);
                     }
 
+                    // get the generic type if specific doesn't exist
+                    if (is_null($collection)) {
+                        $section = $entry->section->handle . '.all';
+                        $collection = CollectionHelper::getCollectionBySection($section);
+                    }
+
                     if ($collection) {
                         $resolver = $collection->schema['resolver']($entry);
                     }
