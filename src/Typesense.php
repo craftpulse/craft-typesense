@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *
@@ -308,6 +309,7 @@ class Typesense extends Plugin
             'typesense/save-collection' => 'typesense/collections/save-collection',
             'typesense/sync-collection' => 'typesense/collections/sync-collection',
             'typesense/flush-collection' => 'typesense/collections/flush-collection',
+            'typesense/update-schema' => 'typesense/collections/update-schema',
         ];
     }
 
