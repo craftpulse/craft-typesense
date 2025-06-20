@@ -3,20 +3,18 @@
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
-use craft\db\Query;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
-use percipiolondon\typesense\db\Table;
 use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\services\SynonymService;
 use percipiolondon\typesense\Typesense;
+use Throwable;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
 /**
- * Synonym Controller controller
+ * Synonym Controller
  */
 class SynonymController extends Controller
 {
@@ -132,6 +130,66 @@ class SynonymController extends Controller
                         'synonyms' => $synonyms,
                     ];
                     break;
+
+                case 'craftpulse\cockpit\elements\Contact':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-contacts',
+                        'name' => 'Contacts',
+                        'handle' => 'contacts',
+                        'type' => 'Cockpit: Contacts',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                        'synonyms' => $synonyms,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\Department':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-departments',
+                        'name' => 'Departments',
+                        'handle' => 'departments',
+                        'type' => 'Cockpit: Departments',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                        'synonyms' => $synonyms,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\Job':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-job-postings',
+                        'name' => 'Job Posts',
+                        'handle' => 'jobPosts',
+                        'type' => 'Cockpit: Job Posts',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                        'synonyms' => $synonyms,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\MatchFieldEntry':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-matchfield-entries',
+                        'name' => 'Match Field Entries',
+                        'handle' => 'matchFieldEntries',
+                        'type' => 'Cockpit: Match Field Entries',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                        'synonyms' => $synonyms,
+                    ];
+                    break;
+
+                case 'craftpulse\reviews\elements\Review':
+                    $variables['sections'][] = [
+                        'id' => 'reviews-review',
+                        'name' => 'Review',
+                        'handle' => 'reviews',
+                        'type' => 'Review',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                        'synonyms' => $synonyms,
+                    ];
+                    break;
             }
         }
 
@@ -144,10 +202,9 @@ class SynonymController extends Controller
         $variables = $this->_getInfo();
         $variables['synonyms'] = null;
         $variables['index'] = $index;
-        array_push($variables['crumbs'], [
+        $variables['crumbs'][] = [
             'label' => $index,
-        ]);
-
+        ];
 
         try {
             $collection = CollectionHelper::getCollection($index);
@@ -172,7 +229,6 @@ class SynonymController extends Controller
      * @throws BadRequestHttpException
      * @throws ForbiddenHttpException
      * @throws MethodNotAllowedHttpException
-     * @throws JsonException
      * @throws Throwable
      */
     public function actionSave(): ?Response
@@ -188,7 +244,7 @@ class SynonymController extends Controller
         // Validation logic and generate ID based on root
         if (empty($synonyms)) {
             Craft::$app->getSession()->setError(Craft::t('typesense','At least one synonym entry is required.'));
-            array_push($errors, Craft::t('typesense','At least one synonym entry is required.'));
+            $errors[] = Craft::t('typesense', 'At least one synonym entry is required.');
             $hasErrors = true;
         } else {
             foreach ($synonyms as $i => &$row) {
@@ -205,13 +261,13 @@ class SynonymController extends Controller
                 // validate
                 if (empty($row['root'])) {
                     Craft::$app->getSession()->setError(Craft::t('typesense', "Errors saving the synonyms"));
-                    array_push($errors, "The 'Root' field in row " . ($i + 1) . " is required.");
+                    $errors[] = "The 'Root' field in row " . ($i + 1) . " is required.";
                     $hasErrors = true;
                 }
 
                 if (empty($row['synonyms'])) {
                     Craft::$app->getSession()->setError(Craft::t('typesense', "Errors saving the synonyms"));
-                    array_push($errors, "The 'Synonyms' field in row " . ($i + 1) . " is required.");
+                    $errors[] = "The 'Synonyms' field in row " . ($i + 1) . " is required.";
                     $hasErrors = true;
                 }
             }

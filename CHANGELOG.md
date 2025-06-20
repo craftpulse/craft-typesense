@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.8.0 - 2025-06-20
+### Added
+- Added element support for craftpulse/cockpit/elements/Contact
+- Added element support for craftpulse/cockpit/elements/Department
+- Added element support for craftpulse/cockpit/elements/Job
+- Added element support for craftpulse/cockpit/elements/MatchFieldEntry
+- Added element support for craftpulse/reviews/elements/Review;
+
 ## 5.7.2.1 - 2025-04-16
 ### Fixed
 - Fixed a regression issue from safeguarding when no client is known

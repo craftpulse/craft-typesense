@@ -4,23 +4,23 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2025 CraftPulse
  */
 
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
+use craft\errors\MissingComponentException;
 use craft\helpers\Queue;
 
 use craft\web\Controller;
 use Http\Client\Exception;
+
+use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\events\DocumentEvent;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\jobs\SyncDocumentsJob;
-
-use percipiolondon\typesense\Typesense;
-
 
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;
@@ -28,6 +28,7 @@ use yii\di\NotInstantiableException;
 use yii\helpers\Json;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
+use yii\web\MethodNotAllowedHttpException;
 use yii\web\Response;
 
 /**
@@ -46,7 +47,7 @@ use yii\web\Response;
  *
  * https://craftcms.com/docs/plugins/controllers
  *
- * @author    percipiolondon
+ * @author    CraftPulse
  * @package   Typesense
  * @since     1.0.0
  */
@@ -187,21 +188,62 @@ class CollectionsController extends Controller
                         'index' => $index->indexName,
                     ];
                     break;
+
+                case 'craftpulse\cockpit\elements\Contact':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-contacts',
+                        'name' => 'Contacts',
+                        'handle' => 'contacts',
+                        'type' => 'Cockpit: Contacts',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\Department':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-departments',
+                        'name' => 'Departments',
+                        'handle' => 'departments',
+                        'type' => 'Cockpit: Departments',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\Job':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-job-postings',
+                        'name' => 'Job Posts',
+                        'handle' => 'jobPosts',
+                        'type' => 'Cockpit: Job Posts',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
+
+                case 'craftpulse\cockpit\elements\MatchFieldEntry':
+                    $variables['sections'][] = [
+                        'id' => 'cockpit-matchfield-entries',
+                        'name' => 'Match Field Entries',
+                        'handle' => 'matchFieldEntries',
+                        'type' => 'Cockpit: Match Field Entries',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
+
+                case 'craftpulse\reviews\elements\Review':
+                    $variables['sections'][] = [
+                        'id' => 'reviews-review',
+                        'name' => 'Review',
+                        'handle' => 'reviews',
+                        'type' => 'Review',
+                        'entryCount' => $index->criteria->count(),
+                        'index' => $index->indexName,
+                    ];
+                    break;
             }
-
-            // Craft::dd($element);
-            // $section = $entry->section ?? null;
-
-            // if ($section) {
-            //     $variables['sections'][] = [
-            //         'id' => $section->id,
-            //         'name' => $section->name,
-            //         'handle' => $section->handle,
-            //         'type' => $entry->type->handle,
-            //         'entryCount' => $index->criteria->count(),
-            //         'index' => $index->indexName,
-            //     ];
-            // }
         }
 
         $variables['csrf'] = [
@@ -213,6 +255,9 @@ class CollectionsController extends Controller
         return $this->renderTemplate('typesense/collections/index', $variables);
     }
 
+    /**
+     * @throws MethodNotAllowedHttpException
+     */
     public function actionFlushCollection(): Response
     {
         $this->requirePostRequest();
@@ -242,11 +287,7 @@ class CollectionsController extends Controller
     }
 
     /**
-     * @throws Exception
-     * @throws TypesenseClientError
-     * @throws InvalidConfigException
-     * @throws NotInstantiableException
-     * @throws BadRequestHttpException
+     * @throws MethodNotAllowedHttpException
      */
     public function actionSyncCollection(): Response
     {
@@ -468,6 +509,7 @@ class CollectionsController extends Controller
      * @throws TypesenseClientError
      * @throws InvalidConfigException
      * @throws NotInstantiableException
+     * @throws MissingComponentException
      */
     public function actionDocument(int $sectionId): Response|string
     {
@@ -511,9 +553,7 @@ class CollectionsController extends Controller
 
     /**
      * @throws Exception
-     * @throws TypesenseClientError
-     * @throws InvalidConfigException
-     * @throws NotInstantiableException
+     * @throws TypesenseClientError|MissingComponentException
      */
     public function actionDeleteDocuments(): string
     {
@@ -531,8 +571,7 @@ class CollectionsController extends Controller
     /**
      * @throws Exception
      * @throws TypesenseClientError
-     * @throws InvalidConfigException
-     * @throws NotInstantiableException
+     * @throws MissingComponentException
      */
     public function actionDropCollection(): string
     {
@@ -550,8 +589,7 @@ class CollectionsController extends Controller
     /**
      * @throws Exception
      * @throws TypesenseClientError
-     * @throws InvalidConfigException
-     * @throws NotInstantiableException
+     * @throws MissingComponentException
      */
     public function actionListCollections(): Response
     {
@@ -562,23 +600,13 @@ class CollectionsController extends Controller
      * @return Response
      * @throws Exception
      * @throws TypesenseClientError
-     * @throws InvalidConfigException
-     * @throws NotInstantiableException
+     * @throws MissingComponentException
      */
-    public function actionRetrieveCollection()
+    public function actionRetrieveCollection(): Response
     {
         $request = Craft::$app->getRequest();
         $index = $request->getBodyParam('index');
 
         return $this->asJson(Typesense::$plugin->getClient()->client()->collections[$index]->retrieve());
     }
-
-    // private function _sortDocuments($a, $b)
-    // {
-    //     if ($a['post_date_timestamp'] == $b['post_date_timestamp']) {
-    //         return 0;
-    //     }
-
-    //     return ($a['post_date_timestamp'] < $b['post_date_timestamp']) ? -1 : 1;
-    // }
 }
