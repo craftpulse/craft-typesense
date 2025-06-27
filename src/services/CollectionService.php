@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @author CraftPulse
  * @since 4.0.0
@@ -9,9 +10,7 @@ namespace percipiolondon\typesense\services;
 use craft\base\MemoizableArray;
 use craft\db\Query;
 use Craft;
-
 use percipiolondon\typesense\models\CollectionModel as Collection;
-
 use percipiolondon\typesense\Typesense;
 use Throwable;
 use yii\base\Component;
@@ -56,7 +55,6 @@ class CollectionService extends Component
         }
     }
 
-
     private function _verifyClient(): bool
     {
         $client = Typesense::$plugin->getClient()->client();
@@ -65,5 +63,34 @@ class CollectionService extends Component
         }
 
         return true;
+    }
+
+    /**
+     * Update the schema in Typesense based on the configuration in PHP
+     *
+     * @return void
+     */
+    public function updateSchema(): void
+    {
+        $indexes = Typesense::$plugin->getSettings()->collections;
+
+        foreach ($indexes as $index) {
+
+            print('Updating schema ' . $index->indexName);
+            print(PHP_EOL);
+
+            $updateSchema = ['fields' => []];
+            foreach ($index->schema['fields'] as $field) {
+                $updateSchema['fields'][] = [
+                    'name' => $field['name'],
+                    'drop' => true
+                ];
+                $updateSchema['fields'][] = $field;
+            }
+            Typesense::$plugin->getClient()->client()->collections[$index->indexName]->update($updateSchema);
+
+            print('Updated schema ' . $index->indexName);
+            print(PHP_EOL);
+        }
     }
 }

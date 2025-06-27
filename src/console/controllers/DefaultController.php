@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *
@@ -90,6 +91,11 @@ class DefaultController extends Controller
                 ]
             ]));
         }
+    }
+
+    public function actionUpdateSchema()
+    {
+        Typesense::$plugin->getCollections()->updateSchema();
     }
 
     public function actionSync()
