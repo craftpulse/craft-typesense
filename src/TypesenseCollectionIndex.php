@@ -13,9 +13,6 @@ class TypesenseCollectionIndex
     /** @var string */
     public $indexName;
 
-    /** @var string */
-    public $section;
-
     /** @var array */
     public $schema = [];
 
@@ -31,9 +28,12 @@ class TypesenseCollectionIndex
     public function __construct(array $schema)
     {
         $this->indexName = $schema['name'];
-        $this->section = $schema['section'];
         $this->schema = $schema;
         $this->criteria = $this->elementType::find();
+
+        if (isset($schema['section'])) {
+            Craft::$app->getDeprecator()->log(__METHOD__, 'Setting section in the Typesense config no longer does anything, all corrosponding functionality now runs through the criteria parameter.');
+        }
     }
 
     public static function create(array $schema): self

@@ -2,12 +2,8 @@
 
 namespace percipiolondon\typesense\helpers;
 
-use Craft;
-
-use craft\helpers\DateTimeHelper;
+use craft\base\Element;
 use craft\helpers\Json;
-
-use percipiolondon\typesense\models\CollectionModel as Collection;
 use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\TypesenseCollectionIndex;
 
@@ -31,23 +27,26 @@ class CollectionHelper
         return null;
     }
 
-    public static function getCollectionBySection(string $name): ?TypesenseCollectionIndex
+    /**
+     * Find all collections that an element is included in by executing the collection element query with the element ID
+     */
+    public static function getAllCollectionsElementIsIndexedIn(Element $element)
     {
+        $matchingCollections = [];
         $indexes = Typesense::$plugin->getSettings()->collections;
 
         foreach ($indexes as $index) {
-            if ($index->section === $name || (is_array($index->section) && in_array($name, $index->section))) {
-                return $index;
+            if ($index->criteria->id($element->id)->count() > 0) {
+                $matchingCollections[] = $index;
             }
         }
-
-        return null;
+        return $matchingCollections;
     }
 
     public static function convertDocumentsToArray(string $index): array
     {
         $documents = Typesense::$plugin->getClient()->client()->collections[$index]->documents->export();
-        $jsonDocs = explode("\n",$documents);
+        $jsonDocs = explode("\n", $documents);
         $documents = [];
 
         foreach ($jsonDocs as $document) {

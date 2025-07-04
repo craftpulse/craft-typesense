@@ -14,7 +14,6 @@ Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic
 \percipiolondon\typesense\TypesenseCollectionIndex::create(
     [
         'name' => 'schools',
-        'section' => 'schools.default', //section handle + entry type handle
         'fields' => [
             [
                 'name' => 'title',
