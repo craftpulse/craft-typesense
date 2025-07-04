@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *
@@ -28,7 +29,6 @@ return [
         \percipiolondon\typesense\TypesenseCollectionIndex::create(
             [
                 'name' => 'schools',
-                'section' => 'schools.default', //section handle + entry type handle
                 'fields' => [
                     [
                         'name' => 'title',
@@ -50,7 +50,7 @@ return [
                     ],
                 ],
                 'default_sorting_field' => 'post_date_timestamp', // can only be an integer,
-                'resolver' => static function(\craft\elements\Entry $entry) {
+                'resolver' => static function (\craft\elements\Entry $entry) {
                     return [
                         'id' => (string)$entry->id,
                         'title' => $entry->title,
@@ -62,7 +62,7 @@ return [
             ]
         )
         ->elementType(\craft\elements\Entry::class)
-        ->criteria(function(\craft\elements\db\EntryQuery $query) {
+        ->criteria(function (\craft\elements\db\EntryQuery $query) {
             return $query->section('schools');
         }),
     ]
