@@ -11,6 +11,13 @@ use craft\services\Elements;
 use percipiolondon\typesense\events\DocumentEvent;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\Typesense;
+
+use craftpulse\cockpit\Cockpit;
+use craftpulse\cockpit\elements\Job;
+use craftpulse\cockpit\elements\Department;
+use craftpulse\cockpit\elements\MatchFieldEntry;
+use craftpulse\cockpit\elements\Contact;
+
 use Typesense\Exceptions\ObjectNotFound;
 use Typesense\Exceptions\ServerError;
 use yii\base\Event;
@@ -45,10 +52,23 @@ class DocumentsController extends Controller
                 $event[0],
                 $event[1],
                 function (ElementEvent $event) {
-                    // Ignore any element that is not an entry
-                    if (!($event->element instanceof Entry)) {
-                        return;
+                    // We need to allow for our cockpit plugin Elements here.
+                    // Check if class exists
+                    if (class_exists(Cockpit::class)) {
+                        // This allowedTypes thing is wonderful! ;)
+                        $allowedTypes = [Entry::class, Job::class, Department::class, MatchFieldEntry::class, Contact::class];
+
+                        if (!in_array(get_class($event->element), $allowedTypes)) {
+                            return;
+                        }
+                    } else {
+                        // Ignore any element that is not an entry
+                        if (!($event->element instanceof Entry)) {
+                            return;
+                        }
                     }
+
+
 
                     $element = $event->element;
 
@@ -135,7 +155,7 @@ class DocumentsController extends Controller
         }
     }
 
-    protected function handleSave(Entry $entry): void
+    protected function handleSave(Entry|Job|MatchFieldEntry|Department|Contact $entry): void
     {
         $sectionHande = $entry->section->handle ?? null;
         $type = $entry->type->handle ?? null;

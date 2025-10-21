@@ -11,10 +11,13 @@
 namespace percipiolondon\typesense\jobs;
 
 use Craft;
+use craft\errors\MissingComponentException;
 use craft\queue\BaseJob;
 
+use Http\Client\Exception;
 use percipiolondon\typesense\helpers\CollectionHelper;
 use percipiolondon\typesense\Typesense;
+use Typesense\Exceptions\TypesenseClientError;
 
 /**
  * TypesenseTask job
@@ -47,6 +50,11 @@ class SyncDocumentsJob extends BaseJob
     // Public Methods
     // =========================================================================
 
+    /**
+     * @throws TypesenseClientError
+     * @throws MissingComponentException
+     * @throws Exception
+     */
     public function execute($queue): void
     {
         $upsertIds = [];
@@ -118,6 +126,6 @@ class SyncDocumentsJob extends BaseJob
      */
     protected function defaultDescription(): string
     {
-        return Craft::t('typesense', ($this->criteria['type'] ?? 'Unkown') . ' documents for ' . $this->criteria['index']);
+        return Craft::t('typesense', ($this->criteria['type'] ?? 'Unknown') . ' documents for ' . $this->criteria['index']);
     }
 }

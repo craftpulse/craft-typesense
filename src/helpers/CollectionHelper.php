@@ -2,12 +2,8 @@
 
 namespace percipiolondon\typesense\helpers;
 
-use Craft;
-
-use craft\helpers\DateTimeHelper;
 use craft\helpers\Json;
 
-use percipiolondon\typesense\models\CollectionModel as Collection;
 use percipiolondon\typesense\Typesense;
 use percipiolondon\typesense\TypesenseCollectionIndex;
 
