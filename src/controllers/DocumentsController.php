@@ -54,7 +54,10 @@ class DocumentsController extends Controller
                 function (ElementEvent $event) {
                     // We need to allow for our cockpit plugin Elements here.
                     // Check if class exists
-                    if (class_exists(Cockpit::class)) {
+
+
+
+                   if (class_exists(Cockpit::class)) {
                         // This allowedTypes thing is wonderful! ;)
                         $allowedTypes = [Entry::class, Job::class, Department::class, MatchFieldEntry::class, Contact::class];
 
@@ -67,8 +70,6 @@ class DocumentsController extends Controller
                             return;
                         }
                     }
-
-
 
                     $element = $event->element;
 
@@ -157,30 +158,51 @@ class DocumentsController extends Controller
 
     protected function handleSave(Entry|Job|MatchFieldEntry|Department|Contact $entry): void
     {
-        $sectionHande = $entry->section->handle ?? null;
+        $sectionHandle = $entry->section->handle ?? null;
         $type = $entry->type->handle ?? null;
         $collection = null;
-        $resolver = null;
 
-        if ($sectionHande) {
+        /* This is very limited - as we always need to have a section named the same, this should go to settings, and mappable!) */
+        if ($sectionHandle) {
             $section = '';
 
             if ($type) {
-                $section = $sectionHande . '.' . $type;
+                $section = $sectionHandle . '.' . $type;
             }
 
             $collection = CollectionHelper::getCollectionBySection($section);
 
-            // get the generic type if specific doesn't exist
+            // Get the generic type if specific doesn't exist
             if (is_null($collection)) {
-                $section = $sectionHande . '.all';
+                $section = $sectionHandle . '.all';
                 $collection = CollectionHelper::getCollectionBySection($section);
             }
 
-            //create collection if it doesn't exist
+            // Create collection if it doesn't exist
             if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
                 $collection = CollectionHelper::getCollectionBySection($section);
+            }
+        }
+
+        // Temporary until full Typesense Rework to support Cockpit.
+        if($entry instanceof Job) {
+            $collection = CollectionHelper::getCollectionBySection('jobs.all');
+
+            // Create collection if it doesn't exist
+            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+                Typesense::$plugin->getCollections()->saveCollections();
+                $collection = CollectionHelper::getCollectionBySection('jobs.all');
+            }
+        }
+
+        if($entry instanceof Department) {
+            $collection = CollectionHelper::getCollectionBySection('offices');
+
+            // Create collection if it doesn't exist
+            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+                Typesense::$plugin->getCollections()->saveCollections();
+                $collection = CollectionHelper::getCollectionBySection('offices');
             }
         }
 

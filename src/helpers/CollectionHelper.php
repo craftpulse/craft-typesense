@@ -27,6 +27,7 @@ class CollectionHelper
         return null;
     }
 
+    // This can potentially create so many issues! :scream:
     public static function getCollectionBySection(string $name): ?TypesenseCollectionIndex
     {
         $indexes = Typesense::$plugin->getSettings()->collections;
