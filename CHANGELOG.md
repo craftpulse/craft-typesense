@@ -4,6 +4,10 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.8.3 - 2026-03-27
+### Fixed
+- Fixed site-aware collection resolution in `DocumentsController` for multi-instance Cockpit elements. Previously, `handleSave` always resolved to the first matching collection (Go4Jobs), causing FiftyFivePlus jobs and departments to never sync to their correct Typesense index on element save.
+
 ## 5.8.2 - 2025-12-08
 ### Fixed
 - Fixed an where the custom elements wouldn't sync - this is cockpit specific, temporary solution until full rework is labelled "done".
