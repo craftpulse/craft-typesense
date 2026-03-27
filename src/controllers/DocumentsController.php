@@ -185,24 +185,28 @@ class DocumentsController extends Controller
             }
         }
 
-        // Temporary until full Typesense Rework to support Cockpit.
-        if($entry instanceof Job) {
-            $collection = CollectionHelper::getCollectionBySection('jobs.all');
+        // Resolve the correct Typesense collection based on the element's site.
+        if ($entry instanceof Job) {
+            $siteHandle = $entry->getSite()->handle;
+            $sectionKey = $siteHandle === 'fiftyfiveplus' ? 'jobs.ffp' : 'jobs.all';
+            $collection = CollectionHelper::getCollectionBySection($sectionKey);
 
             // Create collection if it doesn't exist
             if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection('jobs.all');
+                $collection = CollectionHelper::getCollectionBySection($sectionKey);
             }
         }
 
-        if($entry instanceof Department) {
-            $collection = CollectionHelper::getCollectionBySection('offices');
+        if ($entry instanceof Department) {
+            $siteHandle = $entry->getSite()->handle;
+            $sectionKey = $siteHandle === 'fiftyfiveplus' ? 'offices.ffp' : 'offices.all';
+            $collection = CollectionHelper::getCollectionBySection($sectionKey);
 
             // Create collection if it doesn't exist
             if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection('offices');
+                $collection = CollectionHelper::getCollectionBySection($sectionKey);
             }
         }
 
