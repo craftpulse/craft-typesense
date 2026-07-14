@@ -36,6 +36,9 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\web\View;
 use craftpulse\typesense\base\PluginTrait;
+use craftpulse\typesense\controllers\AnalyticsController;
+use craftpulse\typesense\controllers\CollectionsController;
+use craftpulse\typesense\controllers\CurationController;
 
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\elementactions\Reindex;
@@ -68,9 +71,25 @@ use yii\queue\ExecEvent;
  * @property  Client $client
  *
  * @property  Settings $settings
+ * @property-read bool $isPro
  */
 class Typesense extends Plugin
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The Free edition handle: the complete search engine, no
+     * control-panel authoring.
+     */
+    public const EDITION_FREE = 'free';
+
+    /**
+     * @var string The Pro edition handle: adds the control-panel authoring layer
+     * (collections cockpit, mapping UI, curation, analytics, keys).
+     */
+    public const EDITION_PRO = 'pro';
+
     // Static Properties
     // =========================================================================
 
@@ -121,8 +140,35 @@ class Typesense extends Plugin
 
     use PluginTrait;
 
+    // Static Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     * @return array<int, string>
+     */
+    public static function editions(): array
+    {
+        return [
+            self::EDITION_FREE,
+            self::EDITION_PRO,
+        ];
+    }
+
     // Public Methods
     // =========================================================================
+
+    /**
+     * Whether the active edition is Pro, gating the control-panel authoring
+     * layer. Accessible as the `isPro` magic property.
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function getIsPro(): bool
+    {
+        return $this->is(self::EDITION_PRO);
+    }
 
     /**
      * Set our $plugin static property to this class so that it can be accessed via
@@ -203,9 +249,30 @@ class Typesense extends Plugin
         $subNavs = [];
         $currentUser = Craft::$app->getUser();
 
-        // Only show sub navigation the user has permission to view. The
-        // collections overview and synonyms now live in the Typesense utility
-        // (Free) and, later, the Pro control-panel managers.
+        // Pro control-panel screens surface only in the Pro edition (hide, never
+        // badge), and then only for users holding the matching permission.
+        if ($this->getIsPro()) {
+            if ($currentUser->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)) {
+                $subNavs['collections'] = [
+                    'label' => Craft::t('typesense', 'Collections'),
+                    'url' => 'typesense/collections',
+                ];
+            }
+
+            if ($currentUser->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
+                $subNavs['curation'] = [
+                    'label' => Craft::t('typesense', 'Curation'),
+                    'url' => 'typesense/curation',
+                ];
+            }
+
+            if ($currentUser->checkPermission(AnalyticsController::PERMISSION_VIEW_ANALYTICS)) {
+                $subNavs['analytics'] = [
+                    'label' => Craft::t('typesense', 'Analytics'),
+                    'url' => 'typesense/analytics',
+                ];
+            }
+        }
 
         // Gate on the permission, not on allowAdminChanges: the screen stays
         // reachable in read-only mode (it renders read-only there).
@@ -343,10 +410,19 @@ class Typesense extends Plugin
      */
     protected function customAdminCpRoutes(): array
     {
-        return [
+        $routes = [
             'typesense' => 'typesense/settings/edit',
             'typesense/settings' => 'typesense/settings/edit',
         ];
+
+        // Pro routes are registered only in the Pro edition (hide, never badge).
+        if ($this->getIsPro()) {
+            $routes['typesense/collections'] = 'typesense/collections/index';
+            $routes['typesense/curation'] = 'typesense/curation/index';
+            $routes['typesense/analytics'] = 'typesense/analytics/index';
+        }
+
+        return $routes;
     }
 
     /**
@@ -356,11 +432,26 @@ class Typesense extends Plugin
      */
     protected function customAdminCpPermissions(): array
     {
-        return [
+        $permissions = [
             SettingsController::PERMISSION_MANAGE_SETTINGS => [
                 'label' => Craft::t('typesense', 'Manage plugin settings'),
             ],
         ];
+
+        // Pro permissions are registered only in the Pro edition (hide, never badge).
+        if ($this->getIsPro()) {
+            $permissions[CollectionsController::PERMISSION_MANAGE_COLLECTIONS] = [
+                'label' => Craft::t('typesense', 'Manage collections and mappings'),
+            ];
+            $permissions[CurationController::PERMISSION_MANAGE_CURATION] = [
+                'label' => Craft::t('typesense', 'Manage curation'),
+            ];
+            $permissions[AnalyticsController::PERMISSION_VIEW_ANALYTICS] = [
+                'label' => Craft::t('typesense', 'View analytics'),
+            ];
+        }
+
+        return $permissions;
     }
 
     /**
