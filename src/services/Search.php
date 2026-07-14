@@ -31,8 +31,60 @@ use Throwable;
  */
 class Search extends Component
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var int The largest page size the front-end search endpoint will honour.
+     */
+    public const MAX_PER_PAGE = 100;
+
     // Public Methods
     // =========================================================================
+
+    /**
+     * Runs a front-end search from the loosely-typed options a request (or a
+     * template) supplies: a query string, selected facet values, a facet field
+     * to aggregate, a sort clause, a page, and a page size. Every value is
+     * validated and bounded here, so callers never build Typesense params by
+     * hand and untrusted input cannot widen the query. Fail-soft.
+     *
+     * @param string $handle
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function frontendSearch(string $handle, array $options): array
+    {
+        $q = trim((string)($options['q'] ?? ''));
+        $params = [
+            'q' => $q === '' ? '*' : mb_substr($q, 0, 256),
+            'page' => max(1, (int)($options['page'] ?? 1)),
+            'per_page' => max(1, min(self::MAX_PER_PAGE, (int)($options['perPage'] ?? 20))),
+        ];
+
+        if (!empty($options['queryBy'])) {
+            $params['query_by'] = (string)$options['queryBy'];
+        }
+
+        if (!empty($options['sort'])) {
+            $params['sort_by'] = (string)$options['sort'];
+        }
+
+        $facetField = isset($options['facetBy']) ? (string)$options['facetBy'] : '';
+
+        if ($facetField !== '') {
+            $params['facet_by'] = $facetField;
+        }
+
+        $filters = $this->_facetFilters($facetField, $options['facets'] ?? []);
+
+        if ($filters !== '') {
+            $params['filter_by'] = $filters;
+        }
+
+        return $this->search($handle, $params);
+    }
 
     /**
      * Runs a search against a collection, enriched with the collection's preset,
@@ -140,5 +192,36 @@ class Search extends Component
     private function _siteId(): int
     {
         return (int)Craft::$app->getSites()->getCurrentSite()->id;
+    }
+
+    /**
+     * Builds a Typesense `filter_by` clause from a facet field and the selected
+     * values, as `field:=[v1,v2]`. Non-scalar values are dropped and each value
+     * is quoted, so selections coming straight from the request are safe.
+     *
+     * @param string $field
+     * @param mixed $values
+     * @return string
+     * @author CraftPulse
+     */
+    private function _facetFilters(string $field, mixed $values): string
+    {
+        if ($field === '' || !is_array($values)) {
+            return '';
+        }
+
+        $clean = [];
+
+        foreach ($values as $value) {
+            if (is_scalar($value) && (string)$value !== '') {
+                $clean[] = '`' . str_replace('`', '', (string)$value) . '`';
+            }
+        }
+
+        if ($clean === []) {
+            return '';
+        }
+
+        return $field . ':=[' . implode(',', $clean) . ']';
     }
 }

@@ -1,0 +1,53 @@
+{# =========================================================================
+   Typesense front-end fragment: facet sidebar
+   =========================================================================
+   Rendered on the initial page load and re-rendered by the fragment endpoint
+   so the counts track the current query. Keeps its `ts-facets` id for the
+   Datastar morph.
+
+   Progressive enhancement: each checkbox submits as `facets[]` with no JS, and
+   carries a `data-bind:facets` signal plus a `data-on:change` that resets the
+   page and refetches when Datastar is present.
+
+   Override by creating templates/_typesense/facets.twig in your project.
+
+   Variables:
+   - result:   the Typesense response (reads result.facet_counts)
+   - options:  the normalised request (options.facets holds the selection)
+   - endpoint: the fragment endpoint URL for the Datastar refetch
+   ========================================================================= #}
+{%- set facetCounts = result.facet_counts ?? [] -%}
+{%- set selected = options.facets ?? [] -%}
+
+<div id="ts-facets" class="ts-facets">
+    {%- if facetCounts is empty -%}
+        <p class="ts-facets__empty text-sm text-gray-400">{{ 'No facets.'|t('typesense') }}</p>
+    {%- else -%}
+        {%- for facet in facetCounts -%}
+            <fieldset class="ts-facets__group mb-4">
+                <legend class="ts-facets__legend text-sm font-semibold text-gray-700 mb-2">{{ facet.field_name }}</legend>
+                <ul class="ts-facets__list space-y-1">
+                    {%- for count in facet.counts ?? [] -%}
+                        {%- set value = count.value -%}
+                        {%- set id = 'ts-facet-' ~ facet.field_name ~ '-' ~ loop.index -%}
+                        <li class="ts-facets__item">
+                            <label class="ts-facets__label flex items-center gap-2 text-sm text-gray-700" for="{{ id }}">
+                                <input
+                                    type="checkbox"
+                                    id="{{ id }}"
+                                    name="facets[]"
+                                    value="{{ value }}"
+                                    {{ value in selected ? 'checked' }}
+                                    data-bind:facets
+                                    data-on:change="$page = 1; @get('{{ endpoint }}')"
+                                >
+                                <span>{{ value }}</span>
+                                <span class="ts-facets__count text-gray-400">({{ count.count }})</span>
+                            </label>
+                        </li>
+                    {%- endfor -%}
+                </ul>
+            </fieldset>
+        {%- endfor -%}
+    {%- endif -%}
+</div>

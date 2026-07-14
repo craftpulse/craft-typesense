@@ -1,0 +1,28 @@
+{# =========================================================================
+   Typesense example templates - full search page
+   =========================================================================
+   The complete search widget in one builder call: a Datastar-signalled form
+   with a search-as-you-type input, a facet sidebar, results, and pagination.
+   It is server-rendered on first load (so it works with no JavaScript and is
+   fully indexable) and morph-updated by the fragment endpoint thereafter.
+
+   Wired to the playground's `heroes` collection out of the box. Point
+   `collection`, `queryBy`, and `facetBy` at your own collection to reuse it.
+   The facet here is `slug` only because that is what the demo collection marks
+   as a facet; in a real project you would facet a category or brand field.
+   ========================================================================= #}
+{% extends 'typesense/_private/layouts/index' %}
+
+{% set title = 'Search'|t('typesense') %}
+
+{% block main %}
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Search'|t('typesense') }}</h1>
+
+    {{ craft.typesense.searchForm({
+        collection: 'heroes',
+        queryBy: 'title,slug',
+        facetBy: 'slug',
+        perPage: 10,
+        placeholder: 'Search heroes...'|t('typesense'),
+    }).render() }}
+{% endblock %}

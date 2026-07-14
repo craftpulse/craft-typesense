@@ -1,0 +1,38 @@
+{# =========================================================================
+   Typesense front-end fragment: results list
+   =========================================================================
+   Rendered both on the initial (no-JS) page load and by the fragment endpoint
+   for the Datastar morph. The wrapping element keeps its `ts-results` id so
+   Datastar patches it in place.
+
+   Override by creating templates/_typesense/results.twig in your project.
+
+   Variables:
+   - result:  the Typesense response (fail-soft: may be empty)
+   - options: the normalised request (q, facets, page, perPage, ...)
+   ========================================================================= #}
+{%- set hits = result.hits ?? [] -%}
+{%- set found = result.found ?? 0 -%}
+
+<div id="ts-results" class="ts-results" aria-live="polite">
+    <p class="ts-results__count text-sm text-gray-500 mb-4">
+        {{ 'Found {count} results'|t('typesense', { count: found }) }}
+    </p>
+
+    {%- if hits is empty -%}
+        <p class="ts-results__empty rounded border border-gray-200 bg-white px-4 py-6 text-gray-600">
+            {{ 'No results.'|t('typesense') }}
+        </p>
+    {%- else -%}
+        <ul class="ts-results__list space-y-3">
+            {%- for hit in hits -%}
+                {%- set doc = hit.document ?? {} -%}
+                <li class="ts-results__item rounded border border-gray-200 bg-white px-4 py-3">
+                    <h3 class="ts-results__title font-semibold text-gray-900">
+                        {{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}
+                    </h3>
+                </li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+</div>

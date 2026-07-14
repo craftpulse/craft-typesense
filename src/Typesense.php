@@ -22,6 +22,7 @@ use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
 use craft\events\RegisterElementActionsEvent;
 use craft\events\RegisterGqlQueriesEvent;
+use craft\events\RegisterTemplateRootsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Cp;
@@ -33,6 +34,7 @@ use craft\services\UserPermissions;
 use craft\services\Utilities;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
+use craft\web\View;
 use craftpulse\typesense\base\PluginTrait;
 
 use craftpulse\typesense\controllers\SettingsController;
@@ -143,6 +145,7 @@ class Typesense extends Plugin
         $this->getSync()->registerEventListeners();
         $this->_registerSyncFailureAlerts();
         $this->_registerVariable();
+        $this->_registerSiteTemplateRoots();
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -404,5 +407,25 @@ class Typesense extends Plugin
             $variable = $event->sender;
             $variable->set('typesense', TypesenseVariable::class);
         });
+    }
+
+    /**
+     * Registers the `_typesense` site template root, which holds the front-end
+     * search fragment partials the fragment endpoint renders. A project can
+     * override any of them by placing a same-named template under
+     * `templates/_typesense/`.
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    private function _registerSiteTemplateRoots(): void
+    {
+        Event::on(
+            View::class,
+            View::EVENT_REGISTER_SITE_TEMPLATE_ROOTS,
+            function(RegisterTemplateRootsEvent $event) {
+                $event->roots['_typesense'] = $this->getBasePath() . DIRECTORY_SEPARATOR . 'templates' . DIRECTORY_SEPARATOR . 'frontend';
+            }
+        );
     }
 }

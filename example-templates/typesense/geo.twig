@@ -1,0 +1,54 @@
+{# =========================================================================
+   Typesense example templates - geo / radius search
+   =========================================================================
+   Demonstrates a radius search: a latitude, a longitude, and a distance build
+   a Typesense geo `filter_by` clause of the form
+   `location:(lat, lng, distance km)`.
+
+   The demo `heroes` collection has no geopoint field, so results stay empty
+   until you point this at a collection with a `geopoint` field (see
+   Field::geopoint() in the fluent config). The constructed filter is shown so
+   the mechanism is clear. Server-rendered, no JavaScript required.
+   ========================================================================= #}
+{% extends 'typesense/_private/layouts/index' %}
+
+{% set title = 'Geo search'|t('typesense') %}
+
+{% set lat = craft.app.request.getQueryParam('lat') %}
+{% set lng = craft.app.request.getQueryParam('lng') %}
+{% set radius = craft.app.request.getQueryParam('radius') ?: 10 %}
+{% set geoField = 'location' %}
+
+{% set filterBy = null %}
+{% if lat and lng %}
+    {% set filterBy = geoField ~ ':(' ~ lat ~ ', ' ~ lng ~ ', ' ~ radius ~ ' km)' %}
+{% endif %}
+
+{% block main %}
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Geo search'|t('typesense') }}</h1>
+
+    <form method="get" action="" class="grid grid-cols-3 gap-4 max-w-xl mb-6">
+        <label class="block text-sm">{{ 'Latitude'|t('typesense') }}
+            <input type="text" name="lat" value="{{ lat }}" class="mt-1 w-full rounded border border-gray-300 px-3 py-2" inputmode="decimal">
+        </label>
+        <label class="block text-sm">{{ 'Longitude'|t('typesense') }}
+            <input type="text" name="lng" value="{{ lng }}" class="mt-1 w-full rounded border border-gray-300 px-3 py-2" inputmode="decimal">
+        </label>
+        <label class="block text-sm">{{ 'Radius (km)'|t('typesense') }}
+            <input type="number" name="radius" value="{{ radius }}" class="mt-1 w-full rounded border border-gray-300 px-3 py-2" min="1">
+        </label>
+        <div class="col-span-3">
+            <button type="submit" class="rounded bg-gray-900 px-4 py-2 text-white">{{ 'Search nearby'|t('typesense') }}</button>
+        </div>
+    </form>
+
+    {% if filterBy %}
+        <p class="mb-4 text-sm text-gray-500">
+            {{ 'Filter'|t('typesense') }}: <code>{{ filterBy }}</code>
+        </p>
+        {% set result = craft.typesense.search('heroes', { q: '*', query_by: 'title', filter_by: filterBy }) %}
+        <p class="text-sm text-gray-500">{{ 'Found {count} results'|t('typesense', { count: result.found ?? 0 }) }}</p>
+    {% else %}
+        <p class="text-gray-600">{{ 'Enter a latitude and longitude to search within a radius.'|t('typesense') }}</p>
+    {% endif %}
+{% endblock %}

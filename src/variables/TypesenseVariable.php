@@ -10,6 +10,9 @@
 
 namespace craftpulse\typesense\variables;
 
+use craft\helpers\UrlHelper;
+use craftpulse\typesense\twig\tags\RegionTag;
+use craftpulse\typesense\twig\tags\SearchFormTag;
 use craftpulse\typesense\Typesense;
 
 /**
@@ -30,6 +33,37 @@ class TypesenseVariable
     // =========================================================================
 
     /**
+     * Returns the facet-sidebar region builder, for composing a custom search
+     * layout. Wrap it in your own `<form data-signals>` alongside a results
+     * region.
+     *
+     * {{ craft.typesense.facetList({ collection: 'products', facetBy: 'brand' }).render() }}
+     *
+     * @param array<string, mixed> $config
+     * @return RegionTag
+     * @author CraftPulse
+     */
+    public function facetList(array $config = []): RegionTag
+    {
+        return (new RegionTag($config))->region('facets');
+    }
+
+    /**
+     * Runs a fail-soft front-end search from loosely-typed options (query,
+     * selected facets, facet field, sort, page, page size), bounding every
+     * value server-side. Handy for a fully custom page.
+     *
+     * @param string $handle
+     * @param array<string, mixed> $options
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function frontendSearch(string $handle, array $options = []): array
+    {
+        return Typesense::$plugin->getSearch()->frontendSearch($handle, $options);
+    }
+
+    /**
      * Runs a fail-soft multi-search (union) across several collections.
      *
      * @param array<int, array<string, mixed>> $searches
@@ -40,6 +74,21 @@ class TypesenseVariable
     public function multiSearch(array $searches, array $common = []): array
     {
         return Typesense::$plugin->getSearch()->multiSearch($searches, $common);
+    }
+
+    /**
+     * Returns the results-and-pagination region builder, for composing a custom
+     * search layout. Wrap it in your own `<form data-signals>`.
+     *
+     * {{ craft.typesense.results({ collection: 'products' }).render() }}
+     *
+     * @param array<string, mixed> $config
+     * @return RegionTag
+     * @author CraftPulse
+     */
+    public function results(array $config = []): RegionTag
+    {
+        return (new RegionTag($config))->region('results');
     }
 
     /**
@@ -71,5 +120,35 @@ class TypesenseVariable
     public function search(string $handle, array $params = []): array
     {
         return Typesense::$plugin->getSearch()->search($handle, $params);
+    }
+
+    /**
+     * Returns the fragment endpoint URL for hand-rolled Datastar forms. Using
+     * this instead of writing the action path as a literal keeps the example
+     * templates safe to install under a renamed folder.
+     *
+     * @return string
+     * @author CraftPulse
+     */
+    public function searchEndpoint(): string
+    {
+        return UrlHelper::actionUrl('typesense/search/results');
+    }
+
+    /**
+     * Returns the complete, self-contained search widget builder: a Datastar
+     * signalled form wrapping the input, optional facet sidebar, results, and
+     * pagination, server-rendered on first load and morph-updated thereafter.
+     * Degrades to a plain GET form with no JavaScript.
+     *
+     * {{ craft.typesense.searchForm({ collection: 'products', facetBy: 'brand' }).render() }}
+     *
+     * @param array<string, mixed> $config
+     * @return SearchFormTag
+     * @author CraftPulse
+     */
+    public function searchForm(array $config = []): SearchFormTag
+    {
+        return new SearchFormTag($config);
     }
 }

@@ -1,0 +1,44 @@
+{# =========================================================================
+   Typesense example templates - header autocomplete
+   =========================================================================
+   A compact search box that reveals a live results dropdown as you type, the
+   header-search pattern. Built from the standalone results region builder
+   inside a hand-rolled Datastar form, to show composing the pieces yourself
+   rather than using the all-in-one searchForm().
+
+   Progressive enhancement: with no JavaScript the box is a plain GET form that
+   lands on the full search page.
+   ========================================================================= #}
+{% extends 'typesense/_private/layouts/index' %}
+
+{% set title = 'Autocomplete'|t('typesense') %}
+
+{% block main %}
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Autocomplete'|t('typesense') }}</h1>
+
+    <form
+        method="get"
+        action="{{ url('typesense/search') }}"
+        role="search"
+        class="relative max-w-md"
+        data-signals='{"q":"","page":1,"facets":[]}'
+    >
+        <label class="sr-only" for="ac-input">{{ 'Search'|t('typesense') }}</label>
+        <input
+            type="search"
+            id="ac-input"
+            name="q"
+            autocomplete="off"
+            placeholder="{{ 'Start typing...'|t('typesense') }}"
+            class="w-full rounded border border-gray-300 px-3 py-2"
+            data-bind:q
+            data-on:input__debounce.250ms="@get('{{ craft.typesense.searchEndpoint() }}')"
+        >
+        <input type="hidden" name="collection" value="heroes">
+
+        {# Only reveal the dropdown once the shopper has typed something. #}
+        <div class="absolute z-10 mt-1 w-full rounded border border-gray-200 bg-white shadow" data-show="$q.length > 0">
+            {{ craft.typesense.results({ collection: 'heroes', queryBy: 'title,slug', perPage: 6 }).render() }}
+        </div>
+    </form>
+{% endblock %}

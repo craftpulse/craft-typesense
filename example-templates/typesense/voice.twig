@@ -1,0 +1,75 @@
+{# =========================================================================
+   Typesense example templates - voice input
+   =========================================================================
+   A search box with a microphone button. It uses the browser's Web Speech API
+   to transcribe speech into the query, then runs the normal text search, so it
+   works against any collection with no server-side audio handling. (Typesense
+   also has a server-side `voice_query` audio parameter, which the search layer
+   forwards as-is; that path needs a voice model and is a Pro/experimental
+   Typesense feature.)
+
+   Progressive enhancement: the box is a normal search-as-you-type form. Where
+   the Web Speech API is unavailable the mic button hides itself and typing
+   still works; with no JavaScript at all it submits a plain GET to the search
+   page.
+   ========================================================================= #}
+{% extends 'typesense/_private/layouts/index' %}
+
+{% set title = 'Voice search'|t('typesense') %}
+{% set endpoint = craft.typesense.searchEndpoint() %}
+
+{% block main %}
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Voice search'|t('typesense') }}</h1>
+
+    <form
+        method="get"
+        action="{{ url('typesense/search') }}"
+        role="search"
+        class="max-w-md"
+        data-signals='{"q":"","page":1,"facets":[]}'
+    >
+        <div class="flex gap-2">
+            <label class="sr-only" for="voice-input">{{ 'Search'|t('typesense') }}</label>
+            <input
+                type="search"
+                id="voice-input"
+                name="q"
+                autocomplete="off"
+                placeholder="{{ 'Speak or type...'|t('typesense') }}"
+                class="w-full rounded border border-gray-300 px-3 py-2"
+                data-bind:q
+                data-on:input__debounce.300ms="@get('{{ endpoint }}')"
+            >
+            <input type="hidden" name="collection" value="heroes">
+            <button type="button" id="voice-mic" hidden class="rounded border border-gray-300 px-3 py-2" aria-label="{{ 'Search by voice'|t('typesense') }}">
+                {{ 'Mic'|t('typesense') }}
+            </button>
+        </div>
+
+        <div class="mt-4">
+            {{ craft.typesense.results({ collection: 'heroes', queryBy: 'title,slug', perPage: 10 }).render() }}
+        </div>
+    </form>
+
+    <script>
+        (function () {
+            var Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+            var mic = document.getElementById('voice-mic');
+            var input = document.getElementById('voice-input');
+            if (!Speech || !mic || !input) {
+                return;
+            }
+            mic.hidden = false;
+            var recognition = new Speech();
+            recognition.lang = document.documentElement.lang || 'en';
+            recognition.addEventListener('result', function (event) {
+                input.value = event.results[0][0].transcript;
+                // Let Datastar's data-on:input pick up the new value.
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            });
+            mic.addEventListener('click', function () {
+                recognition.start();
+            });
+        })();
+    </script>
+{% endblock %}

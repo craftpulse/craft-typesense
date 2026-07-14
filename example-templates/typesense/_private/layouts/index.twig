@@ -1,0 +1,70 @@
+{# =========================================================================
+   Typesense example templates - top-level layout
+   =========================================================================
+   The shared shell every demo page extends: a complete HTML document with a
+   skip link, a small header nav, flash notices, and the two CDN scripts the
+   demos need.
+
+   Styling is Tailwind from its Play CDN, the same throwaway-demo approach Craft
+   Commerce's example templates take: utility classes on the markup, one script
+   below. Interactivity is Datastar (pinned to v1.0.2), a ~10kb hypermedia
+   library that drives requests from data-* attributes and morphs the HTML
+   fragments the plugin's search endpoint returns. Neither is a build step;
+   swap both for your own pipeline when you integrate.
+
+   The bundle assumes it lives at templates/typesense/. Every path and URL in it
+   starts with typesense/. Renaming the folder on install rewrites those.
+
+   Pages can push extra markup into <head> with:
+     {% set extraHead %}<meta name="robots" content="noindex">{% endset %}
+
+   Progressive enhancement: every demo works with JavaScript disabled. The
+   search form submits a plain GET and the page re-renders server-side; Datastar
+   only layers search-as-you-type, live facets, and morphing on top.
+   ========================================================================= #}
+
+{%- set flashNotice = craft.app.session.getFlash('notice') -%}
+{%- set flashError = craft.app.session.getFlash('error') -%}
+
+<!DOCTYPE html>
+<html lang="{{ craft.app.language }}">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ (title ?? 'Search'|t('typesense')) ~ ' - ' ~ siteName }}</title>
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.2/bundles/datastar.js"></script>
+
+    {% if extraHead is defined %}
+        {{ extraHead }}
+    {% endif %}
+</head>
+<body class="min-h-screen flex flex-col bg-gray-50 text-gray-800 antialiased">
+    <a class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:bg-white focus:px-3 focus:py-2 focus:rounded focus:shadow" href="#main-content">
+        {{ 'Skip to content'|t('typesense') }}
+    </a>
+
+    {{ include('typesense/_private/layouts/includes/header') }}
+
+    <main class="flex-1 w-full max-w-5xl mx-auto px-6 py-10" id="main-content" tabindex="-1">
+        {% if flashError %}
+            <div class="mb-6 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert">
+                {{ flashError }}
+            </div>
+        {% endif %}
+
+        {% if flashNotice %}
+            <div class="mb-6 rounded border border-blue-300 bg-blue-50 px-4 py-3 text-blue-800" role="status">
+                {{ flashNotice }}
+            </div>
+        {% endif %}
+
+        {% block main %}{% endblock %}
+    </main>
+
+    <footer class="w-full max-w-5xl mx-auto px-6 py-6 text-sm text-gray-400">
+        {{ 'Powered by Typesense'|t('typesense') }}
+    </footer>
+</body>
+</html>

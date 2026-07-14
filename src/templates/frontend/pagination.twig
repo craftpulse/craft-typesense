@@ -1,0 +1,49 @@
+{# =========================================================================
+   Typesense front-end fragment: pagination
+   =========================================================================
+   Rendered on the initial page load and by the fragment endpoint. Keeps its
+   `ts-pagination` id for the Datastar morph.
+
+   Progressive enhancement: the prev/next controls are real submit buttons that
+   carry `page` with no JS, and set the `$page` signal and refetch when Datastar
+   is present.
+
+   Override by creating templates/_typesense/pagination.twig in your project.
+
+   Variables:
+   - result:   the Typesense response (reads result.found)
+   - options:  the normalised request (options.page, options.perPage)
+   - endpoint: the fragment endpoint URL for the Datastar refetch
+   ========================================================================= #}
+{%- set found = result.found ?? 0 -%}
+{%- set perPage = options.perPage ?? 20 -%}
+{%- set page = options.page ?? 1 -%}
+{%- set totalPages = perPage > 0 ? max(1, (found / perPage)|round(0, 'ceil')) : 1 -%}
+
+<nav id="ts-pagination" class="ts-pagination mt-6 flex items-center justify-between" aria-label="{{ 'Search pagination'|t('typesense') }}">
+    <button
+        type="submit"
+        name="page"
+        value="{{ page - 1 }}"
+        class="ts-pagination__prev rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
+        {{ page <= 1 ? 'disabled' }}
+        data-on:click__prevent="$page = {{ page - 1 }}; @get('{{ endpoint }}')"
+    >
+        {{ 'Previous'|t('typesense') }}
+    </button>
+
+    <span class="ts-pagination__status text-sm text-gray-500">
+        {{ 'Page {page} of {total}'|t('typesense', { page: page, total: totalPages }) }}
+    </span>
+
+    <button
+        type="submit"
+        name="page"
+        value="{{ page + 1 }}"
+        class="ts-pagination__next rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
+        {{ page >= totalPages ? 'disabled' }}
+        data-on:click__prevent="$page = {{ page + 1 }}; @get('{{ endpoint }}')"
+    >
+        {{ 'Next'|t('typesense') }}
+    </button>
+</nav>
