@@ -130,6 +130,21 @@ class Collection
      */
     private array $_raw = [];
 
+    /**
+     * @var array<int, array<string, mixed>> Config-seeded synonym definitions.
+     */
+    private array $_synonymDefinitions = [];
+
+    /**
+     * @var array<int, array<string, mixed>> Config-seeded curation rules.
+     */
+    private array $_curationRules = [];
+
+    /**
+     * @var array<int, string> Config-seeded stopwords.
+     */
+    private array $_stopwords = [];
+
     // Public Methods
     // =========================================================================
 
@@ -387,6 +402,50 @@ class Collection
     }
 
     /**
+     * Config-seeded synonym definitions. Each entry: id, synonyms[], optional
+     * root (one-way), locale.
+     *
+     * @param array<int, array<string, mixed>> $definitions
+     * @return self
+     * @author CraftPulse
+     */
+    public function synonymDefinitions(array $definitions): self
+    {
+        $this->_synonymDefinitions = array_values($definitions);
+
+        return $this;
+    }
+
+    /**
+     * Config-seeded curation rules. Each entry: id, rule (query/match/filter_by),
+     * includes, excludes, filter_by, sort_by, effective_from_ts, effective_to_ts.
+     *
+     * @param array<int, array<string, mixed>> $rules
+     * @return self
+     * @author CraftPulse
+     */
+    public function curationRules(array $rules): self
+    {
+        $this->_curationRules = array_values($rules);
+
+        return $this;
+    }
+
+    /**
+     * Config-seeded stopwords for the collection's search path.
+     *
+     * @param array<int, string> $stopwords
+     * @return self
+     * @author CraftPulse
+     */
+    public function stopwords(array $stopwords): self
+    {
+        $this->_stopwords = array_values($stopwords);
+
+        return $this;
+    }
+
+    /**
      * Attaches registered computed fields by name.
      *
      * @param string ...$names
@@ -542,6 +601,33 @@ class Collection
     public function getMapping(): array
     {
         return $this->_mapping;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    public function getSynonymDefinitions(): array
+    {
+        return $this->_synonymDefinitions;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    public function getCurationRules(): array
+    {
+        return $this->_curationRules;
+    }
+
+    /**
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public function getStopwords(): array
+    {
+        return $this->_stopwords;
     }
 
     // Emission + validation

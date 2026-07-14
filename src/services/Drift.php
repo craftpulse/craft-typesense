@@ -14,6 +14,7 @@ use Craft;
 use craft\base\Component;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\enums\MultisiteStrategy;
+use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use Throwable;
 use Typesense\Exceptions\ObjectNotFound;
@@ -21,11 +22,13 @@ use Typesense\Exceptions\ObjectNotFound;
 /**
  * Drift detection: compares the live Typesense state against the declared config.
  *
- * In this release the schema comparator is complete (declared fields vs the live
- * collection's fields, per resolved target), detecting both a manual server-side
- * edit (an extra live field) and a config change (a declared field the server
- * lacks). The synonyms, curation, and presets aspects are stubbed here and deepen
- * when those services land. Powers `typesense/config/diff` and the CP drift panel.
+ * The schema comparator is complete (declared fields vs the live collection's
+ * fields, per resolved target), detecting both a manual server-side edit (an
+ * extra live field) and a config change (a declared field the server lacks). The
+ * synonyms and curation comparators run for config-managed collections (config is
+ * the source of truth, so a live rule the config lacks is drift), and the preset
+ * comparator compares the declared preset value against the live one. Powers
+ * `typesense/config/diff` and the CP drift panel.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -68,6 +71,8 @@ class Drift extends Component
             foreach ($this->_targets($collection) as $siteId => $target) {
                 $findings[] = $this->_schemaFinding($collection, $siteId, $target);
             }
+
+            $findings = array_merge($findings, $this->_resourceFindings($collection));
         }
 
         return $findings;
@@ -192,5 +197,138 @@ class Drift extends Component
         }
 
         return $types;
+    }
+
+    /**
+     * Builds the synonyms, curation, and preset drift findings for a collection.
+     *
+     * @param Collection $collection
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    private function _resourceFindings(Collection $collection): array
+    {
+        $findings = [];
+        $synonyms = Typesense::$plugin->getSynonyms();
+        $curation = Typesense::$plugin->getCuration();
+
+        if ($synonyms->getManagedBy($collection) === Settings::MANAGED_BY_CONFIG) {
+            $findings[] = $this->_ruleFinding(
+                $collection,
+                'synonyms',
+                $this->_declaredIds($collection->getSynonymDefinitions(), $collection->getName()),
+                $this->_liveIds($synonyms->all($collection)),
+            );
+        }
+
+        if ($curation->getManagedBy($collection) === Settings::MANAGED_BY_CONFIG) {
+            $findings[] = $this->_ruleFinding(
+                $collection,
+                'curation',
+                $this->_declaredIds($collection->getCurationRules(), $collection->getName()),
+                $this->_liveIds($curation->all($collection)),
+            );
+        }
+
+        $presetFinding = $this->_presetFinding($collection);
+
+        if ($presetFinding !== null) {
+            $findings[] = $presetFinding;
+        }
+
+        return $findings;
+    }
+
+    /**
+     * Compares a declared set of rule ids against the live set (config is the
+     * source of truth: a live-only rule and a missing declared rule are both drift).
+     *
+     * @param Collection $collection
+     * @param string $aspect
+     * @param array<int, string> $declared
+     * @param array<int, string> $live
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    private function _ruleFinding(Collection $collection, string $aspect, array $declared, array $live): array
+    {
+        $missing = array_values(array_diff($declared, $live));
+        $extra = array_values(array_diff($live, $declared));
+        $drifted = $missing !== [] || $extra !== [];
+
+        return [
+            'collection' => $collection->getName(),
+            'target' => $collection->getName(),
+            'aspect' => $aspect,
+            'status' => $drifted ? self::STATUS_DRIFTED : self::STATUS_IN_SYNC,
+            'details' => ['missing' => $missing, 'extra' => $extra],
+        ];
+    }
+
+    /**
+     * Compares a collection's declared preset value against the live preset, or
+     * null when neither a declared nor a live preset exists.
+     *
+     * @param Collection $collection
+     * @return array<string, mixed>|null
+     * @author CraftPulse
+     */
+    private function _presetFinding(Collection $collection): ?array
+    {
+        $declared = $collection->getPreset();
+        $name = Typesense::$plugin->getPresets()->presetName($collection);
+        $stored = Typesense::$plugin->getClient()->request('GET', '/presets/' . $name);
+        $live = is_array($stored['value'] ?? null) ? $stored['value'] : null;
+
+        if ($declared === null && $live === null) {
+            return null;
+        }
+
+        return [
+            'collection' => $collection->getName(),
+            'target' => $name,
+            'aspect' => 'preset',
+            'status' => $declared === $live ? self::STATUS_IN_SYNC : self::STATUS_DRIFTED,
+            'details' => ['declared' => $declared, 'live' => $live],
+        ];
+    }
+
+    /**
+     * The rule ids a config declaration would seed (mirrors the seed id fallback).
+     *
+     * @param array<int, array<string, mixed>> $definitions
+     * @param string $name
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    private function _declaredIds(array $definitions, string $name): array
+    {
+        $ids = [];
+
+        foreach ($definitions as $index => $definition) {
+            $ids[] = (string)($definition['id'] ?? ($name . '-' . $index));
+        }
+
+        return $ids;
+    }
+
+    /**
+     * The rule ids present in a live rule list.
+     *
+     * @param array<int, array<string, mixed>> $rules
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    private function _liveIds(array $rules): array
+    {
+        $ids = [];
+
+        foreach ($rules as $rule) {
+            if (isset($rule['id'])) {
+                $ids[] = (string)$rule['id'];
+            }
+        }
+
+        return $ids;
     }
 }

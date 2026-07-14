@@ -103,6 +103,54 @@ class Client extends Component
     }
 
     /**
+     * Makes a raw HTTP request to the Typesense API, for endpoints the bundled SDK
+     * does not model (synonym_sets, curation_sets, presets, stopwords, stemming).
+     * Fail-soft: returns an empty array on error.
+     *
+     * @param string $method
+     * @param string $path
+     * @param array<string, mixed>|null $json
+     * @param string|null $body
+     * @param array<string, mixed> $query
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function request(string $method, string $path, ?array $json = null, ?string $body = null, array $query = []): array
+    {
+        $settings = $this->_settings();
+        $base = sprintf(
+            '%s://%s:%s',
+            (string)App::parseEnv($settings->protocol),
+            (string)App::parseEnv($settings->server),
+            (string)App::parseEnv($settings->port),
+        );
+
+        $options = ['headers' => ['X-TYPESENSE-API-KEY' => App::parseEnv($settings->apiKey)]];
+
+        if ($json !== null) {
+            $options['json'] = $json;
+        }
+
+        if ($body !== null) {
+            $options['body'] = $body;
+        }
+
+        if ($query !== []) {
+            $options['query'] = $query;
+        }
+
+        try {
+            $response = Craft::createGuzzleClient(['base_uri' => $base])->request($method, $path, $options);
+
+            return (array)json_decode((string)$response->getBody(), true);
+        } catch (Throwable $e) {
+            Craft::error("Typesense request failed ({$method} {$path}): {$e->getMessage()}", 'typesense');
+
+            return [];
+        }
+    }
+
+    /**
      * Returns the server health payload, fail-soft.
      *
      * @return array{ok: bool}

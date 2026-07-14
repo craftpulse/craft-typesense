@@ -37,7 +37,7 @@ class Install extends Migration
     /**
      * Creates the tables.
      */
-    public function createTables()
+    public function createTables(): void
     {
         // The vestigial typesense_collections table is intentionally NOT created
         // for fresh 5.9.0 installs (it was never read or written). Existing
@@ -110,7 +110,7 @@ class Install extends Migration
     /**
      * Drop the tables
      */
-    public function dropTables()
+    public function dropTables(): void
     {
         $this->dropTableIfExists(Table::SYNC_DEPENDENCIES);
         $this->dropTableIfExists(Table::SYNC_STATE);
@@ -120,7 +120,7 @@ class Install extends Migration
     /**
      * Deletes the project config entry.
      */
-    public function dropProjectConfig()
+    public function dropProjectConfig(): void
     {
         Craft::$app->projectConfig->remove('typesense');
     }

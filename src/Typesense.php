@@ -25,12 +25,14 @@ use yii\queue\ExecEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
 use craft\events\RegisterElementActionsEvent;
+use craft\events\RegisterGqlQueriesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Cp;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
+use craft\services\Gql;
 use craft\services\Utilities;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
@@ -39,9 +41,10 @@ use craft\web\UrlManager;
 use craftpulse\typesense\base\PluginTrait;
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\elementactions\Reindex;
+use craftpulse\typesense\elementactions\ViewInSearch;
+use craftpulse\typesense\gql\queries\SearchQuery;
 use craftpulse\typesense\helpers\FileLog;
 use craftpulse\typesense\models\Settings;
-use craftpulse\typesense\services\SynonymService;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\utilities\TypesenseUtility;
 use craftpulse\typesense\variables\TypesenseVariable;
@@ -66,10 +69,8 @@ use yii\base\Event;
  * @since     1.0.0
  *
  * @property  Client $client
- * @property  SynonymService $synonymService
  *
  * @property  Settings $settings
- * @property mixed|object|null $synonyms
  */
 class Typesense extends Plugin
 {
@@ -137,7 +138,7 @@ class Typesense extends Plugin
      * you do not need to load it in your init() method.
      *
      */
-    public function init()
+    public function init(): void
     {
         parent::init();
         self::$plugin = $this;
@@ -188,6 +189,7 @@ class Typesense extends Plugin
 
     /**
      * @inheritdoc
+     * @return array<string, mixed>|null
      */
     public function getCpNavItem(): ?array
     {
@@ -196,13 +198,8 @@ class Typesense extends Plugin
         $currentUser = Craft::$app->getUser();
 
         // Only show sub navigation the user has permission to view. The
-        // collections overview now lives in the Typesense control-panel utility.
-        if ($currentUser->checkPermission('typesense:synonyms')) {
-            $subNavs['synonyms'] = [
-                'label' => Craft::t('typesense', 'Synonyms'),
-                'url' => 'typesense/synonyms',
-            ];
-        }
+        // collections overview and synonyms now live in the Typesense utility
+        // (Free) and, later, the Pro control-panel managers.
 
         // Gate on the permission, not on allowAdminChanges: the screen stays
         // reachable in read-only mode (it renders read-only there).
@@ -224,7 +221,7 @@ class Typesense extends Plugin
     /**
      *
      */
-    protected function installEventListeners()
+    protected function installEventListeners(): void
     {
         // Register CP URL rules and permissions unconditionally. The events only
         // fire in the relevant request contexts, and gating registration on the
@@ -238,7 +235,7 @@ class Typesense extends Plugin
     /**
      * Install site event listeners for Control Panel requests only
      */
-    protected function installCpEventListeners()
+    protected function installCpEventListeners(): void
     {
 
         // Handler: UrlManager::EVENT_REGISTER_CP_URL_RULES
@@ -310,9 +307,19 @@ class Typesense extends Plugin
                 Element::EVENT_REGISTER_ACTIONS,
                 function (RegisterElementActionsEvent $event) {
                     $event->actions[] = Reindex::class;
+                    $event->actions[] = ViewInSearch::class;
                 }
             );
         }
+
+        // Handler: Gql::EVENT_REGISTER_GQL_QUERIES (Free Typesense search query)
+        Event::on(
+            Gql::class,
+            Gql::EVENT_REGISTER_GQL_QUERIES,
+            function (RegisterGqlQueriesEvent $event) {
+                $event->queries = array_merge($event->queries, SearchQuery::getQueries());
+            }
+        );
     }
 
     /**
@@ -325,26 +332,25 @@ class Typesense extends Plugin
 
     /**
      * Return the custom Control Panel routes
+     *
+     * @return array<string, string>
      */
     protected function customAdminCpRoutes(): array
     {
         return [
-            'typesense' => 'typesense/synonym/index',
+            'typesense' => 'typesense/settings/edit',
             'typesense/settings' => 'typesense/settings/edit',
-            'typesense/synonyms' => 'typesense/synonym/index',
-            'typesense/synonyms/<index:\w+>' => 'typesense/synonym/synonyms',
         ];
     }
 
     /**
      * Return the custom Control Panel user permissions.
+     *
+     * @return array<string, array<string, string>>
      */
     protected function customAdminCpPermissions(): array
     {
         return [
-            'typesense:synonyms' => [
-                'label' => Craft::t('typesense', 'Synonyms'),
-            ],
             SettingsController::PERMISSION_MANAGE_SETTINGS => [
                 'label' => Craft::t('typesense', 'Manage plugin settings'),
             ],
@@ -354,7 +360,7 @@ class Typesense extends Plugin
     /**
      * Register Typesense’s project config event listeners
      */
-    private function _registerProjectConfigEventListeners()
+    private function _registerProjectConfigEventListeners(): void
     {
         // $projectConfigService = Craft::$app->getProjectConfig();
 

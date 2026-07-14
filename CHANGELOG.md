@@ -45,6 +45,16 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Added the Typesense control-panel utility (read-only in Free): server status and capabilities, a collections overview with document counts and drift indicators, and sync/flush/suspend actions built with `UrlHelper::actionUrl` (fixing the CP action URL issues in headless and split-domain setups).
 - Added a "Reindex in Typesense" bulk element action on entries, categories, assets, and Commerce products (when installed).
 - Added opt-in sync-failure email alerts (off by default), throttled per failure context.
+- Added the Synonyms service with one public interface over two server shapes: per-collection synonyms on v28/v29 (through the typesense-php client) and global synonym sets on v30.2+ (through raw HTTP, since the bundled client predates them). The shape is chosen from the detected capabilities, so callers behave identically on either. Ownership resolves from the `synonymsManagedBy` setting and is overridable per collection in fluent config (config wins, surfacing the override notice); config-managed synonyms are seeded on collection creation, CP-managed synonyms are left to the control panel.
+- Added the Curation service with the same dual-shape design: per-collection overrides on v28/v29 and global curation sets on v30.2+, config-seeded for config-managed collections.
+- Added the Presets service: a collection's declared search preset (typo tolerance, prefix, `drop_tokens`, and so on) is mirrored into a Typesense preset, and the search layer always passes it by name.
+- Added the Search service and the `craft.typesense.search()` and `craft.typesense.multiSearch()` Twig helpers: fail-soft single and multi-search that resolve the site-aware target name and enrich each query with the collection's preset, synonym set (v30.2+), and stopwords. An unreachable server or unknown collection returns a well-formed empty result, never an error.
+- Added config-seeded stopwords and stemming-dictionary import (the Dictionaries service), so a field's `stem_dictionary` reference resolves.
+- Added a Free GraphQL `typesenseSearch` query: a developer tool that runs entirely server-side through the fail-soft search layer and returns the Typesense response as JSON, never exposing an API key to the client.
+- Added a "View in Typesense search" element action (Free: points to the `typesense/inspect` command and the utility; upgrades to an in-panel search preview when the Pro companion is present).
+
+### Changed
+- Deepened the Drift service beyond schema: for config-managed collections it now compares declared synonyms and curation rules against the live sets (a live-only rule is drift), and it compares the declared search preset against the live one.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.
@@ -52,7 +62,8 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Removed the dead `ProjectConfigDataHelper` (only referenced by commented-out code).
 - Retired the legacy sync internals now superseded by the new engine: the element-save event host, the legacy sync job, and the legacy collection service. Their responsibilities moved to the Sync and Documents services.
 - Dropped the vestigial `typesense_collections` table.
-- Retired the legacy Collections and Documents control-panel screens, the collection model, and the legacy event classes. The collections overview now lives in the Typesense utility. The plugin section's collections view is replaced by the utility, and the section now lands on Synonyms.
+- Retired the legacy Collections and Documents control-panel screens, the collection model, and the legacy event classes. The collections overview now lives in the Typesense utility.
+- Retired the legacy synonyms control-panel cluster (its controller, service, sync job, model, and templates) and the now-orphaned `CollectionHelper`, `CollectionRecord`, and vestigial `TypesenseModel` scaffold. The `typesense_synonyms` table and its rows are preserved and now read through the Synonyms service. Synonym management moves to config (Free) and the Pro control-panel manager. With both the Collections and Synonyms screens retired, the plugin section now lands on Settings; collections and synonyms status lives in the Typesense utility.
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

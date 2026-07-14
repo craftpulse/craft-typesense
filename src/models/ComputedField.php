@@ -77,6 +77,7 @@ class ComputedField extends Model
 
     /**
      * @inheritdoc
+     * @return array<int, mixed>
      */
     protected function defineRules(): array
     {

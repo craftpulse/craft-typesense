@@ -7,14 +7,18 @@ use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
 use craftpulse\typesense\services\ConfigGenerator;
+use craftpulse\typesense\services\Curation;
+use craftpulse\typesense\services\Dictionaries;
 use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
 use craftpulse\typesense\services\Notifications;
+use craftpulse\typesense\services\Presets;
 use craftpulse\typesense\services\Schema;
+use craftpulse\typesense\services\Search;
 use craftpulse\typesense\services\Sync;
-use craftpulse\typesense\services\SynonymService;
+use craftpulse\typesense\services\Synonyms;
 use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\services\VitePluginService;
 
@@ -84,6 +88,31 @@ trait PluginTrait
         return $this->get('notifications');
     }
 
+    public function getSynonyms(): Synonyms
+    {
+        return $this->get('synonyms');
+    }
+
+    public function getCuration(): Curation
+    {
+        return $this->get('curation');
+    }
+
+    public function getPresets(): Presets
+    {
+        return $this->get('presets');
+    }
+
+    public function getDictionaries(): Dictionaries
+    {
+        return $this->get('dictionaries');
+    }
+
+    public function getSearch(): Search
+    {
+        return $this->get('search');
+    }
+
     public function getVite(): VitePluginService
     {
         return $this->get('vite');
@@ -106,7 +135,11 @@ trait PluginTrait
             'keys' => Keys::class,
             'drift' => Drift::class,
             'notifications' => Notifications::class,
-            'synonyms' => SynonymService::class,
+            'synonyms' => Synonyms::class,
+            'curation' => Curation::class,
+            'presets' => Presets::class,
+            'dictionaries' => Dictionaries::class,
+            'search' => Search::class,
             'client' => Client::class,
             // Register the vite service
             'vite' => [

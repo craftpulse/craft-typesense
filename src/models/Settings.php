@@ -177,7 +177,7 @@ class Settings extends Model
     public ?string $collectionPrefix = null;
 
     /**
-     * @var array The collections declared in the config file (fluent config).
+     * @var array<int, mixed> The collections declared in the config file (fluent config).
      */
     public array $collections = [];
 
@@ -244,6 +244,7 @@ class Settings extends Model
 
     /**
      * @inheritdoc
+     * @return array<string, mixed>
      */
     protected function defineBehaviors(): array
     {
@@ -271,6 +272,7 @@ class Settings extends Model
 
     /**
      * @inheritdoc
+     * @return array<int, mixed>
      */
     protected function defineRules(): array
     {

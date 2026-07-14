@@ -4,8 +4,8 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 namespace craftpulse\typesense\variables;
@@ -22,9 +22,9 @@ use nystudio107\pluginvite\variables\ViteVariableTrait;
  *
  * https://craftcms.com/docs/plugins/variables
  *
- * @author    craftpulse
+ * @author    CraftPulse
  * @package   Typesense
- * @since     1.0.0
+ * @since     5.9.0
  */
 class TypesenseVariable implements ViteVariableInterface
 {
@@ -32,6 +32,19 @@ class TypesenseVariable implements ViteVariableInterface
 
     // Public Methods
     // =========================================================================
+
+    /**
+     * Runs a fail-soft multi-search (union) across several collections.
+     *
+     * @param array<int, array<string, mixed>> $searches
+     * @param array<string, mixed> $common
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function multiSearch(array $searches, array $common = []): array
+    {
+        return Typesense::$plugin->getSearch()->multiSearch($searches, $common);
+    }
 
     /**
      * Derives a scoped search key for the front end from the search-only key.
@@ -46,5 +59,21 @@ class TypesenseVariable implements ViteVariableInterface
     public function scopedSearchKey(array $parameters = []): string
     {
         return Typesense::$plugin->getKeys()->generateScopedSearchKey($parameters);
+    }
+
+    /**
+     * Runs a fail-soft search against a collection through the search layer,
+     * enriched with the collection's preset, synonym set, and stopwords.
+     *
+     * {{ craft.typesense.search('products', { q: 'coat', query_by: 'title' }) }}
+     *
+     * @param string $handle
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function search(string $handle, array $params = []): array
+    {
+        return Typesense::$plugin->getSearch()->search($handle, $params);
     }
 }

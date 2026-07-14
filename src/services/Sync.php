@@ -407,6 +407,7 @@ class Sync extends Component
             return true;
         } catch (ObjectNotFound) {
             $client->collections->create($registry->getCreateSchema($collection, $siteId));
+            $this->_seedManagedResources($collection);
 
             return true;
         } catch (Throwable $e) {
@@ -727,6 +728,23 @@ class Sync extends Component
     private function _resolve(Collection|string $collection): ?Collection
     {
         return $collection instanceof Collection ? $collection : $this->getCollection($collection);
+    }
+
+    /**
+     * Seeds the config-declared, config-managed search resources for a freshly
+     * created collection: synonyms, curation rules, the search preset, and
+     * stopwords. CP-managed synonyms and curation are left untouched.
+     *
+     * @param Collection $collection
+     * @return void
+     * @author CraftPulse
+     */
+    private function _seedManagedResources(Collection $collection): void
+    {
+        Typesense::$plugin->getSynonyms()->seedFromConfig($collection);
+        Typesense::$plugin->getCuration()->seedFromConfig($collection);
+        Typesense::$plugin->getPresets()->seedFromConfig($collection);
+        Typesense::$plugin->getDictionaries()->seedStopwords($collection);
     }
 
     /**

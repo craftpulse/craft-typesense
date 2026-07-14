@@ -102,3 +102,32 @@ it('reports in sync when declared and live schemas match', function() {
         expect($finding['status'])->toBe(Drift::STATUS_IN_SYNC);
     });
 });
+
+it('detects synonyms drift for a config-managed collection, then clears once seeded', function() {
+    $declared = Collection::make(DRIFT_TEST_COLLECTION)
+        ->multisite(MultisiteStrategy::SharedWithSiteFilter)
+        ->synonyms(\craftpulse\typesense\models\Settings::MANAGED_BY_CONFIG)
+        ->synonymDefinitions([['id' => 'outerwear', 'synonyms' => ['coat', 'jacket']]])
+        ->fields(Field::string('title'));
+
+    withDrift($declared, [
+        ['name' => 'title', 'type' => 'string'],
+        ['name' => 'elementId', 'type' => 'int64'],
+        ['name' => 'siteId', 'type' => 'int32'],
+    ], function() use ($declared) {
+        $synonymsFinding = fn(): array => \craft\helpers\ArrayHelper::firstWhere(
+            Typesense::$plugin->getDrift()->diff(),
+            'aspect',
+            'synonyms',
+        );
+
+        expect($synonymsFinding()['status'])->toBe(Drift::STATUS_DRIFTED)
+            ->and($synonymsFinding()['details']['missing'])->toContain('outerwear');
+
+        Typesense::$plugin->getSynonyms()->seedFromConfig($declared);
+
+        expect($synonymsFinding()['status'])->toBe(Drift::STATUS_IN_SYNC);
+
+        Typesense::$plugin->getSynonyms()->clear($declared);
+    });
+});

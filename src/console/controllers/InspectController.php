@@ -39,6 +39,7 @@ class InspectController extends Controller
      */
     public function actionIndex(int $elementId): int
     {
+        /** @phpstan-ignore-next-line the inspected element type is not known ahead of time */
         $element = Craft::$app->getElements()->getElementById($elementId);
 
         if ($element === null) {

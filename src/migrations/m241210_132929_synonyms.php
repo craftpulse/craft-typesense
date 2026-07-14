@@ -60,7 +60,7 @@ class m241210_132929_synonyms extends Migration
     /**
      * @inheritdoc
      */
-    public function dropTables()
+    public function dropTables(): void
     {
         $this->dropTableIfExists(Table::SYNONYMS);
     }
