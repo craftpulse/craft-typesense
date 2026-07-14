@@ -1,0 +1,300 @@
+{# @var settings \craftpulse\typesense\models\Settings #}
+{# @var status array #}
+{# @var readOnly bool #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+
+{% set title = 'Settings'|t('typesense') %}
+{% set selectedSubnavItem = 'settings' %}
+{% set crumbs = [{ label: 'Typesense'|t('typesense'), url: url('typesense') }] %}
+{% set readOnly = readOnly ?? false %}
+{% set fullPageForm = not readOnly %}
+
+{% set serverTypeOptions = {
+    (settings.SERVER_TYPE_SINGLE): 'Single node'|t('typesense'),
+    (settings.SERVER_TYPE_CLUSTER): 'Cluster'|t('typesense'),
+    (settings.SERVER_TYPE_CLOUD): 'Typesense Cloud'|t('typesense'),
+} %}
+
+{% set managedByOptions = {
+    (settings.MANAGED_BY_CONFIG): 'Config file'|t('typesense'),
+    (settings.MANAGED_BY_CP): 'Control panel'|t('typesense'),
+} %}
+
+{% set tabs = {
+    connection: { label: 'Connection'|t('typesense'), url: '#connection' },
+    resilience: { label: 'Resilience'|t('typesense'), url: '#resilience' },
+    syncQueue: { label: 'Sync and queue'|t('typesense'), url: '#syncQueue' },
+    ownership: { label: 'Ownership'|t('typesense'), url: '#ownership' },
+    analytics: { label: 'Analytics'|t('typesense'), url: '#analytics' },
+} %}
+{% set selectedTab = 'connection' %}
+
+{% block content %}
+    {{ actionInput('typesense/settings/save') }}
+    {{ redirectInput('typesense/settings') }}
+
+    {% if readOnly %}
+        {% set notice %}
+            {{ 'Settings are read-only because allowAdminChanges is disabled in this environment.'|t('typesense') }}
+        {% endset %}
+        <div class="readable">
+            <blockquote class="note">{{ notice }}</blockquote>
+        </div>
+    {% endif %}
+
+    <div id="connection">
+        {# Server status panel #}
+        <div class="readable">
+            <h2>{{ 'Server status'|t('typesense') }}</h2>
+            {% if not status.configured %}
+                <p>{{ 'Provide an admin API key below to connect to Typesense.'|t('typesense') }}</p>
+            {% elseif not status.connected %}
+                <p><span class="status red"></span> {{ 'Not connected. Check the connection settings and that the server is reachable.'|t('typesense') }}</p>
+            {% else %}
+                <p>
+                    <span class="status green"></span>
+                    {{ 'Connected to Typesense {version}.'|t('typesense', { version: status.version ?? '?' }) }}
+                </p>
+                {% if not status.supported %}
+                    {% set reason = status.unsupportedReason %}
+                    {% if reason %}
+                        <hr>
+                        <blockquote class="note warning">{{ reason }}</blockquote>
+                    {% endif %}
+                {% else %}
+                    <p>{{ 'Available features on this server version:'|t('typesense') }}</p>
+                    <ul>
+                        {% for flag, enabled in status.flags %}
+                            {% if enabled %}
+                                <li><code>{{ flag }}</code></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endif %}
+            {% endif %}
+        </div>
+
+        {{ forms.selectField({
+            label: 'Server type'|t('typesense'),
+            id: 'serverType',
+            name: 'settings[serverType]',
+            options: serverTypeOptions,
+            value: settings.serverType,
+            errors: settings.getErrors('serverType'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Host'|t('typesense'),
+            instructions: 'The single-node host. Used when the server type is Single node.'|t('typesense'),
+            id: 'server',
+            name: 'settings[server]',
+            value: settings.server,
+            suggestEnvVars: true,
+            errors: settings.getErrors('server'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Port'|t('typesense'),
+            instructions: 'The single-node port.'|t('typesense'),
+            id: 'port',
+            name: 'settings[port]',
+            value: settings.port,
+            suggestEnvVars: true,
+            errors: settings.getErrors('port'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Protocol'|t('typesense'),
+            instructions: 'The single-node protocol (http or https).'|t('typesense'),
+            id: 'protocol',
+            name: 'settings[protocol]',
+            value: settings.protocol,
+            suggestEnvVars: true,
+            errors: settings.getErrors('protocol'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Cluster nodes'|t('typesense'),
+            instructions: 'Semicolon-separated node hosts. Used when the server type is Cluster or Typesense Cloud.'|t('typesense'),
+            id: 'cluster',
+            name: 'settings[cluster]',
+            value: settings.cluster,
+            suggestEnvVars: true,
+            errors: settings.getErrors('cluster'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Cluster port'|t('typesense'),
+            instructions: 'The port shared by the cluster or cloud nodes.'|t('typesense'),
+            id: 'clusterPort',
+            name: 'settings[clusterPort]',
+            value: settings.clusterPort,
+            suggestEnvVars: true,
+            errors: settings.getErrors('clusterPort'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Nearest node'|t('typesense'),
+            instructions: 'The Typesense Cloud nearest-node host (Search Delivery Network). Cloud only.'|t('typesense'),
+            id: 'nearestNode',
+            name: 'settings[nearestNode]',
+            value: settings.nearestNode,
+            suggestEnvVars: true,
+            errors: settings.getErrors('nearestNode'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Admin API key'|t('typesense'),
+            instructions: 'The admin key used for indexing and management. Keep it out of the browser.'|t('typesense'),
+            id: 'apiKey',
+            name: 'settings[apiKey]',
+            value: settings.apiKey,
+            suggestEnvVars: true,
+            required: true,
+            errors: settings.getErrors('apiKey'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Search-only API key'|t('typesense'),
+            instructions: 'The search-only key that front-end scoped keys are derived from.'|t('typesense'),
+            id: 'searchOnlyApiKey',
+            name: 'settings[searchOnlyApiKey]',
+            value: settings.searchOnlyApiKey,
+            suggestEnvVars: true,
+            errors: settings.getErrors('searchOnlyApiKey'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Collection prefix'|t('typesense'),
+            instructions: 'Prepended to every collection name, so several environments can share one cluster (for example "staging_").'|t('typesense'),
+            id: 'collectionPrefix',
+            name: 'settings[collectionPrefix]',
+            value: settings.collectionPrefix,
+            suggestEnvVars: true,
+            errors: settings.getErrors('collectionPrefix'),
+            disabled: readOnly,
+        }) }}
+    </div>
+
+    <div id="resilience" class="hidden">
+        {{ forms.autosuggestField({
+            label: 'Connection timeout (seconds)'|t('typesense'),
+            id: 'connectionTimeoutSeconds',
+            name: 'settings[connectionTimeoutSeconds]',
+            value: settings.connectionTimeoutSeconds,
+            suggestEnvVars: true,
+            errors: settings.getErrors('connectionTimeoutSeconds'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Health-check interval (seconds)'|t('typesense'),
+            instructions: 'How long a node is considered unhealthy before it is retried.'|t('typesense'),
+            id: 'healthcheckIntervalSeconds',
+            name: 'settings[healthcheckIntervalSeconds]',
+            value: settings.healthcheckIntervalSeconds,
+            suggestEnvVars: true,
+            errors: settings.getErrors('healthcheckIntervalSeconds'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Retries'|t('typesense'),
+            instructions: 'The number of times a failed request is retried across nodes.'|t('typesense'),
+            id: 'numRetries',
+            name: 'settings[numRetries]',
+            value: settings.numRetries,
+            suggestEnvVars: true,
+            errors: settings.getErrors('numRetries'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.autosuggestField({
+            label: 'Retry interval (seconds)'|t('typesense'),
+            id: 'retryIntervalSeconds',
+            name: 'settings[retryIntervalSeconds]',
+            value: settings.retryIntervalSeconds,
+            suggestEnvVars: true,
+            errors: settings.getErrors('retryIntervalSeconds'),
+            disabled: readOnly,
+        }) }}
+    </div>
+
+    <div id="syncQueue" class="hidden">
+        {{ forms.lightswitchField({
+            label: 'Suspend sync'|t('typesense'),
+            instructions: 'When on, element changes stop syncing to Typesense. Use during bulk imports (for example Feed Me).'|t('typesense'),
+            id: 'syncSuspended',
+            name: 'settings[syncSuspended]',
+            on: settings.syncSuspended,
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Queue priority'|t('typesense'),
+            instructions: 'The priority assigned to Typesense sync jobs. Lower runs sooner.'|t('typesense'),
+            id: 'queuePriority',
+            name: 'settings[queuePriority]',
+            type: 'number',
+            value: settings.queuePriority,
+            errors: settings.getErrors('queuePriority'),
+            disabled: readOnly,
+        }) }}
+    </div>
+
+    <div id="ownership" class="hidden">
+        {{ forms.selectField({
+            label: 'Synonyms managed by'|t('typesense'),
+            instructions: 'Who owns synonym state by default. A config-file override always wins.'|t('typesense'),
+            id: 'synonymsManagedBy',
+            name: 'settings[synonymsManagedBy]',
+            options: managedByOptions,
+            value: settings.synonymsManagedBy,
+            errors: settings.getErrors('synonymsManagedBy'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Curation managed by'|t('typesense'),
+            instructions: 'Who owns curation state by default. A config-file override always wins.'|t('typesense'),
+            id: 'curationManagedBy',
+            name: 'settings[curationManagedBy]',
+            options: managedByOptions,
+            value: settings.curationManagedBy,
+            errors: settings.getErrors('curationManagedBy'),
+            disabled: readOnly,
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Presets managed by'|t('typesense'),
+            instructions: 'Who owns search-preset state by default. A config-file override always wins.'|t('typesense'),
+            id: 'presetsManagedBy',
+            name: 'settings[presetsManagedBy]',
+            options: managedByOptions,
+            value: settings.presetsManagedBy,
+            errors: settings.getErrors('presetsManagedBy'),
+            disabled: readOnly,
+        }) }}
+    </div>
+
+    <div id="analytics" class="hidden">
+        {{ forms.lightswitchField({
+            label: 'Enable search analytics'|t('typesense'),
+            instructions: 'Opt in to collecting search analytics. User-id association stays off by default; review your retention and privacy obligations before enabling.'|t('typesense'),
+            id: 'analyticsEnabled',
+            name: 'settings[analyticsEnabled]',
+            on: settings.analyticsEnabled,
+            disabled: readOnly,
+        }) }}
+    </div>
+{% endblock %}

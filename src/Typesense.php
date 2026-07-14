@@ -28,12 +28,13 @@ use craft\web\UrlManager;
 use craftpulse\typesense\base\PluginTrait;
 use craftpulse\typesense\controllers\CollectionsController;
 use craftpulse\typesense\controllers\DocumentsController;
+use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\helpers\CollectionHelper;
 use craftpulse\typesense\helpers\FileLog;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\CollectionService;
 use craftpulse\typesense\services\SynonymService;
-use craftpulse\typesense\services\TypesenseService;
+use craftpulse\typesense\services\Client;
 use craftpulse\typesense\variables\TypesenseVariable;
 
 
@@ -55,7 +56,7 @@ use yii\base\Event;
  * @package   Typesense
  * @since     1.0.0
  *
- * @property  TypesenseService $typesenseService
+ * @property  Client $client
  * @property  CollectionService $collectionService
  * @property  SynonymService $synonymService
  *
@@ -103,6 +104,14 @@ class Typesense extends Plugin
      * @var bool
      */
     public bool $hasCpSettings = true;
+
+    /**
+     * Set to `true` so the plugin's settings link stays visible when
+     * `allowAdminChanges` is off (the screen renders read-only).
+     *
+     * @var bool
+     */
+    public bool $hasReadOnlyCpSettings = true;
 
     use PluginTrait;
 
@@ -167,7 +176,7 @@ class Typesense extends Plugin
     public function getSettingsResponse(): mixed
     {
         // redirect to plugin settings page
-        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/plugin'));
+        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/settings'));
     }
 
     /**
@@ -177,46 +186,29 @@ class Typesense extends Plugin
     {
         $subNavs = [];
         $navItem = parent::getCpNavItem();
-        Craft::$app->getUser()->getIdentity();
+        $currentUser = Craft::$app->getUser();
 
-        // Only show sub navigation the user has permission to view
-        if (Craft::$app->getUser()->checkPermission('typesense:dashboard')) {
-            $subNavs['dashboard'] = [
-                'label' => Craft::t('typesense', 'Dashboard'),
-                'url' => 'typesense/dashboard',
-            ];
-        }
-
-        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
+        // Only show sub navigation the user has permission to view.
+        if ($currentUser->checkPermission('typesense:collections')) {
             $subNavs['collections'] = [
                 'label' => Craft::t('typesense', 'Collections'),
                 'url' => 'typesense/collections',
             ];
         }
-        if (Craft::$app->getUser()->checkPermission('typesense:synonyms')) {
+
+        if ($currentUser->checkPermission('typesense:synonyms')) {
             $subNavs['synonyms'] = [
                 'label' => Craft::t('typesense', 'Synonyms'),
                 'url' => 'typesense/synonyms',
             ];
         }
 
-        //        if (Craft::$app->getUser()->checkPermission('typesense:collections')) {
-//            $subNavs['documents'] = [
-//                'label' => Craft::t('typesense', 'Documents'),
-//                'url' => 'typesense/documents',
-//            ];
-//        }
-
-        $editableSettings = true;
-        // Check against allowAdminChanges
-        if (!Craft::$app->getConfig()->getGeneral()->allowAdminChanges) {
-            $editableSettings = false;
-        }
-
-        if (Craft::$app->getUser()->checkPermission('typesense:plugin-settings') && $editableSettings) {
-            $subNavs['plugin'] = [
-                'label' => Craft::t('typesense', 'Plugin settings'),
-                'url' => 'typesense/plugin',
+        // Gate on the permission, not on allowAdminChanges: the screen stays
+        // reachable in read-only mode (it renders read-only there).
+        if ($currentUser->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS)) {
+            $subNavs['settings'] = [
+                'label' => Craft::t('typesense', 'Settings'),
+                'url' => 'typesense/settings',
             ];
         }
 
@@ -233,11 +225,11 @@ class Typesense extends Plugin
      */
     protected function installEventListeners()
     {
-        $request = Craft::$app->getRequest();
-        // Install our event listeners
-        if ($request->getIsCpRequest() && !$request->getIsConsoleRequest()) {
-            $this->installCpEventListeners();
-        }
+        // Register CP URL rules and permissions unconditionally. The events only
+        // fire in the relevant request contexts, and gating registration on the
+        // boot-time request context hides the routes from console/queue and test
+        // requests.
+        $this->installCpEventListeners();
 
         $this->_registerProjectConfigEventListeners();
     }
@@ -297,9 +289,8 @@ class Typesense extends Plugin
     protected function customAdminCpRoutes(): array
     {
         return [
-            'typesense' => 'typesense/settings/dashboard',
-            'typesense/dashboard' => 'typesense/settings/dashboard',
-            'typesense/plugin' => 'typesense/settings/plugin',
+            'typesense' => 'typesense/collections/collections',
+            'typesense/settings' => 'typesense/settings/edit',
             'typesense/collections' => 'typesense/collections/collections',
             'typesense/synonyms' => 'typesense/synonym/index',
             'typesense/synonyms/<index:\w+>' => 'typesense/synonym/synonyms',
@@ -317,9 +308,6 @@ class Typesense extends Plugin
     protected function customAdminCpPermissions(): array
     {
         return [
-            'typesense:dashboard' => [
-                'label' => Craft::t('typesense', 'Dashboard'),
-            ],
             'typesense:collections' => [
                 'label' => Craft::t('typesense', 'Collections'),
             ],
@@ -329,8 +317,8 @@ class Typesense extends Plugin
             'typesense:manage-collections' => [
                 'label' => Craft::t('typesense', 'Manage Collections'),
             ],
-            'typesense:plugin-settings' => [
-                'label' => Craft::t('typesense', 'Edit Plugin Settings'),
+            SettingsController::PERMISSION_MANAGE_SETTINGS => [
+                'label' => Craft::t('typesense', 'Manage plugin settings'),
             ],
         ];
     }

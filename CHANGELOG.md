@@ -9,12 +9,21 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 
 ### Changed
 - Moved the internal PHP namespace from `percipiolondon\typesense` to `craftpulse\typesense`, keeping the `craftpulse/craft-typesense` package name and `typesense` handle.
+- Replaced the legacy client service with the new `Client` service. The plugin component is still reached with `getClient()`, and `getClient()->client()` still returns the typesense-php client, so existing calls keep working.
+- The plugin's `typesense:manageSettings` permission now gates the settings screen. The old `typesense:plugin-settings` and `typesense:dashboard` permissions were removed.
 
 ### Added
 - Added a backwards-compatibility autoloader that transparently aliases legacy `percipiolondon\typesense\*` class names to their `craftpulse\typesense\*` counterparts.
+- Added a new `Client` service: a typesense-php client factory for single-node, cluster, and Typesense Cloud connections, with health checks and a fail-soft search contract (an unreachable server returns a well-formed empty result, never a 500).
+- Added client resilience settings: connection timeout, health-check interval, retry count, and retry interval, all environment-variable aware.
+- Added server-version detection and `ServerCapabilities`: version-sensitive features are gated on the detected version (hide, never badge). Servers below v28.0 are unsupported, and v30.0 and v30.1 are refused because their synonym and curation APIs return 404.
+- Added a collection-name prefix setting so several environments can share one cluster.
+- Added a rebuilt settings screen (dedicated `SettingsController`, gated by the new `typesense:manageSettings` permission) with connection, resilience, sync and queue, ownership, and analytics tabs. The screen is read-only and saves fail closed when `allowAdminChanges` is off.
+- Added per-feature ownership defaults (synonyms, curation, presets), an analytics opt-in default, and a global sync-suspend switch.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.
+- Removed the redundant Dashboard control-panel nav item, which only redirected to Collections. The plugin section now lands on Collections.
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

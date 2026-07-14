@@ -34,7 +34,6 @@ return static function(ECSConfig $ecsConfig): void {
         __DIR__ . '/src/jobs/SyncDocumentsJob.php',
         __DIR__ . '/src/jobs/SyncSynonymsJob.php',
         __DIR__ . '/src/migrations/m241210_132929_synonyms.php',
-        __DIR__ . '/src/models/Settings.php',
         __DIR__ . '/src/models/SynonymModel.php',
         __DIR__ . '/src/records/CollectionRecord.php',
         __DIR__ . '/src/services/CollectionService.php',

@@ -2,133 +2,113 @@
 /**
  * Typesense plugin for Craft CMS 5.x
  *
- * @link      https://percipio.london/
- * @copyright Copyright (c) 2022 Percipio Global Ltd.
- * @license   https://percipio.london/license
+ * Craft Plugin that synchronises with Typesense
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 namespace craftpulse\typesense\controllers;
 
 use Craft;
-use craft\errors\MissingComponentException;
+use craft\config\GeneralConfig;
 use craft\web\Controller;
-
+use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
-use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
-use yii\web\NotFoundHttpException;
-
 use yii\web\Response;
 
 /**
- * @author    Percipio.London
- * @package   Seomatic
- * @since     3.0.0
+ * Manages the plugin's connection and behaviour settings.
+ *
+ * Access is gated by the typesense:manageSettings permission (never requireAdmin),
+ * so a site can delegate the screen to a non-admin group. Writability is a
+ * separate axis: when allowAdminChanges is false the screen renders read-only and
+ * the save action fails closed with a 403.
+ *
+ * @author    CraftPulse
+ * @package   Typesense
+ * @since     5.9.0
  */
-
 class SettingsController extends Controller
 {
     // Constants
     // =========================================================================
+
+    /**
+     * @var string The permission that gates the settings screen.
+     */
+    public const PERMISSION_MANAGE_SETTINGS = 'typesense:manageSettings';
+
     // Public Methods
     // =========================================================================
+
     /**
-     * Dashboard display
-     *
-     * @param string|null $siteHandle
-     *
-     * @return Response The rendered result
-     * @throws NotFoundHttpException
+     * @inheritdoc
      * @throws ForbiddenHttpException
      */
-    public function actionDashboard(string $siteHandle = null, bool $showWelcome = false): Response
+    public function beforeAction($action): bool
     {
-        $variables = [];
+        // Who may be on the screen: covers both edit and save.
+        $this->requirePermission(self::PERMISSION_MANAGE_SETTINGS);
 
-        $pluginName = Typesense::$plugin->getSettings()->pluginName;
-        $templateTitle = Craft::t('typesense', 'Dashboard');
-
-        $variables['controllerHandle'] = 'dashboard';
-        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
-        $variables['title'] = $templateTitle;
-        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
-        $variables['selectedSubnavItem'] = 'dashboard';
-        $variables['showWelcome'] = $showWelcome;
-
-        // Render the template
-        return $this->renderTemplate('typesense/dashboard/index', $variables);
+        return parent::beforeAction($action);
     }
 
     /**
-     * Settings display
+     * Renders the settings screen.
      *
-     *
-     * @return Response The rendered result
-     * @throws NotFoundHttpException
-     * @throws ForbiddenHttpException
+     * @return Response
+     * @author CraftPulse
      */
-    public function actionPlugin(): Response
+    public function actionEdit(): Response
     {
-        $variables = [];
-        $pluginName = Typesense::$plugin->getSettings()->pluginName;
-        $templateTitle = Craft::t('typesense', 'Plugin Settings');
+        /** @var GeneralConfig $general */
+        $general = Craft::$app->getConfig()->getGeneral();
 
-        $variables['fullPageForm'] = true;
-        $variables['pluginName'] = Typesense::$plugin->getSettings()->pluginName;
-        $variables['title'] = $templateTitle;
-        $variables['docTitle'] = sprintf('%s - %s', $pluginName, $templateTitle);
-        $variables['selectedSubnavItem'] = 'plugin';
-        $variables['settings'] = Typesense::$plugin->getSettings();
-
-        // Render the template
-        return $this->renderTemplate('typesense/settings/typesense-settings', $variables);
+        return $this->renderTemplate('typesense/settings/_edit', [
+            'plugin' => Typesense::$plugin,
+            'settings' => Typesense::$plugin->getSettings(),
+            'status' => Typesense::$plugin->getClient()->getStatus(),
+            'readOnly' => !$general->allowAdminChanges,
+        ]);
     }
 
     /**
-     * Saves a plugin’s settings.
+     * Saves the settings. Fails closed with a 403 when writes are disabled.
      *
      * @return Response|null
-     * @throws NotFoundHttpException if the requested plugin cannot be found
-     * @throws BadRequestHttpException
-     * @throws MissingComponentException
+     * @throws ForbiddenHttpException
+     * @author CraftPulse
      */
-
-    public function actionSavePluginSettings()
+    public function actionSave(): ?Response
     {
         $this->requirePostRequest();
-        $pluginHandle = Craft::$app->getRequest()->getRequiredBodyParam('pluginHandle');
-        $plugin = Craft::$app->getPlugins()->getPlugin($pluginHandle);
 
-        if ($plugin === null) {
-            throw new NotFoundHttpException('Plugin not found');
+        /** @var GeneralConfig $general */
+        $general = Craft::$app->getConfig()->getGeneral();
+
+        if (!$general->allowAdminChanges) {
+            throw new ForbiddenHttpException('Typesense settings are read-only because allowAdminChanges is disabled in this environment.');
         }
 
-        $settings = [
-            'apiKey' => Craft::$app->getRequest()->getBodyParam('apiKey'),
-            'cluster' => Craft::$app->getRequest()->getBodyParam('cluster'),
-            'clusterPort' => Craft::$app->getRequest()->getBodyParam('clusterPort'),
-            'nearestNode' => Craft::$app->getRequest()->getBodyParam('nearestNode'),
-            'port' => Craft::$app->getRequest()->getBodyParam('port'),
-            'protocol' => Craft::$app->getRequest()->getBodyParam('protocol'),
-            'searchOnlyApiKey' => Craft::$app->getRequest()->getBodyParam('searchOnlyApiKey'),
-            'server' => Craft::$app->getRequest()->getBodyParam('server'),
-            'serverType' => Craft::$app->getRequest()->getBodyParam('serverType'),
-        ];
+        $plugin = Typesense::$plugin;
+        /** @var Settings $settings */
+        $settings = $plugin->getSettings();
+        $settings->setAttributes($this->request->getBodyParam('settings', []), false);
 
-        if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings)) {
-            Craft::$app->getSession()->setError(Craft::t('app', "Couldn't save plugin settings."));
+        if (!Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray())) {
+            $this->setFailFlash(Craft::t('typesense', 'Could not save settings.'));
 
-            // Send the plugin back to the template
-            Craft::$app->getUrlManager()->setRouteParams([
+            return $this->renderTemplate('typesense/settings/_edit', [
                 'plugin' => $plugin,
+                'settings' => $settings,
+                'status' => $plugin->getClient()->getStatus(),
+                'readOnly' => false,
             ]);
-
-            return null;
         }
 
-        Craft::$app->getSession()->setNotice(Craft::t('app', 'Plugin settings saved.'));
-
-        Typesense::$plugin->getCollections()->saveCollections();
+        $this->setSuccessFlash(Craft::t('typesense', 'Settings saved.'));
 
         return $this->redirectToPostedUrl();
     }

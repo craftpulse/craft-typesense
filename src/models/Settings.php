@@ -4,90 +4,104 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 namespace craftpulse\typesense\models;
 
+use Craft;
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
 
 /**
- * Typesense Settings Model
+ * Typesense settings model.
  *
- * @author    craftpulse
+ * Backs the plugin's project-config settings: connection (single node, cluster,
+ * or Typesense Cloud), client resilience, queue options, per-feature managedBy
+ * defaults, analytics opt-in, the global sync-suspend switch, and the collection
+ * name prefix. Connection and numeric values support environment variables via
+ * EnvAttributeParserBehavior and resolve through craft\helpers\App::parseEnv().
+ *
+ * @author    CraftPulse
  * @package   Typesense
- * @since     1.0.0
+ * @since     5.9.0
  */
 class Settings extends Model
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string Single-node connection.
+     */
+    public const SERVER_TYPE_SINGLE = 'single';
+
+    /**
+     * @var string Self-managed multi-node cluster connection.
+     */
+    public const SERVER_TYPE_CLUSTER = 'cluster';
+
+    /**
+     * @var string Typesense Cloud connection.
+     */
+    public const SERVER_TYPE_CLOUD = 'cloud';
+
+    /**
+     * @var string A feature's state is owned by the config file (seed and enforce).
+     */
+    public const MANAGED_BY_CONFIG = 'config';
+
+    /**
+     * @var string A feature's state is owned by the control panel (seed then CP owns).
+     */
+    public const MANAGED_BY_CP = 'cp';
+
     // Public Properties
     // =========================================================================
-    /**
-     * @const int
-     * @var string
-     */
-    public const TYPESENSE_SERVER = 'single';
 
     /**
-     * @const int
-     * @var string
-     */
-    public const TYPESENSE_CLUSTER = 'cluster';
-
-    /**
-     * @const int
-     * @var string
-     */
-    public const TYPESENSE_CLOUD = 'cloud';
-
-    /**
-     * @var string The public-facing name of the plugin
+     * @var string The public-facing name of the plugin.
      */
     public string $pluginName = 'Typesense';
 
     /**
-     * @var string which type of Typesense connection needs to be used.
-     *
-     * - `self::TYPESENSE_SERVER`: Use a single server connection
-     * - `self::TYPESENSE_CLUSTER`: Use a cluster server connection
-     * - `self::TYPESENSE_CLOUD`: Use the Typesense cloud connection
+     * @var string The connection shape: single node, cluster, or Typesense Cloud.
      */
-    public string $serverType = self::TYPESENSE_SERVER;
+    public string $serverType = self::SERVER_TYPE_SINGLE;
 
     /**
-     * @var string|null The API cluster endpoint where Typesense connects to.
+     * @var string|null The single-node host.
      */
-    public ?string $cluster = '0.0.0.0;0.0.0.1;0.0.0.2';
+    public ?string $server = null;
 
     /**
-     * @var string|null The API cluster endpoint where Typesense connects to.
+     * @var string|null The single-node port.
      */
-    public ?string $nearestNode = null;
+    public ?string $port = '8108';
 
     /**
-     * @var string|null The API port which the Typesense cluster listens to.
-     */
-    public ?string $clusterPort = '443';
-
-    /**
-     * @var string|null The API endpoint where Typesense connects to.
-     */
-    public ?string $server = '0.0.0.0';
-
-    /**
-     * @var string|null The API port which Typesense listens to.
-     */
-    public ?string $port = '443';
-
-    /**
-     * @var string|null The API port which Typesense listens to.
+     * @var string|null The single-node protocol.
      */
     public ?string $protocol = 'http';
 
     /**
-     * @var string|null The Admin API key.
+     * @var string|null The semicolon-separated cluster/cloud node hosts.
+     */
+    public ?string $cluster = null;
+
+    /**
+     * @var string|null The cluster/cloud node port.
+     */
+    public ?string $clusterPort = '443';
+
+    /**
+     * @var string|null The Typesense Cloud nearest-node host (Search Delivery Network).
+     */
+    public ?string $nearestNode = null;
+
+    /**
+     * @var string|null The admin API key.
      */
     public ?string $apiKey = null;
 
@@ -97,57 +111,125 @@ class Settings extends Model
     public ?string $searchOnlyApiKey = null;
 
     /**
-     * @var array Provide an array of collections that needs to be added.
+     * @var string|null The connection timeout, in seconds.
+     */
+    public ?string $connectionTimeoutSeconds = '2';
+
+    /**
+     * @var string|null The interval between node health checks, in seconds.
+     */
+    public ?string $healthcheckIntervalSeconds = '60';
+
+    /**
+     * @var string|null The number of times a failed request is retried.
+     */
+    public ?string $numRetries = '3';
+
+    /**
+     * @var string|null The interval between retries, in seconds.
+     */
+    public ?string $retryIntervalSeconds = '1';
+
+    /**
+     * @var int The priority assigned to Typesense sync jobs pushed onto the queue.
+     */
+    public int $queuePriority = 1024;
+
+    /**
+     * @var string The default owner of synonym state.
+     */
+    public string $synonymsManagedBy = self::MANAGED_BY_CONFIG;
+
+    /**
+     * @var string The default owner of curation state.
+     */
+    public string $curationManagedBy = self::MANAGED_BY_CONFIG;
+
+    /**
+     * @var string The default owner of search-preset state.
+     */
+    public string $presetsManagedBy = self::MANAGED_BY_CONFIG;
+
+    /**
+     * @var bool Whether search analytics collection is opted into by default.
+     */
+    public bool $analyticsEnabled = false;
+
+    /**
+     * @var bool Whether element sync is globally suspended (for bulk imports).
+     */
+    public bool $syncSuspended = false;
+
+    /**
+     * @var string|null A prefix prepended to every collection name (e.g. "staging_").
+     */
+    public ?string $collectionPrefix = null;
+
+    /**
+     * @var array The collections declared in the config file (fluent config).
      */
     public array $collections = [];
 
-
     // Public Methods
     // =========================================================================
-    public function getCollections(): array {
-        return $this->collections;
+
+    /**
+     * Returns the list of valid server-type values.
+     *
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public static function serverTypeOptions(): array
+    {
+        return [
+            self::SERVER_TYPE_SINGLE,
+            self::SERVER_TYPE_CLUSTER,
+            self::SERVER_TYPE_CLOUD,
+        ];
     }
 
-    public function getPluginName(): string {
-        return $this->pluginName;
+    /**
+     * Returns the list of managedBy options.
+     *
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public static function managedByOptions(): array
+    {
+        return [
+            self::MANAGED_BY_CONFIG,
+            self::MANAGED_BY_CP,
+        ];
     }
 
-    public function serverType(): string {
-        return $this->serverType;
+    /**
+     * Validates that an attribute is empty, an environment placeholder, or numeric.
+     *
+     * @param string $attribute
+     * @return void
+     * @author CraftPulse
+     */
+    public function validateNumericOrEnv(string $attribute): void
+    {
+        $value = $this->$attribute;
+
+        if ($value === null || $value === '') {
+            return;
+        }
+
+        if (str_starts_with((string)$value, '$')) {
+            return;
+        }
+
+        if (!is_numeric($value)) {
+            $this->addError($attribute, Craft::t('typesense', '{attribute} must be a number or an environment variable.', [
+                'attribute' => $attribute,
+            ]));
+        }
     }
 
-    public function getCluster(): string {
-        return $this->cluster;
-    }
-
-    public function getNearestNode(): string {
-        return $this->nearestNode;
-    }
-
-    public function getClusterPort(): string {
-        return $this->clusterPort;
-    }
-
-    public function getServer(): string {
-        return $this->server;
-    }
-
-    public function getPort(): string {
-        return $this->port;
-    }
-
-    public function getProtocol(): string {
-        return $this->protocol;
-    }
-
-    public function getApiKey(): string {
-        return $this->apiKey;
-    }
-
-    public function getSearchOnlyApiKey(): string {
-        return $this->searchOnlyApiKey;
-    }
-
+    // Protected Methods
+    // =========================================================================
 
     /**
      * @inheritdoc
@@ -157,7 +239,21 @@ class Settings extends Model
         return [
             'parser' => [
                 'class' => EnvAttributeParserBehavior::class,
-                'attributes' => ['apiKey', 'cluster', 'nearestNode', 'clusterPort', 'port', 'protocol', 'searchOnlyApiKey', 'server'],
+                'attributes' => [
+                    'apiKey',
+                    'searchOnlyApiKey',
+                    'server',
+                    'port',
+                    'protocol',
+                    'cluster',
+                    'clusterPort',
+                    'nearestNode',
+                    'collectionPrefix',
+                    'connectionTimeoutSeconds',
+                    'healthcheckIntervalSeconds',
+                    'numRetries',
+                    'retryIntervalSeconds',
+                ],
             ],
         ];
     }
@@ -167,16 +263,41 @@ class Settings extends Model
      */
     protected function defineRules(): array
     {
-        return [
-            [['apiKey', 'cluster', 'clusterPort', 'nearestNode', 'pluginName', 'port', 'protocol', 'searchOnlyApiKey', 'server'], 'string'],
-            [['apiKey', 'serverType'], 'required'],
-            [['serverType'], 'in', 'range' => [
-                self::TYPESENSE_SERVER,
-                self::TYPESENSE_CLUSTER,
-                self::TYPESENSE_CLOUD,
-            ]],
-            [['cluster', 'clusterPort'], 'required', 'when' => fn($model) => $model->serverType === self::TYPESENSE_CLUSTER],
-            [['port', 'server'], 'required', 'when' => fn($model) => $model->serverType === self::TYPESENSE_SERVER],
+        $rules = parent::defineRules();
+
+        $rules[] = [
+            [
+                'apiKey', 'searchOnlyApiKey', 'server', 'port', 'protocol', 'cluster',
+                'clusterPort', 'nearestNode', 'collectionPrefix', 'pluginName',
+                'connectionTimeoutSeconds', 'healthcheckIntervalSeconds', 'numRetries',
+                'retryIntervalSeconds',
+            ],
+            'string',
         ];
+        $rules[] = [['apiKey', 'serverType'], 'required'];
+        $rules[] = [['serverType'], 'in', 'range' => self::serverTypeOptions()];
+        $rules[] = [
+            ['synonymsManagedBy', 'curationManagedBy', 'presetsManagedBy'],
+            'in',
+            'range' => self::managedByOptions(),
+        ];
+        $rules[] = [['analyticsEnabled', 'syncSuspended'], 'boolean'];
+        $rules[] = [['queuePriority'], 'integer', 'min' => 0];
+        $rules[] = [
+            ['connectionTimeoutSeconds', 'healthcheckIntervalSeconds', 'numRetries', 'retryIntervalSeconds'],
+            'validateNumericOrEnv',
+        ];
+        $rules[] = [
+            ['server', 'port'],
+            'required',
+            'when' => fn(self $model): bool => $model->serverType === self::SERVER_TYPE_SINGLE,
+        ];
+        $rules[] = [
+            ['cluster', 'clusterPort'],
+            'required',
+            'when' => fn(self $model): bool => in_array($model->serverType, [self::SERVER_TYPE_CLUSTER, self::SERVER_TYPE_CLOUD], true),
+        ];
+
+        return $rules;
     }
 }

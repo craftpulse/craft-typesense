@@ -70,9 +70,6 @@
         "developerUrl": "https://craft-pulse.com",
         "documentationUrl": "https://github.com/craftpulse/craft-typesense/blob/v5/README.md",
         "changelogUrl": "https://raw.githubusercontent.com/craftpulse/craft-typesense/v5/CHANGELOG.md",
-        "components": {
-            "typesenseService": "craftpulse\\typesense\\services\\TypesenseService"
-        },
         "class": "craftpulse\\typesense\\Typesense"
     },
     "config": {

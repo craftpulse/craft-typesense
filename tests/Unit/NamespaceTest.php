@@ -13,7 +13,7 @@
  * @since     5.9.0
  */
 
-use craftpulse\typesense\services\TypesenseService;
+use craftpulse\typesense\services\Client;
 use craftpulse\typesense\Typesense;
 use craftpulse\typesense\TypesenseCollectionIndex;
 
@@ -28,7 +28,7 @@ it('resolves a service under the new namespace', function() {
     /** @var Typesense $plugin */
     $plugin = Craft::$app->getPlugins()->getPlugin('typesense');
 
-    expect($plugin->getClient())->toBeInstanceOf(TypesenseService::class);
+    expect($plugin->getClient())->toBeInstanceOf(Client::class);
 });
 
 it('aliases the legacy percipiolondon class names to the craftpulse namespace', function() {

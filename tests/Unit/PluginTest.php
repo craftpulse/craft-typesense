@@ -11,8 +11,8 @@
  */
 
 use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\CollectionService;
-use craftpulse\typesense\services\TypesenseService;
 use craftpulse\typesense\Typesense;
 
 it('registers the plugin instance', function() {
@@ -30,5 +30,5 @@ it('wires the collection and client services', function() {
     $plugin = Craft::$app->getPlugins()->getPlugin('typesense');
 
     expect($plugin->getCollections())->toBeInstanceOf(CollectionService::class)
-        ->and($plugin->getClient())->toBeInstanceOf(TypesenseService::class);
+        ->and($plugin->getClient())->toBeInstanceOf(Client::class);
 });

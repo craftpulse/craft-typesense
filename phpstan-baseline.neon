@@ -211,11 +211,6 @@ parameters:
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$pluginName\\.$#"
-			count: 4
-			path: src/controllers/SettingsController.php
-
-		-
 			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
 			count: 1
 			path: src/controllers/SynonymController.php
@@ -239,48 +234,3 @@ parameters:
 			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
 			count: 1
 			path: src/services/CollectionService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$apiKey\\.$#"
-			count: 4
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$cluster\\.$#"
-			count: 1
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$clusterPort\\.$#"
-			count: 2
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$nearestNode\\.$#"
-			count: 1
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$port\\.$#"
-			count: 1
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$protocol\\.$#"
-			count: 1
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$server\\.$#"
-			count: 1
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$serverType\\.$#"
-			count: 2
-			path: src/services/TypesenseService.php
-
-		-
-			message: "#^PHPDoc tag @param references unknown parameter\\: \\$settings$#"
-			count: 1
-			path: src/services/TypesenseService.php

@@ -3,9 +3,9 @@
 namespace craftpulse\typesense\base;
 
 use craftpulse\typesense\assetbundles\typesense\TypesenseAsset;
+use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\CollectionService;
 use craftpulse\typesense\services\SynonymService;
-use craftpulse\typesense\services\TypesenseService;
 use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\services\VitePluginService;
 
@@ -20,7 +20,7 @@ trait PluginTrait
         return $this->get('typesense');
     }
 
-    public function getClient(): TypesenseService
+    public function getClient(): Client
     {
         return $this->get('client');
     }
@@ -44,7 +44,7 @@ trait PluginTrait
             'typesense' => Typesense::class,
             'collections' => CollectionService::class,
             'synonyms' => SynonymService::class,
-            'client' => TypesenseService::class,
+            'client' => Client::class,
             // Register the vite service
             'vite' => [
                 'class' => VitePluginService::class,
