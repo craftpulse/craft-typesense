@@ -27,7 +27,7 @@ $composerLoader = require $craftBase . '/vendor/autoload.php';
 // The plugin's autoload-dev mapping never lands in the consuming project's
 // vendor dir, so the test namespace is registered here.
 if (is_object($composerLoader) && method_exists($composerLoader, 'addPsr4')) {
-    $composerLoader->addPsr4('percipiolondon\\typesense\\tests\\', __DIR__ . '/');
+    $composerLoader->addPsr4('craftpulse\\typesense\\tests\\', __DIR__ . '/');
 }
 
 // Pest discovers Pest.php relative to its own working directory; load the

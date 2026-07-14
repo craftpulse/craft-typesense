@@ -5,15 +5,15 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\models;
+namespace craftpulse\typesense\models;
 
 use Craft;
 
 use craft\base\Model;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 
 /**
  * TypesenseModel Model
@@ -23,7 +23,7 @@ use percipiolondon\typesense\Typesense;
  *
  * https://craftcms.com/docs/plugins/models
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */

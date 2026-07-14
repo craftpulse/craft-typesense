@@ -12,7 +12,7 @@
  */
 
 use craft\elements\Entry;
-use percipiolondon\typesense\TypesenseCollectionIndex;
+use craftpulse\typesense\TypesenseCollectionIndex;
 
 it('builds a collection index from the fluent config shape', function() {
     $index = TypesenseCollectionIndex::create([

@@ -5,18 +5,18 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2022 percipiolondon
+ * @copyright Copyright (c) 2022 craftpulse
  */
 
-namespace percipiolondon\typesense\jobs;
+namespace craftpulse\typesense\jobs;
 
 use Craft;
 use craft\errors\MissingComponentException;
 use craft\queue\BaseJob;
 
 use Http\Client\Exception;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\Typesense;
 use Typesense\Exceptions\TypesenseClientError;
 
 /**
@@ -24,7 +24,7 @@ use Typesense\Exceptions\TypesenseClientError;
  *
  * Upserts the documents in a collection
  *
- * use percipiolondon\typesense\jobs\SyncDocumentsTask;
+ * use craftpulse\typesense\jobs\SyncDocumentsTask;
  *
  * Queue::push(new SyncDocumentsTask([
  *   'criteria' => [
@@ -33,7 +33,7 @@ use Typesense\Exceptions\TypesenseClientError;
  *   ]
  * ]));
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */

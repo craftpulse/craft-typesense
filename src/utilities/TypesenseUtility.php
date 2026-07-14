@@ -5,16 +5,16 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\utilities;
+namespace craftpulse\typesense\utilities;
 
 use Craft;
 use craft\base\Utility;
 
-use percipiolondon\typesense\assetbundles\typesenseutility\TypesenseUtilityAsset;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\assetbundles\typesenseutility\TypesenseUtilityAsset;
+use craftpulse\typesense\Typesense;
 
 /**
  * Typesense Utility
@@ -23,7 +23,7 @@ use percipiolondon\typesense\Typesense;
  *
  * https://craftcms.com/docs/plugins/utilities
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */
@@ -59,7 +59,7 @@ class TypesenseUtility extends Utility
      */
     public static function icon(): string|null
     {
-        return Craft::getAlias("@percipiolondon/typesense/assetbundles/typesenseutility/dist/img/TypesenseUtility-icon.svg");
+        return Craft::getAlias("@craftpulse/typesense/assetbundles/typesenseutility/dist/img/TypesenseUtility-icon.svg");
     }
 
     /**

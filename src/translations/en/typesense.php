@@ -5,7 +5,7 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
 /**
@@ -16,7 +16,7 @@
  *
  * http://www.yiiframework.com/doc-2.0/guide-tutorial-i18n.html
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */

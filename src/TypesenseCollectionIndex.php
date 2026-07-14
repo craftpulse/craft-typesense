@@ -1,6 +1,6 @@
 <?php
 
-namespace percipiolondon\typesense;
+namespace craftpulse\typesense;
 
 use Craft;
 use craft\base\Element;

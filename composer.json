@@ -2,7 +2,7 @@
     "name": "craftpulse/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "5.8.3",
+    "version": "5.9.0",
     "keywords": [
         "craft",
         "cms",
@@ -47,12 +47,15 @@
     ],
     "autoload": {
         "psr-4": {
-            "percipiolondon\\typesense\\": "src/"
-        }
+            "craftpulse\\typesense\\": "src/"
+        },
+        "files": [
+            "src/bootstrap.php"
+        ]
     },
     "autoload-dev": {
         "psr-4": {
-            "percipiolondon\\typesense\\tests\\": "tests/"
+            "craftpulse\\typesense\\tests\\": "tests/"
         }
     },
     "scripts": {
@@ -68,9 +71,9 @@
         "documentationUrl": "https://github.com/craftpulse/craft-typesense/blob/v5/README.md",
         "changelogUrl": "https://raw.githubusercontent.com/craftpulse/craft-typesense/v5/CHANGELOG.md",
         "components": {
-            "typesenseService": "percipiolondon\\typesense\\services\\TypesenseService"
+            "typesenseService": "craftpulse\\typesense\\services\\TypesenseService"
         },
-        "class": "percipiolondon\\typesense\\Typesense"
+        "class": "craftpulse\\typesense\\Typesense"
     },
     "config": {
         "allow-plugins": {

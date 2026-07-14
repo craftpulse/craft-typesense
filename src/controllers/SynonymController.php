@@ -1,12 +1,12 @@
 <?php
 
-namespace percipiolondon\typesense\controllers;
+namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\Typesense;
 use Throwable;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;

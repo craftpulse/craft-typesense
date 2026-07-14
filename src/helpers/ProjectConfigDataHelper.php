@@ -1,8 +1,8 @@
 <?php
 
-namespace percipiolondon\typesense\helpers;
+namespace craftpulse\typesense\helpers;
 
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 
 class ProjectConfigDataHelper
 {

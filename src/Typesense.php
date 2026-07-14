@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2025 CraftPulse
  */
 
-namespace percipiolondon\typesense;
+namespace craftpulse\typesense;
 
 use Craft;
 use craft\base\Model;
@@ -25,16 +25,16 @@ use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
-use percipiolondon\typesense\base\PluginTrait;
-use percipiolondon\typesense\controllers\CollectionsController;
-use percipiolondon\typesense\controllers\DocumentsController;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\helpers\FileLog;
-use percipiolondon\typesense\models\Settings;
-use percipiolondon\typesense\services\CollectionService;
-use percipiolondon\typesense\services\SynonymService;
-use percipiolondon\typesense\services\TypesenseService;
-use percipiolondon\typesense\variables\TypesenseVariable;
+use craftpulse\typesense\base\PluginTrait;
+use craftpulse\typesense\controllers\CollectionsController;
+use craftpulse\typesense\controllers\DocumentsController;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\helpers\FileLog;
+use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\SynonymService;
+use craftpulse\typesense\services\TypesenseService;
+use craftpulse\typesense\variables\TypesenseVariable;
 
 
 use Typesense\Exceptions\ObjectNotFound;
@@ -131,13 +131,13 @@ class Typesense extends Plugin
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
-            $this->controllerNamespace = 'percipiolondon\typesense\console\controllers';
+            $this->controllerNamespace = 'craftpulse\typesense\console\controllers';
         } else {
-            $this->controllerNamespace = 'percipiolondon\typesense\controllers';
+            $this->controllerNamespace = 'craftpulse\typesense\controllers';
         }
 
         // Create endpoint for custom logs
-        FileLog::create('typesense', 'percipiolondon\craft-typesense\*');
+        FileLog::create('typesense', 'craftpulse\craft-typesense\*');
 
         // Captures event handlers inside of the CollectionsController
         $documentsController = new DocumentsController('documents-controller', Craft::$app);

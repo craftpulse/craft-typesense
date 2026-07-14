@@ -1,6 +1,6 @@
 <?php
 
-namespace percipiolondon\typesense\helpers;
+namespace craftpulse\typesense\helpers;
 
 use Craft;
 use craft\log\MonologTarget;

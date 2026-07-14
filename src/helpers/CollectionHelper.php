@@ -1,16 +1,16 @@
 <?php
 
-namespace percipiolondon\typesense\helpers;
+namespace craftpulse\typesense\helpers;
 
 use craft\helpers\Json;
 
-use percipiolondon\typesense\Typesense;
-use percipiolondon\typesense\TypesenseCollectionIndex;
+use craftpulse\typesense\Typesense;
+use craftpulse\typesense\TypesenseCollectionIndex;
 
 /**
  * Class CollectionHelper
  *
- * @package percipiolondon\typesense\helpers
+ * @package craftpulse\typesense\helpers
  */
 class CollectionHelper
 {

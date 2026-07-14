@@ -1,15 +1,15 @@
 <?php
-namespace percipiolondon\typesense\services;
+namespace craftpulse\typesense\services;
 
 use Craft;
 use craft\db\Query;
 use craft\helpers\Queue;
 use Illuminate\Support\Collection;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\jobs\SyncSynonymsJob;
-use percipiolondon\typesense\db\Table;
-use percipiolondon\typesense\models\SynonymModel;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\jobs\SyncSynonymsJob;
+use craftpulse\typesense\db\Table;
+use craftpulse\typesense\models\SynonymModel;
+use craftpulse\typesense\Typesense;
 use yii\base\Component;
 use yii\db\Exception;
 

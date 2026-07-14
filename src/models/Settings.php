@@ -5,10 +5,10 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\models;
+namespace craftpulse\typesense\models;
 
 use craft\base\Model;
 use craft\behaviors\EnvAttributeParserBehavior;
@@ -16,7 +16,7 @@ use craft\behaviors\EnvAttributeParserBehavior;
 /**
  * Typesense Settings Model
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */

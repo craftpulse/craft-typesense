@@ -5,7 +5,7 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2022 percipiolondon
+ * @copyright Copyright (c) 2022 craftpulse
  */
 
 /**
@@ -25,7 +25,7 @@
 return [
     'collections' => [
         // CONTENT
-        \percipiolondon\typesense\TypesenseCollectionIndex::create(
+        \craftpulse\typesense\TypesenseCollectionIndex::create(
             [
                 'name' => 'schools',
                 'section' => 'schools.default', //section handle + entry type handle

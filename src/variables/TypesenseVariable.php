@@ -5,17 +5,17 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\variables;
+namespace craftpulse\typesense\variables;
 
 use Craft;
 
+use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\variables\ViteVariableInterface;
-use nystudio107\pluginvite\variables\ViteVariableTrait;
 
-use percipiolondon\typesense\Typesense;
+use nystudio107\pluginvite\variables\ViteVariableTrait;
 
 /**
  * Typesense Variable
@@ -25,7 +25,7 @@ use percipiolondon\typesense\Typesense;
  *
  * https://craftcms.com/docs/plugins/variables
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */

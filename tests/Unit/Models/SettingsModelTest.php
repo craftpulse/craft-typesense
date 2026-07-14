@@ -11,7 +11,7 @@
  */
 
 use craft\helpers\App;
-use percipiolondon\typesense\models\Settings;
+use craftpulse\typesense\models\Settings;
 
 it('requires an api key', function() {
     $settings = new Settings();

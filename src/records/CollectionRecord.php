@@ -1,11 +1,11 @@
 <?php
 
-namespace percipiolondon\typesense\records;
+namespace craftpulse\typesense\records;
 
 use craft\db\ActiveRecord;
 use craft\records\FieldLayout;
 
-use percipiolondon\typesense\db\Table;
+use craftpulse\typesense\db\Table;
 
 use yii\db\ActiveQueryInterface;
 

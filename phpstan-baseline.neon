@@ -186,27 +186,27 @@ parameters:
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Parameter \\#1 \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) expects craft\\\\elements\\\\Entry\\|craftpulse\\\\cockpit\\\\elements\\\\Contact\\|craftpulse\\\\cockpit\\\\elements\\\\Department\\|craftpulse\\\\cockpit\\\\elements\\\\Job\\|craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry, craft\\\\base\\\\ElementInterface given\\.$#"
+			message: "#^Parameter \\#1 \\$entry of method craftpulse\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) expects craft\\\\elements\\\\Entry\\|craftpulse\\\\cockpit\\\\elements\\\\Contact\\|craftpulse\\\\cockpit\\\\elements\\\\Department\\|craftpulse\\\\cockpit\\\\elements\\\\Job\\|craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry, craft\\\\base\\\\ElementInterface given\\.$#"
 			count: 1
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			message: "#^Parameter \\$entry of method craftpulse\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
 			count: 1
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			message: "#^Parameter \\$entry of method craftpulse\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
 			count: 1
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			message: "#^Parameter \\$entry of method craftpulse\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
 			count: 1
 			path: src/controllers/DocumentsController.php
 
 		-
-			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			message: "#^Parameter \\$entry of method craftpulse\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
 			count: 1
 			path: src/controllers/DocumentsController.php
 

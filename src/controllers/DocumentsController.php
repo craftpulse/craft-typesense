@@ -1,5 +1,5 @@
 <?php
-namespace percipiolondon\typesense\controllers;
+namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craft\services\Structures;
@@ -8,9 +8,9 @@ use craft\elements\Entry;
 use craft\helpers\ElementHelper;
 use craft\events\ElementEvent;
 use craft\services\Elements;
-use percipiolondon\typesense\events\DocumentEvent;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\events\DocumentEvent;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\Typesense;
 
 use craftpulse\cockpit\Cockpit;
 use craftpulse\cockpit\elements\Job;
@@ -179,7 +179,7 @@ class DocumentsController extends Controller
             }
 
             // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+            if (!$collection instanceof \craftpulse\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
                 $collection = CollectionHelper::getCollectionBySection($section);
             }
@@ -192,7 +192,7 @@ class DocumentsController extends Controller
             $collection = CollectionHelper::getCollectionBySection($sectionKey);
 
             // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+            if (!$collection instanceof \craftpulse\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
                 $collection = CollectionHelper::getCollectionBySection($sectionKey);
             }
@@ -204,7 +204,7 @@ class DocumentsController extends Controller
             $collection = CollectionHelper::getCollectionBySection($sectionKey);
 
             // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
+            if (!$collection instanceof \craftpulse\typesense\TypesenseCollectionIndex) {
                 Typesense::$plugin->getCollections()->saveCollections();
                 $collection = CollectionHelper::getCollectionBySection($sectionKey);
             }

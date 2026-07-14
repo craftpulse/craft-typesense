@@ -8,7 +8,7 @@
  * @copyright Copyright (c) 2025 CraftPulse
  */
 
-namespace percipiolondon\typesense\controllers;
+namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craft\errors\MissingComponentException;
@@ -17,10 +17,10 @@ use craft\helpers\Queue;
 use craft\web\Controller;
 use Http\Client\Exception;
 
-use percipiolondon\typesense\Typesense;
-use percipiolondon\typesense\events\DocumentEvent;
-use percipiolondon\typesense\helpers\CollectionHelper;
-use percipiolondon\typesense\jobs\SyncDocumentsJob;
+use craftpulse\typesense\Typesense;
+use craftpulse\typesense\events\DocumentEvent;
+use craftpulse\typesense\helpers\CollectionHelper;
+use craftpulse\typesense\jobs\SyncDocumentsJob;
 
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;

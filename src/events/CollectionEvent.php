@@ -1,8 +1,8 @@
 <?php
 
-namespace percipiolondon\typesense\events;
+namespace craftpulse\typesense\events;
 
-use percipiolondon\typesense\models\CollectionModel;
+use craftpulse\typesense\models\CollectionModel;
 use yii\base\Event;
 
 /**

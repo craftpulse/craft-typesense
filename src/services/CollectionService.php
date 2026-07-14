@@ -4,7 +4,7 @@
  * @since 4.0.0
  */
 
-namespace percipiolondon\typesense\services;
+namespace craftpulse\typesense\services;
 
 use craft\base\MemoizableArray;
 use craft\db\Query;
@@ -12,9 +12,9 @@ use Craft;
 
 use craft\errors\MissingComponentException;
 use Http\Client\Exception;
-use percipiolondon\typesense\models\CollectionModel as Collection;
+use craftpulse\typesense\models\CollectionModel as Collection;
 
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 use Throwable;
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\Component;

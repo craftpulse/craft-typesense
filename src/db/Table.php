@@ -1,6 +1,6 @@
 <?php
 
-namespace percipiolondon\typesense\db;
+namespace craftpulse\typesense\db;
 
 abstract class Table
 {

@@ -10,10 +10,10 @@
  * @copyright Copyright (c) 2026 CraftPulse
  */
 
-use percipiolondon\typesense\models\Settings;
-use percipiolondon\typesense\services\CollectionService;
-use percipiolondon\typesense\services\TypesenseService;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\TypesenseService;
+use craftpulse\typesense\Typesense;
 
 it('registers the plugin instance', function() {
     expect(Craft::$app->getPlugins()->getPlugin('typesense'))->toBeInstanceOf(Typesense::class);

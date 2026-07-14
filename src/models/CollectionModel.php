@@ -1,6 +1,6 @@
 <?php
 
-namespace percipiolondon\typesense\models;
+namespace craftpulse\typesense\models;
 
 use craft\base\Model;
 use craft\validators\DateTimeValidator;

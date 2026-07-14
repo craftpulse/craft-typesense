@@ -1,10 +1,10 @@
 <?php
 
-namespace percipiolondon\typesense\jobs;
+namespace craftpulse\typesense\jobs;
 
 use Craft;
 use craft\queue\BaseJob;
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 
 class SyncSynonymsJob extends BaseJob
 {

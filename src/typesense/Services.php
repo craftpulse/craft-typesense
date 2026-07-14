@@ -1,8 +1,8 @@
 <?php
 
-namespace percipiolondon\typesense\typesense;
+namespace craftpulse\typesense\typesense;
 
-use percipiolondon\typesense\services\CollectionService as Collections;
+use craftpulse\typesense\services\CollectionService as Collections;
 
 /**
  * Trait Services

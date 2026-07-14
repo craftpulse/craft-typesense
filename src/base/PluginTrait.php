@@ -1,13 +1,13 @@
 <?php
 
-namespace percipiolondon\typesense\base;
+namespace craftpulse\typesense\base;
 
+use craftpulse\typesense\assetbundles\typesense\TypesenseAsset;
+use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\SynonymService;
+use craftpulse\typesense\services\TypesenseService;
+use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\services\VitePluginService;
-use percipiolondon\typesense\assetbundles\typesense\TypesenseAsset;
-use percipiolondon\typesense\services\CollectionService;
-use percipiolondon\typesense\services\SynonymService;
-use percipiolondon\typesense\services\TypesenseService;
-use percipiolondon\typesense\Typesense;
 
 trait PluginTrait
 {

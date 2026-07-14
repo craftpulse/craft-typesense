@@ -5,10 +5,10 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\assetbundles\typesense;
+namespace craftpulse\typesense\assetbundles\typesense;
 
 use craft\web\AssetBundle;
 
@@ -26,7 +26,7 @@ use craft\web\AssetBundle;
  *
  * http://www.yiiframework.com/doc-2.0/guide-structure-assets.html
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */
@@ -41,7 +41,7 @@ class TypesenseAsset extends AssetBundle
     public function init()
     {
         // define the path that your publishable resources live
-        $this->sourcePath = "@percipiolondon/typesense/web/assets/dist";
+        $this->sourcePath = "@craftpulse/typesense/web/assets/dist";
 
         parent::init();
     }

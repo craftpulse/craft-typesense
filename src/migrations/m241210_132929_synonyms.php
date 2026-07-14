@@ -1,10 +1,10 @@
 <?php
 
-namespace percipiolondon\typesense\migrations;
+namespace craftpulse\typesense\migrations;
 
 use Craft;
 use craft\db\Migration;
-use percipiolondon\typesense\db\Table;
+use craftpulse\typesense\db\Table;
 use yii\base\Exception;
 
 /**

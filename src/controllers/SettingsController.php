@@ -7,13 +7,13 @@
  * @license   https://percipio.london/license
  */
 
-namespace percipiolondon\typesense\controllers;
+namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craft\errors\MissingComponentException;
 use craft\web\Controller;
 
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 use yii\web\BadRequestHttpException;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;

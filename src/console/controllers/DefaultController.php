@@ -5,18 +5,18 @@
  * Craft Plugin that synchronises with Typesense
  *
  * @link      https://percipio.london
- * @copyright Copyright (c) 2021 percipiolondon
+ * @copyright Copyright (c) 2021 craftpulse
  */
 
-namespace percipiolondon\typesense\console\controllers;
+namespace craftpulse\typesense\console\controllers;
 
 use Craft;
 use craft\elements\Entry;
 use craft\helpers\Queue;
-use percipiolondon\typesense\jobs\SyncDocumentsJob;
-use percipiolondon\typesense\events\DocumentEvent;
+use craftpulse\typesense\jobs\SyncDocumentsJob;
+use craftpulse\typesense\events\DocumentEvent;
 
-use percipiolondon\typesense\Typesense;
+use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 
 /**
@@ -40,7 +40,7 @@ use yii\console\Controller;
  *
  * ./craft typesense/default/do-something
  *
- * @author    percipiolondon
+ * @author    craftpulse
  * @package   Typesense
  * @since     1.0.0
  */
