@@ -228,9 +228,4 @@ parameters:
 		-
 			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
 			count: 1
-			path: src/helpers/ProjectConfigDataHelper.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
-			count: 1
 			path: src/services/CollectionService.php

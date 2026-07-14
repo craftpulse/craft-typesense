@@ -71,6 +71,11 @@ class ServerCapabilities extends Model
     public const VERSION_COLLECTION_CLONING = '30.1';
 
     /**
+     * @var string Reference `cascade_delete` on schema fields (v30+).
+     */
+    public const VERSION_CASCADE_DELETE = '30.0';
+
+    /**
      * @var string Global synonym sets (`/synonym_sets`) (v30.2+).
      */
     public const VERSION_SYNONYM_SETS = '30.2';
@@ -231,6 +236,15 @@ class ServerCapabilities extends Model
      * @return bool
      * @author CraftPulse
      */
+    public function cascadeDelete(): bool
+    {
+        return $this->atLeast(self::VERSION_CASCADE_DELETE);
+    }
+
+    /**
+     * @return bool
+     * @author CraftPulse
+     */
     public function synonymSets(): bool
     {
         return $this->atLeast(self::VERSION_SYNONYM_SETS);
@@ -269,6 +283,7 @@ class ServerCapabilities extends Model
             'nlSearch' => $this->nlSearch(),
             'mmr' => $this->mmr(),
             'collectionCloning' => $this->collectionCloning(),
+            'cascadeDelete' => $this->cascadeDelete(),
             'synonymSets' => $this->synonymSets(),
             'curationSets' => $this->curationSets(),
             'personalizationModels' => $this->personalizationModels(),

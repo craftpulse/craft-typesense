@@ -10,16 +10,6 @@
  * @copyright Copyright (c) 2026 CraftPulse
  */
 
-use craftpulse\typesense\models\ServerCapabilities;
-
-function caps(string $version): ServerCapabilities
-{
-    $capabilities = new ServerCapabilities();
-    $capabilities->version = $version;
-
-    return $capabilities;
-}
-
 it('enforces the v28 support floor', function() {
     expect(caps('27.1')->isBelowFloor())->toBeTrue()
         ->and(caps('27.1')->isSupported())->toBeFalse()

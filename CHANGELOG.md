@@ -20,10 +20,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Added a collection-name prefix setting so several environments can share one cluster.
 - Added a rebuilt settings screen (dedicated `SettingsController`, gated by the new `typesense:manageSettings` permission) with connection, resilience, sync and queue, ownership, and analytics tabs. The screen is read-only and saves fail closed when `allowAdminChanges` is off.
 - Added per-feature ownership defaults (synonyms, curation, presets), an analytics opt-in default, and a global sync-suspend switch.
+- Added fluent config builders (`Collection` and `Field`) covering the entire Typesense schema surface: every field type and property, geopoint, object/nested (with automatic `enable_nested_fields`), cross-collection references (JOINs, fluent-config only), vector fields with auto-embedding, and a `raw()` escape hatch. Builder features that need a specific server version validate against the detected capabilities and name the required version.
+- Added the collections registry (`Collections`): merges config-file and event-registered collections into one map, resolves name collisions in favour of the config file (flagging the overridden name), and resolves Typesense target names through the environment-prefix resolver.
+- Added the Schema service: Craft-field to Typesense-type derivation (extensible via `Schema::EVENT_DEFINE_TYPE_MAP`), geopoint normalization ([lat, lng] order, zero-coordinate skip), and a computed-field registry (`Schema::EVENT_REGISTER_COMPUTED_FIELDS`).
+- Added the `Collections::EVENT_REGISTER_COLLECTIONS` event so other plugins and project code can register their own collections.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.
 - Removed the redundant Dashboard control-panel nav item, which only redirected to Collections. The plugin section now lands on Collections.
+- Removed the dead `ProjectConfigDataHelper` (only referenced by commented-out code).
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

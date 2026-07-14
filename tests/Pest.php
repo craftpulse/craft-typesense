@@ -11,6 +11,7 @@
  * @copyright Copyright (c) 2026 CraftPulse
  */
 
+use craftpulse\typesense\models\ServerCapabilities;
 use markhuot\craftpest\test\RefreshesDatabase;
 use markhuot\craftpest\test\TestCase;
 use yii\caching\ArrayCache;
@@ -20,3 +21,14 @@ uses(TestCase::class, RefreshesDatabase::class)
         Craft::$app->set('cache', new ArrayCache());
     })
     ->in(__DIR__);
+
+/**
+ * Builds a ServerCapabilities value object pinned to a version string.
+ */
+function caps(string $version): ServerCapabilities
+{
+    $capabilities = new ServerCapabilities();
+    $capabilities->version = $version;
+
+    return $capabilities;
+}
