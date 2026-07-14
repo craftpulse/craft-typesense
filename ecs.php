@@ -20,15 +20,5 @@ return static function(ECSConfig $ecsConfig): void {
         SetList::CRAFT_CMS_4,
     ]);
 
-    // Legacy 5.8.3 source (percipiolondon\typesense namespace) is skipped until
-    // the clean rebuild rewrites it to house standard. Each file below fails
-    // OrderedImportsFixer and/or BinaryOperatorSpacesFixer; fixing them now is
-    // rebuild work, not preparation. New files added to src are still checked.
-    $ecsConfig->skip([
-        __DIR__ . '/src/Typesense.php',
-        __DIR__ . '/src/config.php',
-        __DIR__ . '/src/migrations/m241210_132929_synonyms.php',
-    ]);
-
     $ecsConfig->parallel();
 };

@@ -67,11 +67,13 @@ class Notifications extends Component
         $cache = Craft::$app->getCache();
         $cacheKey = 'typesense:syncAlert:' . md5($context);
 
-        if ($cache->get($cacheKey) !== false) {
-            return;
-        }
+        if ($cache !== null) {
+            if ($cache->get($cacheKey) !== false) {
+                return;
+            }
 
-        $cache->set($cacheKey, true, self::THROTTLE_SECONDS);
+            $cache->set($cacheKey, true, self::THROTTLE_SECONDS);
+        }
 
         try {
             Craft::$app->getMailer()->compose()

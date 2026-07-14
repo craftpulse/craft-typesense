@@ -12,7 +12,6 @@ use yii\base\Exception;
  */
 class m241210_132929_synonyms extends Migration
 {
-
     /**
      * @inheritdoc
      */

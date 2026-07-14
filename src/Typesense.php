@@ -18,10 +18,6 @@ use craft\console\Application as ConsoleApplication;
 use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
-use craft\queue\BaseJob;
-use craft\queue\Queue;
-use craft\events\ElementEvent;
-use yii\queue\ExecEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
 use craft\events\RegisterElementActionsEvent;
@@ -29,16 +25,16 @@ use craft\events\RegisterGqlQueriesEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Cp;
-use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
-use craft\services\Elements;
+use craft\queue\BaseJob;
+use craft\queue\Queue;
 use craft\services\Gql;
-use craft\services\Utilities;
 use craft\services\UserPermissions;
+use craft\services\Utilities;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
-
 use craftpulse\typesense\base\PluginTrait;
+
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\elementactions\Reindex;
 use craftpulse\typesense\elementactions\ViewInSearch;
@@ -48,11 +44,10 @@ use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\utilities\TypesenseUtility;
 use craftpulse\typesense\variables\TypesenseVariable;
-
-
-use Typesense\Exceptions\ObjectNotFound;
-use Typesense\Exceptions\ServerError;
 use yii\base\Event;
+
+
+use yii\queue\ExecEvent;
 
 /**
  * Craft plugins are very much like little applications in and of themselves. We’ve made
@@ -184,7 +179,10 @@ class Typesense extends Plugin
     public function getSettingsResponse(): mixed
     {
         // redirect to plugin settings page
-        return Craft::$app->getResponse()->redirect(UrlHelper::cpUrl('typesense/settings'));
+        /** @var \craft\web\Response $response */
+        $response = Craft::$app->getResponse();
+
+        return $response->redirect(UrlHelper::cpUrl('typesense/settings'));
     }
 
     /**
@@ -193,8 +191,13 @@ class Typesense extends Plugin
      */
     public function getCpNavItem(): ?array
     {
-        $subNavs = [];
         $navItem = parent::getCpNavItem();
+
+        if ($navItem === null) {
+            return null;
+        }
+
+        $subNavs = [];
         $currentUser = Craft::$app->getUser();
 
         // Only show sub navigation the user has permission to view. The
@@ -242,7 +245,7 @@ class Typesense extends Plugin
         Event::on(
             UrlManager::class,
             UrlManager::EVENT_REGISTER_CP_URL_RULES,
-            function (RegisterUrlRulesEvent $event) {
+            function(RegisterUrlRulesEvent $event) {
                 Craft::debug(
                     'UrlManager::EVENT_REGISTER_CP_URL_RULES',
                     __METHOD__
@@ -259,7 +262,7 @@ class Typesense extends Plugin
         Event::on(
             UserPermissions::class,
             UserPermissions::EVENT_REGISTER_PERMISSIONS,
-            function (RegisterUserPermissionsEvent $event) {
+            function(RegisterUserPermissionsEvent $event) {
                 Craft::debug(
                     'UserPermissions::EVENT_REGISTER_PERMISSIONS',
                     __METHOD__
@@ -267,7 +270,7 @@ class Typesense extends Plugin
                 // Register our custom permissions
                 $event->permissions[] = [
                     'heading' => Craft::t('typesense', 'Typesense'),
-                    'permissions' => $this->customAdminCpPermissions()
+                    'permissions' => $this->customAdminCpPermissions(),
                 ];
             }
         );
@@ -276,7 +279,7 @@ class Typesense extends Plugin
         Event::on(
             Cp::class,
             Cp::EVENT_REGISTER_ALERTS,
-            function (RegisterCpAlertsEvent $event) {
+            function(RegisterCpAlertsEvent $event) {
                 $warning = $this->getCompatibility()->cockpitPairingWarning();
 
                 if ($warning !== null) {
@@ -289,7 +292,7 @@ class Typesense extends Plugin
         Event::on(
             Utilities::class,
             Utilities::EVENT_REGISTER_UTILITIES,
-            function (RegisterComponentTypesEvent $event) {
+            function(RegisterComponentTypesEvent $event) {
                 $event->types[] = TypesenseUtility::class;
             }
         );
@@ -305,7 +308,7 @@ class Typesense extends Plugin
             Event::on(
                 $elementType,
                 Element::EVENT_REGISTER_ACTIONS,
-                function (RegisterElementActionsEvent $event) {
+                function(RegisterElementActionsEvent $event) {
                     $event->actions[] = Reindex::class;
                     $event->actions[] = ViewInSearch::class;
                 }
@@ -316,7 +319,7 @@ class Typesense extends Plugin
         Event::on(
             Gql::class,
             Gql::EVENT_REGISTER_GQL_QUERIES,
-            function (RegisterGqlQueriesEvent $event) {
+            function(RegisterGqlQueriesEvent $event) {
                 $event->queries = array_merge($event->queries, SearchQuery::getQueries());
             }
         );
@@ -383,7 +386,7 @@ class Typesense extends Plugin
         Event::on(
             Queue::class,
             Queue::EVENT_AFTER_ERROR,
-            function (ExecEvent $event) {
+            function(ExecEvent $event) {
                 $job = $event->job;
 
                 if (is_object($job) && str_starts_with($job::class, 'craftpulse\\typesense\\jobs\\')) {
@@ -396,13 +399,10 @@ class Typesense extends Plugin
 
     private function _registerVariable(): void
     {
-        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function (Event $event) {
+        Event::on(CraftVariable::class, CraftVariable::EVENT_INIT, function(Event $event) {
             /** @var CraftVariable $variable */
             $variable = $event->sender;
-            $variable->set('typesense', [
-                'class' => TypesenseVariable::class,
-                'viteService' => $this->getVite(),
-            ]);
+            $variable->set('typesense', TypesenseVariable::class);
         });
     }
 }

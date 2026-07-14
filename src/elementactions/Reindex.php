@@ -12,6 +12,7 @@ namespace craftpulse\typesense\elementactions;
 
 use Craft;
 use craft\base\ElementAction;
+use craft\base\ElementInterface;
 use craft\elements\db\ElementQueryInterface;
 use craftpulse\typesense\Typesense;
 
@@ -43,7 +44,9 @@ class Reindex extends ElementAction
         $sync = Typesense::$plugin->getSync();
 
         foreach ($query->all() as $element) {
-            $sync->handleSave($element);
+            if ($element instanceof ElementInterface) {
+                $sync->handleSave($element);
+            }
         }
 
         $sync->flushPending();

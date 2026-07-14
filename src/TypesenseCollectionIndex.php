@@ -71,7 +71,9 @@ class TypesenseCollectionIndex
         $this->indexName = $schema['name'];
         $this->section = $schema['section'];
         $this->schema = $schema;
-        $this->criteria = $this->elementType::find();
+        /** @var ElementQuery<int, Element> $query */
+        $query = $this->elementType::find();
+        $this->criteria = $query;
     }
 
     /**

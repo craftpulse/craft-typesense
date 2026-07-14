@@ -11,8 +11,6 @@
 namespace craftpulse\typesense\variables;
 
 use craftpulse\typesense\Typesense;
-use nystudio107\pluginvite\variables\ViteVariableInterface;
-use nystudio107\pluginvite\variables\ViteVariableTrait;
 
 /**
  * Typesense Variable
@@ -26,10 +24,8 @@ use nystudio107\pluginvite\variables\ViteVariableTrait;
  * @package   Typesense
  * @since     5.9.0
  */
-class TypesenseVariable implements ViteVariableInterface
+class TypesenseVariable
 {
-    use ViteVariableTrait;
-
     // Public Methods
     // =========================================================================
 

@@ -1,8 +1,15 @@
 <?php
+/**
+ * Typesense plugin for Craft CMS 5.x
+ *
+ * Craft Plugin that synchronises with Typesense
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
+ */
 
 namespace craftpulse\typesense\base;
 
-use craftpulse\typesense\assetbundles\typesense\TypesenseAsset;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
@@ -20,107 +27,258 @@ use craftpulse\typesense\services\Search;
 use craftpulse\typesense\services\Sync;
 use craftpulse\typesense\services\Synonyms;
 use craftpulse\typesense\Typesense;
-use nystudio107\pluginvite\services\VitePluginService;
+use yii\base\InvalidConfigException;
 
+/**
+ * Wires the plugin's service components and exposes a typed getter for each.
+ *
+ * @author    CraftPulse
+ * @package   Typesense
+ * @since     5.9.0
+ */
 trait PluginTrait
 {
+    // Static Properties
+    // =========================================================================
+
+    /**
+     * @var Typesense The plugin instance.
+     */
     public static Typesense $plugin;
 
     // Public Methods
     // =========================================================================
-    public function getTypesense(): Typesense
-    {
-        return $this->get('typesense');
-    }
 
+    /**
+     * @return Client
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getClient(): Client
     {
-        return $this->get('client');
+        /** @var Client $client */
+        $client = $this->get('client');
+
+        return $client;
     }
 
+    /**
+     * @return Collections
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getCollectionRegistry(): Collections
     {
-        return $this->get('collectionRegistry');
+        /** @var Collections $collections */
+        $collections = $this->get('collectionRegistry');
+
+        return $collections;
     }
 
-    public function getSchema(): Schema
-    {
-        return $this->get('schema');
-    }
-
-    public function getDocuments(): Documents
-    {
-        return $this->get('documents');
-    }
-
-    public function getSync(): Sync
-    {
-        return $this->get('sync');
-    }
-
-    public function getLegacyConfig(): LegacyConfig
-    {
-        return $this->get('legacyConfig');
-    }
-
-    public function getConfigGenerator(): ConfigGenerator
-    {
-        return $this->get('configGenerator');
-    }
-
+    /**
+     * @return Compatibility
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getCompatibility(): Compatibility
     {
-        return $this->get('compatibility');
+        /** @var Compatibility $compatibility */
+        $compatibility = $this->get('compatibility');
+
+        return $compatibility;
     }
 
-    public function getKeys(): Keys
+    /**
+     * @return ConfigGenerator
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getConfigGenerator(): ConfigGenerator
     {
-        return $this->get('keys');
+        /** @var ConfigGenerator $configGenerator */
+        $configGenerator = $this->get('configGenerator');
+
+        return $configGenerator;
     }
 
-    public function getDrift(): Drift
-    {
-        return $this->get('drift');
-    }
-
-    public function getNotifications(): Notifications
-    {
-        return $this->get('notifications');
-    }
-
-    public function getSynonyms(): Synonyms
-    {
-        return $this->get('synonyms');
-    }
-
+    /**
+     * @return Curation
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getCuration(): Curation
     {
-        return $this->get('curation');
+        /** @var Curation $curation */
+        $curation = $this->get('curation');
+
+        return $curation;
     }
 
-    public function getPresets(): Presets
-    {
-        return $this->get('presets');
-    }
-
+    /**
+     * @return Dictionaries
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getDictionaries(): Dictionaries
     {
-        return $this->get('dictionaries');
+        /** @var Dictionaries $dictionaries */
+        $dictionaries = $this->get('dictionaries');
+
+        return $dictionaries;
     }
 
+    /**
+     * @return Documents
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getDocuments(): Documents
+    {
+        /** @var Documents $documents */
+        $documents = $this->get('documents');
+
+        return $documents;
+    }
+
+    /**
+     * @return Drift
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getDrift(): Drift
+    {
+        /** @var Drift $drift */
+        $drift = $this->get('drift');
+
+        return $drift;
+    }
+
+    /**
+     * @return Keys
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getKeys(): Keys
+    {
+        /** @var Keys $keys */
+        $keys = $this->get('keys');
+
+        return $keys;
+    }
+
+    /**
+     * @return LegacyConfig
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getLegacyConfig(): LegacyConfig
+    {
+        /** @var LegacyConfig $legacyConfig */
+        $legacyConfig = $this->get('legacyConfig');
+
+        return $legacyConfig;
+    }
+
+    /**
+     * @return Notifications
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getNotifications(): Notifications
+    {
+        /** @var Notifications $notifications */
+        $notifications = $this->get('notifications');
+
+        return $notifications;
+    }
+
+    /**
+     * @return Presets
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getPresets(): Presets
+    {
+        /** @var Presets $presets */
+        $presets = $this->get('presets');
+
+        return $presets;
+    }
+
+    /**
+     * @return Schema
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getSchema(): Schema
+    {
+        /** @var Schema $schema */
+        $schema = $this->get('schema');
+
+        return $schema;
+    }
+
+    /**
+     * @return Search
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
     public function getSearch(): Search
     {
-        return $this->get('search');
+        /** @var Search $search */
+        $search = $this->get('search');
+
+        return $search;
     }
 
-    public function getVite(): VitePluginService
+    /**
+     * @return Sync
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getSync(): Sync
     {
-        return $this->get('vite');
+        /** @var Sync $sync */
+        $sync = $this->get('sync');
+
+        return $sync;
+    }
+
+    /**
+     * @return Synonyms
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getSynonyms(): Synonyms
+    {
+        /** @var Synonyms $synonyms */
+        $synonyms = $this->get('synonyms');
+
+        return $synonyms;
+    }
+
+    /**
+     * @return Typesense
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getTypesense(): Typesense
+    {
+        /** @var Typesense $typesense */
+        $typesense = $this->get('typesense');
+
+        return $typesense;
     }
 
     // Private Methods
     // =========================================================================
 
+    /**
+     * Registers the plugin's service components.
+     *
+     * @return void
+     * @author CraftPulse
+     */
     private function _registerComponents(): void
     {
         $this->setComponents([
@@ -141,17 +299,6 @@ trait PluginTrait
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,
             'client' => Client::class,
-            // Register the vite service
-            'vite' => [
-                'class' => VitePluginService::class,
-                'assetClass' => TypesenseAsset::class,
-                'useDevServer' => true,
-                'devServerPublic' => 'http://localhost:3001',
-                'serverPublic' => 'http://localhost:8001',
-                'errorEntry' => '/src/js/typesense.ts',
-                'devServerInternal' => 'http://craft-typesense-buildchain:3001',
-                'checkDevServer' => true,
-            ],
         ]);
     }
 }

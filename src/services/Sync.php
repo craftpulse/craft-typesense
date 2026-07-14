@@ -828,6 +828,10 @@ class Sync extends Component
             return;
         }
 
+        if (!is_array($results)) {
+            return;
+        }
+
         foreach ($results as $result) {
             if (($result['success'] ?? true) === false) {
                 Craft::error("Typesense import failure in '{$target}': " . ($result['error'] ?? 'unknown'), 'typesense');

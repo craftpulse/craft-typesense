@@ -64,6 +64,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Dropped the vestigial `typesense_collections` table.
 - Retired the legacy Collections and Documents control-panel screens, the collection model, and the legacy event classes. The collections overview now lives in the Typesense utility.
 - Retired the legacy synonyms control-panel cluster (its controller, service, sync job, model, and templates) and the now-orphaned `CollectionHelper`, `CollectionRecord`, and vestigial `TypesenseModel` scaffold. The `typesense_synonyms` table and its rows are preserved and now read through the Synonyms service. Synonym management moves to config (Free) and the Pro control-panel manager. With both the Collections and Synonyms screens retired, the plugin section now lands on Settings; collections and synonyms status lives in the Typesense utility.
+- Removed the dead Vue-era control-panel apparatus: the `TypesenseAsset` and `TypesenseUtilityAsset` bundles, the `src/web/assets` Vue/TypeScript sources and build output, and the Vite plugin service wiring that only the retired Collections and Synonyms screens used. The read-only utility renders with native Craft form posts and needs no bundle; the Pro control panel introduces its own assets when it lands.
+
+### Quality
+- Raised the static-analysis floor to its final Free state: PHPStan runs at level 8 with an empty baseline, and the ECS skip list is empty. Every source file now passes both.
+- Added three regression tests pinning the pre-rebuild backlog's damning themes: control-panel action URLs are built from the control-panel base and never the site URL (issue #68, asserted on `UrlHelper::actionUrl`), saving an element before the plugin is configured is a safe no-op (issue #63), and applying a draft skips cleanly instead of fataling (issue #67). A further test pins that one element indexes into every collection whose query matches it (issues #65 and #66).
+- Completed the `docs/` set for the whole Free surface (search, synonyms/curation/presets, multi-site, drift, backup, and extension events for plugin authors) and rewrote the README for 5.9.0.
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

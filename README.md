@@ -1,31 +1,102 @@
-# Typesense plugin for Craft CMS 5.x
+# Typesense for Craft CMS 5
 
-Craft Plugin that synchronises with Typesense.
-
-<!-- Visit our [Demo](https://typesense.percipio.london/demo) to see the Craft Typesense plugin in action. You can read our [docs](https://typesense.percipio.london/docs/about) to setup your project. Need more help with the setup? Follow our blogpost "[Setup the Typsesense plugin with Typesense Cloud with javascript](https://percipio.london/blog/craftcms-plugin-typsesense)" -->
+Keep a [Typesense](https://typesense.org/) search index in lockstep with your
+Craft content. Define collections with a fluent, type-safe config, and the plugin
+syncs your elements, tunes relevance, and serves fail-soft searches to your front
+end.
 
 ![Screenshot](resources/img/banner.jpg)
 
 ## Requirements
 
-This plugin requires Craft CMS 5.0.0 or later.
+- Craft CMS 5.0.0 or later
+- PHP 8.2 or later
+- A Typesense server, version 28.0 or later
+
+Server versions below 28.0 are unsupported. Versions 30.0 and 30.1 are refused
+on purpose: their synonym and curation APIs return 404. Use 28.x, 29.x, or 30.2+.
+The plugin detects the server version and enables version-specific features
+automatically (see [Server versions and capabilities](docs/capabilities.md)).
+
+## Free and Pro
+
+The Free edition is a complete search engine: fluent config, the sync engine,
+multi-site, synonyms/curation/presets from config, the search layer, a GraphQL
+search query, scoped search keys, a read-only control-panel utility, drift
+detection, and backup/restore.
+
+The Pro edition adds control-panel authoring on top: a field-mapping UI, synonym
+and curation managers, a relevance tuner, an analytics dashboard, and
+vector/AI search. Lower editions never render Pro screens.
 
 ## Installation
 
-To install the plugin, follow these instructions.
+```bash
+composer require craftpulse/craft-typesense
+php craft plugin/install typesense
+```
 
-1.  Open your terminal and go to your Craft project:
+Then add a Typesense admin API key (and, for the front end, a search-only key) in
+Settings, Typesense.
 
-        cd /path/to/project
+## Quick start
 
-2.  Then tell Composer to load the plugin:
+Copy `vendor/craftpulse/craft-typesense/src/config.php` to `config/typesense.php`
+and declare a collection:
 
-        composer require craftpulse/craft-typesense
+```php
+use craft\elements\Entry;
+use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\builders\Field;
 
-3.  In the Control Panel, go to Settings → Plugins and click the “Install” button for Typesense.
+return [
+    'collections' => [
+        Collection::make('products')
+            ->elementType(Entry::class)
+            ->elementQuery(fn($query) => $query->section('products'))
+            ->fields(
+                Field::string('title')->sort(),
+                Field::string('body'),
+                Field::float('price')->facet(),
+            ),
+    ],
+];
+```
 
-## Typesense Documentation
+Sync, then search:
 
-In our [Github Wiki](https://github.com/craftpulse/craft-typesense/wiki) where you can find the information and documentation about the plugin.
+```bash
+php craft typesense/sync/all
+```
 
-Brought to you by [craftpulse](https://craft-pulse.com/)
+```twig
+{% set results = craft.typesense.search('products', { q: 'coat', query_by: 'title,body' }) %}
+{% for hit in results.hits %}{{ hit.document.title }}{% endfor %}
+```
+
+For browser-side search, derive a [scoped search key](docs/scoped-keys.md) rather
+than exposing any admin key.
+
+## Documentation
+
+Full docs live in [`docs/`](docs/):
+
+- [Introduction](docs/introduction.md) and [Configuration](docs/configuration.md)
+- [Fluent config reference](docs/fluent-config.md)
+- [Sync engine](docs/sync-engine.md), [Documents](docs/documents.md), [Multi-site](docs/multisite.md)
+- [Searching (+ GraphQL, stopwords, stemming)](docs/search.md)
+- [Synonyms, curation and presets](docs/synonyms.md)
+- [Scoped search keys](docs/scoped-keys.md)
+- [Console commands](docs/console.md), [Control panel utility](docs/utility.md)
+- [Drift detection](docs/drift.md), [Backup and restore](docs/backup.md)
+- [Server versions and capabilities](docs/capabilities.md), [Settings](docs/settings.md)
+- [Extending (for plugin authors)](docs/extending.md)
+- [Upgrading to 5.9.0](docs/upgrading.md)
+
+## Upgrading from 5.8.x
+
+This is a zero-touch update. Run `craft up` as usual; see
+[docs/upgrading.md](docs/upgrading.md) for the details. If you run the Cockpit
+companion plugin, update it to its 5.9.0 companion release as a paired run.
+
+Brought to you by [CraftPulse](https://craft-pulse.com/)

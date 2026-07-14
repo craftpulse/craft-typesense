@@ -119,7 +119,7 @@ class Drift extends Component
             return $targets;
         }
 
-        $primaryId = Craft::$app->getSites()->getPrimarySite()->id;
+        $primaryId = (int)Craft::$app->getSites()->getPrimarySite()->id;
 
         return [$primaryId => $registry->resolveName($collection, $primaryId)];
     }

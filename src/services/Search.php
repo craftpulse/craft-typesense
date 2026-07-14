@@ -139,6 +139,6 @@ class Search extends Component
      */
     private function _siteId(): int
     {
-        return Craft::$app->getSites()->getCurrentSite()->id;
+        return (int)Craft::$app->getSites()->getCurrentSite()->id;
     }
 }

@@ -4,8 +4,8 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2022 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 /**
@@ -22,48 +22,29 @@
  * you do for 'general.php'
  */
 
+use craft\elements\db\EntryQuery;
+use craft\elements\Entry;
+use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\builders\Field;
+
 return [
     'collections' => [
-        // CONTENT
-        \craftpulse\typesense\TypesenseCollectionIndex::create(
-            [
-                'name' => 'schools',
-                'section' => 'schools.default', //section handle + entry type handle
-                'fields' => [
-                    [
-                        'name' => 'title',
-                        'type' => 'string',
-                        'sort' => true,
-                    ],
-                    [
-                        'name' => 'slug',
-                        'type' => 'string',
-                        'facet' => true
-                    ],
-                    [
-                        'name' => 'handle',
-                        'type' => 'string',
-                    ],
-                    [
-                        'name' => 'post_date_timestamp',
-                        'type' => 'int32',
-                    ],
-                ],
-                'default_sorting_field' => 'post_date_timestamp', // can only be an integer,
-                'resolver' => static function(\craft\elements\Entry $entry) {
-                    return [
-                        'id' => (string)$entry->id,
-                        'title' => $entry->title,
-                        'handle' => $entry->section->handle,
-                        'slug' => $entry->slug,
-                        'post_date_timestamp' => (int)$entry->postDate->format('U')
-                    ];
-                }
-            ]
-        )
-        ->elementType(\craft\elements\Entry::class)
-        ->criteria(function(\craft\elements\db\EntryQuery $query) {
-            return $query->section('schools');
-        }),
-    ]
+        Collection::make('schools')
+            ->elementType(Entry::class)
+            ->elementQuery(fn(EntryQuery $query) => $query->section('schools'))
+            ->fields(
+                Field::string('title')->sort(),
+                Field::string('slug')->facet(),
+                Field::string('handle'),
+                Field::int32('post_date_timestamp'),
+            )
+            ->defaultSortingField('post_date_timestamp')
+            ->transform(fn(Entry $entry) => [
+                'id' => (string)$entry->id,
+                'title' => $entry->title,
+                'handle' => $entry->getSection()?->handle,
+                'slug' => $entry->slug,
+                'post_date_timestamp' => (int)($entry->postDate?->format('U') ?? 0),
+            ]),
+    ],
 ];
