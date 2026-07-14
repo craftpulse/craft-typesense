@@ -6,12 +6,14 @@ description: Create collections inside of Craft CMS
 
 Collections are created within the Craft CMS through a config file. Copy over `src/config.php` and edit to get started with your collections.
 
+> The plugin's PHP namespace moved from `percipiolondon\typesense` to `craftpulse\typesense` in 5.9.0. Existing config files that reference `\percipiolondon\typesense\TypesenseCollectionIndex` keep working through a backwards-compatibility shim, but new config should use the `\craftpulse\typesense\TypesenseCollectionIndex` class.
+
 ## Config.php
 Return an array with a keyed value `collections`. This key contains an array of all the collections you want to add. You can find all the supported [Typesense Field Types here](https://typesense.org/docs/0.23.0/api/collections.html#field-types)
 
 Per array item, you will create a `new TypesenseCollectionIndex`. Here's a basic example on how to achieve this
 ```
-\percipiolondon\typesense\TypesenseCollectionIndex::create(
+\craftpulse\typesense\TypesenseCollectionIndex::create(
     [
         'name' => 'schools',
         'section' => 'schools.default', //section handle + entry type handle

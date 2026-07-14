@@ -40,7 +40,7 @@ FROM typesense/typesense:0.22.2
 ```
 
 ### Settings
-![Screenshot](../resources/docker-typsense.png)
+![Screenshot](resources/docker-typsense.png)
 ```
 TYPESENSE_API_KEY=xxxxx
 TYPESENSE_SEARCH_ONLY_API_KEY=xxxxx
