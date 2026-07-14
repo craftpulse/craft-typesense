@@ -20,7 +20,6 @@ use Http\Client\Exception;
 use craftpulse\typesense\Typesense;
 use craftpulse\typesense\events\DocumentEvent;
 use craftpulse\typesense\helpers\CollectionHelper;
-use craftpulse\typesense\jobs\SyncDocumentsJob;
 
 use Typesense\Exceptions\TypesenseClientError;
 use yii\base\InvalidConfigException;
@@ -274,12 +273,7 @@ class CollectionsController extends Controller
             ]));
         }
 
-        Queue::push(new SyncDocumentsJob([
-            'criteria' => [
-                'index' => $index,
-                'type' => 'Flush',
-            ],
-        ]));
+        Typesense::$plugin->getSync()->flush($index);
 
         return $this->asJson([
             'success' => true,
@@ -305,12 +299,7 @@ class CollectionsController extends Controller
             ]));
         }
 
-        Queue::push(new SyncDocumentsJob([
-            'criteria' => [
-                'index' => $index,
-                'type' => 'Sync',
-            ],
-        ]));
+        Typesense::$plugin->getSync()->syncCollection($index);
 
         return $this->asJson([
             'success' => true,

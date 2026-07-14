@@ -27,16 +27,12 @@ return static function(ECSConfig $ecsConfig): void {
     $ecsConfig->skip([
         __DIR__ . '/src/Typesense.php',
         __DIR__ . '/src/config.php',
-        __DIR__ . '/src/console/controllers/DefaultController.php',
         __DIR__ . '/src/controllers/CollectionsController.php',
-        __DIR__ . '/src/controllers/DocumentsController.php',
         __DIR__ . '/src/controllers/SynonymController.php',
-        __DIR__ . '/src/jobs/SyncDocumentsJob.php',
         __DIR__ . '/src/jobs/SyncSynonymsJob.php',
         __DIR__ . '/src/migrations/m241210_132929_synonyms.php',
         __DIR__ . '/src/models/SynonymModel.php',
         __DIR__ . '/src/records/CollectionRecord.php',
-        __DIR__ . '/src/services/CollectionService.php',
         __DIR__ . '/src/services/SynonymService.php',
     ]);
 

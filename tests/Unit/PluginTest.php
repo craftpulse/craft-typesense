@@ -12,7 +12,7 @@
 
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
-use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\Typesense;
 
 it('registers the plugin instance', function() {
@@ -25,10 +25,10 @@ it('exposes its settings model', function() {
     expect($plugin->getSettings())->toBeInstanceOf(Settings::class);
 });
 
-it('wires the collection and client services', function() {
+it('wires the collection registry and client services', function() {
     /** @var Typesense $plugin */
     $plugin = Craft::$app->getPlugins()->getPlugin('typesense');
 
-    expect($plugin->getCollections())->toBeInstanceOf(CollectionService::class)
+    expect($plugin->getCollectionRegistry())->toBeInstanceOf(Collections::class)
         ->and($plugin->getClient())->toBeInstanceOf(Client::class);
 });

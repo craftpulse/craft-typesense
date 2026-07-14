@@ -296,6 +296,52 @@ class Sync extends Component
     }
 
     /**
+     * Flushes every registered collection (delete and re-sync).
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    public function flushAll(): void
+    {
+        foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
+            $this->flush($collection);
+        }
+    }
+
+    /**
+     * Flushes one collection: deletes its target collection(s) then re-syncs,
+     * rebuilding the schema and documents from scratch.
+     *
+     * @param Collection|string $collection
+     * @param int|null $siteId
+     * @return void
+     * @author CraftPulse
+     */
+    public function flush(Collection|string $collection, ?int $siteId = null): void
+    {
+        $collection = $this->_resolve($collection);
+
+        if ($collection === null) {
+            return;
+        }
+
+        $client = Typesense::$plugin->getClient()->client();
+        $registry = Typesense::$plugin->getCollectionRegistry();
+
+        if ($client !== null) {
+            foreach ($this->_siteIds($siteId) as $id) {
+                try {
+                    $client->collections[$registry->resolveName($collection, $id)]->delete();
+                } catch (Throwable) {
+                    // nothing to delete
+                }
+            }
+        }
+
+        $this->syncCollection($collection, $siteId);
+    }
+
+    /**
      * Queues reconciliation of one collection, one site per job.
      *
      * @param Collection|string $collection
@@ -538,7 +584,7 @@ class Sync extends Component
 
         try {
             $export = $client->collections[$target]->documents->export([
-                'include_fields' => 'id,' . Documents::FIELD_ELEMENT_ID,
+                'include_fields' => 'id,' . Documents::FIELD_ELEMENT_ID . ',' . Documents::FIELD_SITE_ID,
             ]);
         } catch (Throwable $e) {
             Craft::error("Could not export '{$target}' for reconciliation: {$e->getMessage()}", 'typesense');
@@ -550,6 +596,12 @@ class Sync extends Component
             $doc = json_decode($line, true);
 
             if (!is_array($doc) || !isset($doc['id'], $doc[Documents::FIELD_ELEMENT_ID])) {
+                continue;
+            }
+
+            // Only reconcile documents belonging to this site (shared collections
+            // carry documents from every site).
+            if (isset($doc[Documents::FIELD_SITE_ID]) && (int)$doc[Documents::FIELD_SITE_ID] !== $siteId) {
                 continue;
             }
 

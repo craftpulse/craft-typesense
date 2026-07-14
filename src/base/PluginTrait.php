@@ -5,8 +5,10 @@ namespace craftpulse\typesense\base;
 use craftpulse\typesense\assetbundles\typesense\TypesenseAsset;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
-use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\Compatibility;
+use craftpulse\typesense\services\ConfigGenerator;
 use craftpulse\typesense\services\Documents;
+use craftpulse\typesense\services\LegacyConfig;
 use craftpulse\typesense\services\Schema;
 use craftpulse\typesense\services\Sync;
 use craftpulse\typesense\services\SynonymService;
@@ -29,11 +31,6 @@ trait PluginTrait
         return $this->get('client');
     }
 
-    public function getCollections(): CollectionService
-    {
-        return $this->get('collections');
-    }
-
     public function getCollectionRegistry(): Collections
     {
         return $this->get('collectionRegistry');
@@ -54,6 +51,21 @@ trait PluginTrait
         return $this->get('sync');
     }
 
+    public function getLegacyConfig(): LegacyConfig
+    {
+        return $this->get('legacyConfig');
+    }
+
+    public function getConfigGenerator(): ConfigGenerator
+    {
+        return $this->get('configGenerator');
+    }
+
+    public function getCompatibility(): Compatibility
+    {
+        return $this->get('compatibility');
+    }
+
     public function getVite(): VitePluginService
     {
         return $this->get('vite');
@@ -66,11 +78,13 @@ trait PluginTrait
     {
         $this->setComponents([
             'typesense' => Typesense::class,
-            'collections' => CollectionService::class,
             'collectionRegistry' => Collections::class,
             'schema' => Schema::class,
             'documents' => Documents::class,
             'sync' => Sync::class,
+            'legacyConfig' => LegacyConfig::class,
+            'configGenerator' => ConfigGenerator::class,
+            'compatibility' => Compatibility::class,
             'synonyms' => SynonymService::class,
             'client' => Client::class,
             // Register the vite service

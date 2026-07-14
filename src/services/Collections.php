@@ -17,6 +17,7 @@ use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\events\RegisterCollectionsEvent;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
+use craftpulse\typesense\TypesenseCollectionIndex;
 
 /**
  * Collections registry.
@@ -177,11 +178,18 @@ class Collections extends Component
     {
         /** @var Settings $settings */
         $settings = Typesense::$plugin->getSettings();
+        $collections = [];
 
-        return array_values(array_filter(
-            $settings->collections,
-            static fn(mixed $collection): bool => $collection instanceof Collection,
-        ));
+        foreach ($settings->collections as $collection) {
+            if ($collection instanceof Collection) {
+                $collections[] = $collection;
+            } elseif ($collection instanceof TypesenseCollectionIndex) {
+                // Legacy config: adapt it through the compatibility shim.
+                $collections[] = Typesense::$plugin->getLegacyConfig()->adapt($collection);
+            }
+        }
+
+        return $collections;
     }
 
     /**

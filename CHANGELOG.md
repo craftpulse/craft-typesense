@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 5.9.0 - Unreleased
-> **Upgrade note:** the plugin's internal PHP namespace moved from `percipiolondon\typesense` to `craftpulse\typesense`. The Composer package name (`craftpulse/craft-typesense`) and the plugin handle (`typesense`) are unchanged, so project config, permissions, and settings are preserved on update. Existing `config/typesense.php` files that reference legacy class names such as `percipiolondon\typesense\TypesenseCollectionIndex` keep working through a backwards-compatibility shim; update them to the `craftpulse\typesense` namespace when convenient.
+> ### Upgrading from 5.8.x
+> **This is a zero-touch update for existing installs.** Run `craft up` as usual.
+>
+> - **Namespace:** the internal PHP namespace moved from `percipiolondon\typesense` to `craftpulse\typesense`. The Composer package name (`craftpulse/craft-typesense`) and the plugin handle (`typesense`) are unchanged, so project config, permissions, and settings are preserved.
+> - **Config files keep working:** existing `config/typesense.php` files that use `percipiolondon\typesense\TypesenseCollectionIndex` keep working through a backwards-compatibility shim and now run on the new sync engine. Each legacy config is deprecator-logged. Run `craft typesense/config/migrate` to generate the new fluent config, then review the `elementQuery` and `transform` closures it marks.
+> - **Your data is preserved:** the synonyms table and rows survive. The vestigial `typesense_collections` table (never read or written) is dropped. Documents keep every field they had, plus two new reserved fields (`elementId`, `siteId`) used for reliable deletion and multisite filtering.
+> - **Cockpit users:** if you run the Cockpit companion plugin, update it to its 5.9.0 companion release so it re-registers its collections. Until then the control panel shows a non-blocking warning and search keeps working.
+> - **Full upgrade guide:** see `docs/upgrading.md`.
 
 ### Changed
 - Moved the internal PHP namespace from `percipiolondon\typesense` to `craftpulse\typesense`, keeping the `craftpulse/craft-typesense` package name and `typesense` handle.
@@ -28,11 +35,17 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Added the Documents transformer with both the closure path and a generated (field-mapping plus computed-field) path, reserved elementId/siteId fields for reliable deletion and site filtering, status-based delete signalling, multiple documents per element, relation dependency tracking (re-index on related-element change), and the `Documents::EVENT_BEFORE_INDEX_DOCUMENT` / `EVENT_AFTER_INDEX_DOCUMENT` events.
 - Added multisite strategies (`collectionPerSite` and `sharedWithSiteFilter`) threaded through the registry name resolver and job batching.
 - Added the `typesense_sync_state` and `typesense_sync_dependencies` tables (schema version 5.9.0), created on fresh install and via an idempotent update migration.
+- Added a compatibility shim that adapts legacy `TypesenseCollectionIndex` configs into registry collections (deprecator-logged), so pre-5.9.0 config files run untouched on the new sync engine.
+- Added the `typesense/config/migrate` command, which generates a fluent config file from a legacy config (schema deterministically, resolver bodies copied verbatim with review markers).
+- Added the `typesense/config/export` command, which reverse-migrates a collection into a fluent config file.
+- Added a non-blocking control-panel warning when an un-paired Cockpit version is detected during the update.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.
 - Removed the redundant Dashboard control-panel nav item, which only redirected to Collections. The plugin section now lands on Collections.
 - Removed the dead `ProjectConfigDataHelper` (only referenced by commented-out code).
+- Retired the legacy sync internals now superseded by the new engine: the element-save event host, the legacy sync job, and the legacy collection service. Their responsibilities moved to the Sync and Documents services.
+- Dropped the vestigial `typesense_collections` table.
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

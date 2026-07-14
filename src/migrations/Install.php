@@ -39,19 +39,10 @@ class Install extends Migration
      */
     public function createTables()
     {
-        $tableSchema = Craft::$app->db->schema->getTableSchema(Table::COLLECTIONS);
-        if ($tableSchema === null) {
-            $this->createTable(Table::COLLECTIONS, [
-                'id' => $this->primaryKey(),
-                'fieldLayoutId' => $this->integer(),
-                'name' => $this->string()->notNull(),
-                'handle' => $this->string()->notNull(),
-                'sectionId' => $this->integer()->notNull(),
-                'dateCreated' => $this->dateTime()->notNull(),
-                'dateSynced' => $this->dateTime(),
-                'uid' => $this->uid(),
-            ]);
-
+        // The vestigial typesense_collections table is intentionally NOT created
+        // for fresh 5.9.0 installs (it was never read or written). Existing
+        // installs have it dropped by m260714_130000_drop_vestigial_collections.
+        if (Craft::$app->db->schema->getTableSchema(Table::SYNONYMS) === null) {
             $this->createTable(Table::SYNONYMS, [
                 'id' => $this->primaryKey(),
                 'dateCreated' => $this->dateTime()->notNull(),

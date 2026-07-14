@@ -4,144 +4,96 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 namespace craftpulse\typesense\console\controllers;
 
 use Craft;
 use craft\elements\Entry;
-use craft\helpers\Queue;
-use craftpulse\typesense\jobs\SyncDocumentsJob;
-use craftpulse\typesense\events\DocumentEvent;
-
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
+use yii\console\ExitCode;
 
 /**
- * Default Command
+ * Legacy sync commands, routed through the new sync engine.
  *
- * The first line of this class docblock is displayed as the description
- * of the Console Command in ./craft help
+ * `typesense/default/sync` and `typesense/default/flush` are kept as backwards
+ * compatible aliases; the richer sync command surface arrives in a later phase.
  *
- * Craft can be invoked via commandline console by using the `./craft` command
- * from the project root.
- *
- * Console Commands are just controllers that are invoked to handle console
- * actions. The segment routing is plugin-name/controller-name/action-name
- *
- * The actionIndex() method is what is executed if no sub-commands are supplied, e.g.:
- *
- * ./craft typesense/default
- *
- * Actions must be in 'kebab-case' so actionDoSomething() maps to 'do-something',
- * and would be invoked via:
- *
- * ./craft typesense/default/do-something
- *
- * @author    craftpulse
+ * @author    CraftPulse
  * @package   Typesense
  * @since     1.0.0
  */
 class DefaultController extends Controller
 {
-    // Events
-    // -------------------------------------------------------------------------
-
-    /**
-     * @event The event that is triggered before a flush / sync happens.
-     */
-    public const EVENT_BEFORE_FLUSH = 'beforeFlush';
-    public const EVENT_BEFORE_SYNC = 'beforeSync';
-
     // Public Methods
     // =========================================================================
 
     /**
-     * Handle typesense/default console commands
+     * Queues a flush (delete and re-sync) of every collection.
      *
-     * The first line of this method docblock is displayed as the description
-     * of the Console Command in ./craft help
-     *
-     * @return mixed
+     * @return int
+     * @author CraftPulse
      */
-    public function actionFlush()
+    public function actionFlush(): int
     {
-        $indexes = Typesense::$plugin->getSettings()->collections;
-
-        foreach ($indexes as $index) {
-            $this->stdout('Flush ' . $index->indexName);
-            $this->stdout(PHP_EOL);
-
-            if ($this->hasEventHandlers(self::EVENT_BEFORE_FLUSH)) {
-                $this->trigger(self::EVENT_BEFORE_FLUSH, new DocumentEvent([
-                    'document' => [
-                        'index' => $index->indexName,
-                        'type' => 'Flush',
-                    ]
-                ]));
-            }
-
-            Queue::push(new SyncDocumentsJob([
-                'criteria' => [
-                    'index' => $index->indexName,
-                    'type' => 'Flush'
-                ]
-            ]));
+        foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
+            $this->stdout('Flush ' . $collection->getName() . PHP_EOL);
         }
+
+        Typesense::$plugin->getSync()->flushAll();
+
+        return ExitCode::OK;
     }
 
-    public function actionSync()
+    /**
+     * Queues a full sync of every collection.
+     *
+     * @return int
+     * @author CraftPulse
+     */
+    public function actionSync(): int
     {
-        $indexes = Typesense::$plugin->getSettings()->collections;
-
-        foreach ($indexes as $index) {
-            $this->stdout('Sync ' . $index->indexName);
-            $this->stdout(PHP_EOL);
-
-            if ($this->hasEventHandlers(self::EVENT_BEFORE_SYNC)) {
-                $this->trigger(self::EVENT_BEFORE_SYNC, new DocumentEvent([
-                    'document' => [
-                        'index' => $index->indexName,
-                        'type' => 'Sync',
-                    ]
-                ]));
-            }
-
-            Queue::push(new SyncDocumentsJob([
-                'criteria' => [
-                    'index' => $index->indexName,
-                    'type' => 'Sync',
-                ],
-            ]));
+        foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
+            $this->stdout('Sync ' . $collection->getName() . PHP_EOL);
         }
+
+        Typesense::$plugin->getSync()->syncAll();
+
+        return ExitCode::OK;
     }
 
-    public function actionUpdateScheduledPosts()
+    /**
+     * Resaves entries whose scheduled post date is today so they reach Typesense.
+     *
+     * Craft does not fire a save when a scheduled entry becomes live, so this
+     * command (run from cron) resaves today's freshly-live entries; the resave
+     * triggers the sync engine's element listener.
+     *
+     * @return int
+     * @author CraftPulse
+     */
+    public function actionUpdateScheduledPosts(): int
     {
-        $this->stdout("Start fetching entries with today's post date");
-        $this->stdout(PHP_EOL);
+        $morning = date('Y-m-d 00:00:00');
+        $evening = date('Y-m-d 23:59:59');
 
-        // set timestamps to fetch todays entries
-        $morning = mktime(0, 0, 0, (int) date('m'), (int) date('d'), (int) date('y'));
-        $evening = mktime(23, 59, 00, (int) date('m'), (int) date('d'), (int) date('y'));
-
-        // select entries of today's postDate where the dateUpdated is before the postDate gets out
-        $todaysEntries = Entry::find()
-            ->where(['between', 'postDate', date('Y/m/d H:i', $morning), date('Y/m/d H:i', $evening)])
-            ->andWhere('`elements`.`dateUpdated` < `entries`.`postDate`')
+        $entries = Entry::find()
+            ->postDate(['and', ">= {$morning}", "<= {$evening}"])
+            ->status(null)
+            ->andWhere('[[elements.dateUpdated]] < [[entries.postDate]]')
             ->all();
 
-        // resave those entries to setup the document in typsense
-        $count = 0;
-        foreach ($todaysEntries as $entry) {
+        foreach ($entries as $entry) {
             Craft::$app->getElements()->saveElement($entry);
-            $count += 1;
         }
 
-        Craft::info('Typesense update scheduled post fired with ' . $count . ' result(s)', __METHOD__);
-        $this->stdout("End fetching entries with today's post date with " . $count . ' result(s)');
-        $this->stdout(PHP_EOL);
+        $count = count($entries);
+        Craft::info("Typesense update scheduled posts fired with {$count} result(s)", __METHOD__);
+        $this->stdout("Updated {$count} scheduled entr(ies)." . PHP_EOL);
+
+        return ExitCode::OK;
     }
 }

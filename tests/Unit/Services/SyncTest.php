@@ -140,6 +140,27 @@ it('removes a document end to end when the element leaves active statuses', func
     }
 });
 
+it('does not delete another site\'s documents when reconciling a shared collection', function() {
+    $collection = syncTestCollection();
+    $sync = Typesense::$plugin->getSync();
+    $client = Typesense::$plugin->getClient()->client();
+    dropSyncTestCollection();
+
+    try {
+        $sync->ensureCollectionExists($collection, 1);
+        $ids = Entry::find()->section('heroes')->status('live')->siteId(1)->limit(4)->ids();
+        $sync->indexElements($collection, 1, $ids);
+        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+
+        // Reconciling a different site must leave site 1's documents intact.
+        $sync->reconcileCollection($collection, 2);
+
+        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+    } finally {
+        dropSyncTestCollection();
+    }
+});
+
 it('reconciles orphaned documents against the current query', function() {
     $collection = syncTestCollection();
     $sync = Typesense::$plugin->getSync();

@@ -16,8 +16,10 @@ use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
 use craft\elements\Entry;
 use craft\events\ElementEvent;
+use craft\events\RegisterCpAlertsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
+use craft\helpers\Cp;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
@@ -26,13 +28,9 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use craftpulse\typesense\base\PluginTrait;
-use craftpulse\typesense\controllers\CollectionsController;
-use craftpulse\typesense\controllers\DocumentsController;
 use craftpulse\typesense\controllers\SettingsController;
-use craftpulse\typesense\helpers\CollectionHelper;
 use craftpulse\typesense\helpers\FileLog;
 use craftpulse\typesense\models\Settings;
-use craftpulse\typesense\services\CollectionService;
 use craftpulse\typesense\services\SynonymService;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\variables\TypesenseVariable;
@@ -57,7 +55,6 @@ use yii\base\Event;
  * @since     1.0.0
  *
  * @property  Client $client
- * @property  CollectionService $collectionService
  * @property  SynonymService $synonymService
  *
  * @property  Settings $settings
@@ -148,9 +145,6 @@ class Typesense extends Plugin
 
         // Create endpoint for custom logs
         FileLog::create('typesense', 'craftpulse\craft-typesense\*');
-
-        // Captures event handlers inside of the CollectionsController
-        $documentsController = new DocumentsController('documents-controller', Craft::$app);
 
         // init log
         Craft::info(
@@ -272,6 +266,19 @@ class Typesense extends Plugin
                     'heading' => Craft::t('typesense', 'Typesense'),
                     'permissions' => $this->customAdminCpPermissions()
                 ];
+            }
+        );
+
+        // Handler: Cp::EVENT_REGISTER_ALERTS (Cockpit pairing warning)
+        Event::on(
+            Cp::class,
+            Cp::EVENT_REGISTER_ALERTS,
+            function (RegisterCpAlertsEvent $event) {
+                $warning = $this->getCompatibility()->cockpitPairingWarning();
+
+                if ($warning !== null) {
+                    $event->alerts[] = $warning;
+                }
             }
         );
     }
