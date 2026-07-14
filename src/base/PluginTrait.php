@@ -20,6 +20,7 @@ use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
+use craftpulse\typesense\services\ManagedCollections;
 use craftpulse\typesense\services\Notifications;
 use craftpulse\typesense\services\Presets;
 use craftpulse\typesense\services\Schema;
@@ -180,6 +181,19 @@ trait PluginTrait
     }
 
     /**
+     * @return ManagedCollections
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getManagedCollections(): ManagedCollections
+    {
+        /** @var ManagedCollections $managedCollections */
+        $managedCollections = $this->get('managedCollections');
+
+        return $managedCollections;
+    }
+
+    /**
      * @return Notifications
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -292,6 +306,7 @@ trait PluginTrait
             'compatibility' => Compatibility::class,
             'keys' => Keys::class,
             'drift' => Drift::class,
+            'managedCollections' => ManagedCollections::class,
             'notifications' => Notifications::class,
             'synonyms' => Synonyms::class,
             'curation' => Curation::class,

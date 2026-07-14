@@ -418,6 +418,8 @@ class Typesense extends Plugin
         // Pro routes are registered only in the Pro edition (hide, never badge).
         if ($this->getIsPro()) {
             $routes['typesense/collections'] = 'typesense/collections/index';
+            $routes['typesense/collections/new'] = 'typesense/collections/edit';
+            $routes['typesense/collections/<uid:[\w\-]+>'] = 'typesense/collections/edit';
             $routes['typesense/curation'] = 'typesense/curation/index';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
         }

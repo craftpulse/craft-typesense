@@ -86,12 +86,13 @@ it('allows the Pro action in Pro for a permitted admin', function() {
     $admin = anAdmin();
 
     withEdition(Typesense::EDITION_PRO, function() use ($admin) {
-        // A permitted admin passes the edition and permission gates; the stub
-        // save redirects (302), which is a successful non-Ajax form post, not
-        // the 403 the Free edition returns.
+        // A permitted admin passes both the edition and the permission gate. The
+        // delete of a non-existent collection is a safe no-op that redirects
+        // (302), the opposite of the 403 the Free edition returns, and it never
+        // writes project config.
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/collections/save'))
+            ->post(UrlHelper::actionUrl('typesense/collections/delete'), ['uid' => 'does-not-exist'])
             ->assertRedirect();
     });
 });

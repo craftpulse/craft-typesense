@@ -1,0 +1,70 @@
+{# =========================================================================
+   Typesense Pro - Collections cockpit (create/edit)
+   =========================================================================
+   The create/edit form for a control-panel-managed collection. Persists to
+   project config via typesense/collections/save. The field mapping UI attaches
+   to this collection once it is saved (see the mapping screen).
+
+   @var definition    CollectionDefinition
+   @var sourceOptions array
+   @var isNew         bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+
+{% set title = isNew ? 'New collection'|t('typesense') : definition.name %}
+{% set selectedSubnavItem = 'collections' %}
+{% set fullPageForm = true %}
+
+{% set crumbs = [
+    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+] %}
+
+{% block content %}
+    {{ actionInput('typesense/collections/save') }}
+    {% if not isNew %}{{ hiddenInput('uid', definition.uid) }}{% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('typesense'),
+        instructions: 'The logical collection name. Letters, numbers, underscores, and hyphens.'|t('typesense'),
+        id: 'name',
+        name: 'name',
+        value: definition.name,
+        required: true,
+        errors: definition.getErrors('name'),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Element source'|t('typesense'),
+        instructions: 'The element type and source this collection indexes.'|t('typesense'),
+        id: 'source',
+        name: 'source',
+        options: sourceOptions,
+        value: definition.elementType ~ ':' ~ (definition.source ?? ''),
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Multisite strategy'|t('typesense'),
+        instructions: 'How this collection maps to Craft sites.'|t('typesense'),
+        id: 'multisite',
+        name: 'multisite',
+        options: [
+            { label: 'Shared, filtered by site'|t('typesense'), value: 'sharedWithSiteFilter' },
+            { label: 'One collection per site'|t('typesense'), value: 'collectionPerSite' },
+        ],
+        value: definition.multisite,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Enabled'|t('typesense'),
+        instructions: 'Whether this collection syncs.'|t('typesense'),
+        id: 'enabled',
+        name: 'enabled',
+        on: definition.enabled,
+    }) }}
+
+    {% if isNew %}
+        <p class="light">{{ 'Save the collection, then map its fields from the mapping screen.'|t('typesense') }}</p>
+    {% endif %}
+{% endblock %}
