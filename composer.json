@@ -23,6 +23,8 @@
             "homepage": "https://craft-pulse.com"
         }
     ],
+    "minimum-stability": "dev",
+    "prefer-stable": true,
     "require": {
         "php": "^8.0.2",
         "craftcms/cms": "^5.0.0",
@@ -31,8 +33,9 @@
         "php-http/guzzle7-adapter": "^1.0.0"
     },
     "require-dev": {
-        "craftcms/phpstan":"dev-main",
-        "codeception/codeception": "^5.0",
+        "craftcms/ecs": "dev-main",
+        "craftcms/phpstan": "dev-main",
+        "markhuot/craft-pest-core": "^3.2",
         "nystudio107/craft-plugin-vite": "^5.0.0",
         "vlucas/phpdotenv": "^5.4.0"
     },
@@ -47,8 +50,15 @@
             "percipiolondon\\typesense\\": "src/"
         }
     },
+    "autoload-dev": {
+        "psr-4": {
+            "percipiolondon\\typesense\\tests\\": "tests/"
+        }
+    },
     "scripts": {
-        "phpstan": "phpstan --memory-limit=1G"
+        "phpstan": "phpstan --ansi --memory-limit=1G",
+        "check-cs": "ecs check --ansi",
+        "fix-cs": "ecs check --fix --ansi"
     },
     "extra": {
         "name": "Typesense",
@@ -66,7 +76,8 @@
         "allow-plugins": {
             "craftcms/plugin-installer": true,
             "yiisoft/yii2-composer": true,
-            "php-http/discovery": true
+            "php-http/discovery": true,
+            "pestphp/pest-plugin": true
         }
     }
 }

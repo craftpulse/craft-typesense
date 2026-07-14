@@ -1,7 +1,9 @@
 includes:
     - vendor/craftcms/phpstan/phpstan.neon
+    - phpstan-baseline.neon
 
 parameters:
     level: 5
-    paths:
-        - src
+    paths: [src]
+    treatPhpDocTypesAsCertain: false
+    tmpDir: %currentWorkingDirectory%/tmp/phpstan

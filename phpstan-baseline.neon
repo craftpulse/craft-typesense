@@ -1,0 +1,286 @@
+parameters:
+	ignoreErrors:
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 2
+			path: src/console/controllers/DefaultController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 3
+			path: src/controllers/CollectionsController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$pluginName\\.$#"
+			count: 6
+			path: src/controllers/CollectionsController.php
+
+		-
+			message: "#^Access to property \\$enabled on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$enabled on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$enabled on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$enabled on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$id on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$id on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$id on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$id on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$section on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$section on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$section on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$section on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$title on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$title on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$title on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$title on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$type on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$type on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$type on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to property \\$type on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getEnabledForSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getEnabledForSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getEnabledForSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getEnabledForSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getSite\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getStatus\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getStatus\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getStatus\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Call to method getStatus\\(\\) on an unknown class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Class craftpulse\\\\cockpit\\\\elements\\\\Contact not found\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Class craftpulse\\\\cockpit\\\\elements\\\\Department not found\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Class craftpulse\\\\cockpit\\\\elements\\\\Job not found\\.$#"
+			count: 2
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Class craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry not found\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Parameter \\#1 \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) expects craft\\\\elements\\\\Entry\\|craftpulse\\\\cockpit\\\\elements\\\\Contact\\|craftpulse\\\\cockpit\\\\elements\\\\Department\\|craftpulse\\\\cockpit\\\\elements\\\\Job\\|craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry, craft\\\\base\\\\ElementInterface given\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Contact\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Department\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\Job\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Parameter \\$entry of method percipiolondon\\\\typesense\\\\controllers\\\\DocumentsController\\:\\:handleSave\\(\\) has invalid type craftpulse\\\\cockpit\\\\elements\\\\MatchFieldEntry\\.$#"
+			count: 1
+			path: src/controllers/DocumentsController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$pluginName\\.$#"
+			count: 4
+			path: src/controllers/SettingsController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 1
+			path: src/controllers/SynonymController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$pluginName\\.$#"
+			count: 1
+			path: src/controllers/SynonymController.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 2
+			path: src/helpers/CollectionHelper.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 1
+			path: src/helpers/ProjectConfigDataHelper.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
+			count: 1
+			path: src/services/CollectionService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$apiKey\\.$#"
+			count: 4
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$cluster\\.$#"
+			count: 1
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$clusterPort\\.$#"
+			count: 2
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$nearestNode\\.$#"
+			count: 1
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$port\\.$#"
+			count: 1
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$protocol\\.$#"
+			count: 1
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$server\\.$#"
+			count: 1
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$serverType\\.$#"
+			count: 2
+			path: src/services/TypesenseService.php
+
+		-
+			message: "#^PHPDoc tag @param references unknown parameter\\: \\$settings$#"
+			count: 1
+			path: src/services/TypesenseService.php

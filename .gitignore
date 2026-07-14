@@ -5,14 +5,35 @@
 
 # COMPOSER
 /vendor
+/composer.lock
+
+# TOOLING
+/tmp
+.phpunit.cache
+.phpunit.result.cache
+
+# RUNTIME JUNK (created when Craft/tests run with this dir as cwd)
+/storage
+/config/license.key
 
 # BUILD FILES
 bower_components
 node_modules
 yarn-error.log
 npm-error.log
-composer.lock
 package-lock.json
+
+# AI build-planning artifacts, local only
+/PLAN.md
+/BUILD.md
+/REVIEW-*.md
+
+# AI-assisted smoke-run checklists, local only
+/smoke-testing/
+
+# AI assistant config, local only
+/CLAUDE.md
+.claude/settings.local.json
 
 # MISC FILES
 .cache
