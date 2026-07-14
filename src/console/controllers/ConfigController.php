@@ -12,6 +12,7 @@ namespace craftpulse\typesense\console\controllers;
 
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
 use craftpulse\typesense\TypesenseCollectionIndex;
 use yii\console\Controller;
@@ -74,6 +75,52 @@ class ConfigController extends Controller
         }
 
         return $this->_output($generator->file($expressions));
+    }
+
+    /**
+     * Reports schema drift between the declared config and the live server.
+     *
+     * @return int
+     * @author CraftPulse
+     */
+    public function actionDiff(): int
+    {
+        $findings = Typesense::$plugin->getDrift()->diff();
+
+        if ($findings === []) {
+            $this->stdout('No collections declared.' . PHP_EOL);
+
+            return ExitCode::OK;
+        }
+
+        $drifted = false;
+
+        foreach ($findings as $finding) {
+            $status = $finding['status'];
+
+            if ($status === Drift::STATUS_IN_SYNC) {
+                $this->stdout("[in sync] {$finding['target']}" . PHP_EOL);
+                continue;
+            }
+
+            $drifted = true;
+            $this->stdout("[{$status}] {$finding['target']}" . PHP_EOL);
+            $details = $finding['details'];
+
+            foreach (['missingFields', 'extraFields'] as $key) {
+                if (!empty($details[$key])) {
+                    $this->stdout('    ' . $key . ': ' . implode(', ', $details[$key]) . PHP_EOL);
+                }
+            }
+
+            if (!empty($details['typeMismatches'])) {
+                foreach ($details['typeMismatches'] as $name => $types) {
+                    $this->stdout("    type mismatch {$name}: declared {$types['declared']}, live {$types['live']}" . PHP_EOL);
+                }
+            }
+        }
+
+        return $drifted ? ExitCode::UNSPECIFIED_ERROR : ExitCode::OK;
     }
 
     /**

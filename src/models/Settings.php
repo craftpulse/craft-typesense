@@ -161,6 +161,17 @@ class Settings extends Model
     public bool $syncSuspended = false;
 
     /**
+     * @var bool Whether to email an alert on repeated sync-job failures or an
+     *           unreachable server.
+     */
+    public bool $syncAlertsEnabled = false;
+
+    /**
+     * @var string|null The address that sync-failure alerts are sent to.
+     */
+    public ?string $syncAlertEmail = null;
+
+    /**
      * @var string|null A prefix prepended to every collection name (e.g. "staging_").
      */
     public ?string $collectionPrefix = null;
@@ -270,10 +281,12 @@ class Settings extends Model
                 'apiKey', 'searchOnlyApiKey', 'server', 'port', 'protocol', 'cluster',
                 'clusterPort', 'nearestNode', 'collectionPrefix', 'pluginName',
                 'connectionTimeoutSeconds', 'healthcheckIntervalSeconds', 'numRetries',
-                'retryIntervalSeconds',
+                'retryIntervalSeconds', 'syncAlertEmail',
             ],
             'string',
         ];
+        $rules[] = [['syncAlertEmail'], 'email', 'skipOnEmpty' => true];
+        $rules[] = [['syncAlertsEnabled'], 'boolean'];
         $rules[] = [['apiKey', 'serverType'], 'required'];
         $rules[] = [['serverType'], 'in', 'range' => self::serverTypeOptions()];
         $rules[] = [

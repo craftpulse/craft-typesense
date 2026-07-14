@@ -8,7 +8,10 @@ use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
 use craftpulse\typesense\services\ConfigGenerator;
 use craftpulse\typesense\services\Documents;
+use craftpulse\typesense\services\Drift;
+use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
+use craftpulse\typesense\services\Notifications;
 use craftpulse\typesense\services\Schema;
 use craftpulse\typesense\services\Sync;
 use craftpulse\typesense\services\SynonymService;
@@ -66,6 +69,21 @@ trait PluginTrait
         return $this->get('compatibility');
     }
 
+    public function getKeys(): Keys
+    {
+        return $this->get('keys');
+    }
+
+    public function getDrift(): Drift
+    {
+        return $this->get('drift');
+    }
+
+    public function getNotifications(): Notifications
+    {
+        return $this->get('notifications');
+    }
+
     public function getVite(): VitePluginService
     {
         return $this->get('vite');
@@ -85,6 +103,9 @@ trait PluginTrait
             'legacyConfig' => LegacyConfig::class,
             'configGenerator' => ConfigGenerator::class,
             'compatibility' => Compatibility::class,
+            'keys' => Keys::class,
+            'drift' => Drift::class,
+            'notifications' => Notifications::class,
             'synonyms' => SynonymService::class,
             'client' => Client::class,
             // Register the vite service

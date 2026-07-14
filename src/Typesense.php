@@ -11,28 +11,39 @@
 namespace craftpulse\typesense;
 
 use Craft;
+use craft\base\Element;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
+use craft\elements\Asset;
+use craft\elements\Category;
 use craft\elements\Entry;
+use craft\queue\BaseJob;
+use craft\queue\Queue;
 use craft\events\ElementEvent;
+use yii\queue\ExecEvent;
+use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
+use craft\events\RegisterElementActionsEvent;
 use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Cp;
 use craft\helpers\ElementHelper;
 use craft\helpers\UrlHelper;
 use craft\services\Elements;
+use craft\services\Utilities;
 use craft\services\UserPermissions;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 
 use craftpulse\typesense\base\PluginTrait;
 use craftpulse\typesense\controllers\SettingsController;
+use craftpulse\typesense\elementactions\Reindex;
 use craftpulse\typesense\helpers\FileLog;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\SynonymService;
 use craftpulse\typesense\services\Client;
+use craftpulse\typesense\utilities\TypesenseUtility;
 use craftpulse\typesense\variables\TypesenseVariable;
 
 
@@ -134,6 +145,7 @@ class Typesense extends Plugin
         $this->_registerComponents();
         $this->installEventListeners();
         $this->getSync()->registerEventListeners();
+        $this->_registerSyncFailureAlerts();
         $this->_registerVariable();
 
         // Add in our console commands
@@ -183,14 +195,8 @@ class Typesense extends Plugin
         $navItem = parent::getCpNavItem();
         $currentUser = Craft::$app->getUser();
 
-        // Only show sub navigation the user has permission to view.
-        if ($currentUser->checkPermission('typesense:collections')) {
-            $subNavs['collections'] = [
-                'label' => Craft::t('typesense', 'Collections'),
-                'url' => 'typesense/collections',
-            ];
-        }
-
+        // Only show sub navigation the user has permission to view. The
+        // collections overview now lives in the Typesense control-panel utility.
         if ($currentUser->checkPermission('typesense:synonyms')) {
             $subNavs['synonyms'] = [
                 'label' => Craft::t('typesense', 'Synonyms'),
@@ -281,6 +287,32 @@ class Typesense extends Plugin
                 }
             }
         );
+
+        // Handler: Utilities::EVENT_REGISTER_UTILITY_TYPES
+        Event::on(
+            Utilities::class,
+            Utilities::EVENT_REGISTER_UTILITIES,
+            function (RegisterComponentTypesEvent $event) {
+                $event->types[] = TypesenseUtility::class;
+            }
+        );
+
+        // Handler: Element::EVENT_REGISTER_ACTIONS (Reindex bulk action)
+        $elementTypes = [Entry::class, Category::class, Asset::class];
+
+        if (class_exists('craft\\commerce\\elements\\Product')) {
+            $elementTypes[] = 'craft\\commerce\\elements\\Product';
+        }
+
+        foreach ($elementTypes as $elementType) {
+            Event::on(
+                $elementType,
+                Element::EVENT_REGISTER_ACTIONS,
+                function (RegisterElementActionsEvent $event) {
+                    $event->actions[] = Reindex::class;
+                }
+            );
+        }
     }
 
     /**
@@ -297,16 +329,10 @@ class Typesense extends Plugin
     protected function customAdminCpRoutes(): array
     {
         return [
-            'typesense' => 'typesense/collections/collections',
+            'typesense' => 'typesense/synonym/index',
             'typesense/settings' => 'typesense/settings/edit',
-            'typesense/collections' => 'typesense/collections/collections',
             'typesense/synonyms' => 'typesense/synonym/index',
             'typesense/synonyms/<index:\w+>' => 'typesense/synonym/synonyms',
-            'typesense/documents' => 'typesense/collections/documents',
-            'typesense/documents/<sectionId:\d+>' => 'typesense/collections/document',
-            'typesense/save-collection' => 'typesense/collections/save-collection',
-            'typesense/sync-collection' => 'typesense/collections/sync-collection',
-            'typesense/flush-collection' => 'typesense/collections/flush-collection',
         ];
     }
 
@@ -316,14 +342,8 @@ class Typesense extends Plugin
     protected function customAdminCpPermissions(): array
     {
         return [
-            'typesense:collections' => [
-                'label' => Craft::t('typesense', 'Collections'),
-            ],
             'typesense:synonyms' => [
                 'label' => Craft::t('typesense', 'Synonyms'),
-            ],
-            'typesense:manage-collections' => [
-                'label' => Craft::t('typesense', 'Manage Collections'),
             ],
             SettingsController::PERMISSION_MANAGE_SETTINGS => [
                 'label' => Craft::t('typesense', 'Manage plugin settings'),
@@ -347,6 +367,25 @@ class Typesense extends Plugin
         // Event::on(ProjectConfig::class, ProjectConfig::EVENT_REBUILD, function(RebuildConfigEvent $event) {
         //     $event->config['typesense'] = ProjectConfigDataHelper::rebuildProjectConfig();
         // });
+    }
+
+    /**
+     * Registers the sync-failure email alert on queue job errors.
+     */
+    private function _registerSyncFailureAlerts(): void
+    {
+        Event::on(
+            Queue::class,
+            Queue::EVENT_AFTER_ERROR,
+            function (ExecEvent $event) {
+                $job = $event->job;
+
+                if (is_object($job) && str_starts_with($job::class, 'craftpulse\\typesense\\jobs\\')) {
+                    $description = $job instanceof BaseJob ? (string)$job->getDescription() : $job::class;
+                    $this->getNotifications()->notifyJobFailure($description, (string)$event->error?->getMessage());
+                }
+            }
+        );
     }
 
     private function _registerVariable(): void

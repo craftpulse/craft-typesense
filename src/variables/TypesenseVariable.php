@@ -10,11 +10,8 @@
 
 namespace craftpulse\typesense\variables;
 
-use Craft;
-
 use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\variables\ViteVariableInterface;
-
 use nystudio107\pluginvite\variables\ViteVariableTrait;
 
 /**
@@ -31,23 +28,23 @@ use nystudio107\pluginvite\variables\ViteVariableTrait;
  */
 class TypesenseVariable implements ViteVariableInterface
 {
+    use ViteVariableTrait;
+
     // Public Methods
     // =========================================================================
 
     /**
-     * Whatever you want to output to a Twig template can go into a Variable method.
-     * You can have as many variable functions as you want.  From any Twig template,
-     * call it like this:
+     * Derives a scoped search key for the front end from the search-only key.
      *
-     *     {{ craft.typesense.exampleVariable }}
+     * {{ craft.typesense.scopedSearchKey({ filter_by: 'siteId:=1', expires_at: now.timestamp + 3600 }) }}
      *
-     * Or, if your variable requires parameters from Twig:
-     *
-     *     {{ craft.typesense.exampleVariable(twigValue) }}
-     *
-     * @param null $optional
+     * @param array<string, mixed> $parameters
      * @return string
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
      */
-
-    use ViteVariableTrait;
+    public function scopedSearchKey(array $parameters = []): string
+    {
+        return Typesense::$plugin->getKeys()->generateScopedSearchKey($parameters);
+    }
 }

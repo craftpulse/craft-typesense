@@ -2,16 +2,6 @@ parameters:
 	ignoreErrors:
 		-
 			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
-			count: 3
-			path: src/controllers/CollectionsController.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$pluginName\\.$#"
-			count: 6
-			path: src/controllers/CollectionsController.php
-
-		-
-			message: "#^Access to an undefined property craft\\\\base\\\\Model\\:\\:\\$collections\\.$#"
 			count: 1
 			path: src/controllers/SynonymController.php
 

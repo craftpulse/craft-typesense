@@ -39,6 +39,12 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Added the `typesense/config/migrate` command, which generates a fluent config file from a legacy config (schema deterministically, resolver bodies copied verbatim with review markers).
 - Added the `typesense/config/export` command, which reverse-migrates a collection into a fluent config file.
 - Added a non-blocking control-panel warning when an un-paired Cockpit version is detected during the update.
+- Added the full console command surface: `typesense/sync/all|collection|flush|refresh|suspend|resume`, `typesense/config/diff`, `typesense/schema/apply` (always queued and polled), `typesense/keys/generate-scoped`, `typesense/inspect <elementId>`, and `typesense/backup/export|import` (JSONL, pipe-compatible with Typesense import).
+- Added the Keys service and `craft.typesense.scopedSearchKey()` Twig helper: derives narrow, expiring, filter-embedded scoped search keys from the search-only key (HMAC, client-side, no admin key exposure), including the limit_hits, limit_multi_searches, and cache_ttl rate levers.
+- Added the Drift service: compares the live Typesense schema against the declared config, detecting manual server-side edits and config changes. Powers `config/diff` and the utility drift panel.
+- Added the Typesense control-panel utility (read-only in Free): server status and capabilities, a collections overview with document counts and drift indicators, and sync/flush/suspend actions built with `UrlHelper::actionUrl` (fixing the CP action URL issues in headless and split-domain setups).
+- Added a "Reindex in Typesense" bulk element action on entries, categories, assets, and Commerce products (when installed).
+- Added opt-in sync-failure email alerts (off by default), throttled per failure context.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.
@@ -46,6 +52,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Removed the dead `ProjectConfigDataHelper` (only referenced by commented-out code).
 - Retired the legacy sync internals now superseded by the new engine: the element-save event host, the legacy sync job, and the legacy collection service. Their responsibilities moved to the Sync and Documents services.
 - Dropped the vestigial `typesense_collections` table.
+- Retired the legacy Collections and Documents control-panel screens, the collection model, and the legacy event classes. The collections overview now lives in the Typesense utility. The plugin section's collections view is replaced by the utility, and the section now lands on Synonyms.
 
 ## 5.8.3 - 2026-03-27
 ### Fixed

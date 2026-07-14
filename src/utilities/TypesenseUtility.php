@@ -4,80 +4,119 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 namespace craftpulse\typesense\utilities;
 
 use Craft;
 use craft\base\Utility;
-
-use craftpulse\typesense\assetbundles\typesenseutility\TypesenseUtilityAsset;
+use craftpulse\typesense\controllers\SettingsController;
+use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
+use Throwable;
 
 /**
- * Typesense Utility
+ * Typesense control-panel utility: server status, collections overview, drift
+ * report, and operational sync/flush/suspend controls. Read-only in Free (it
+ * surfaces state and queues operational jobs; it never edits configuration).
  *
- * Utility is the base class for classes representing Control Panel utilities.
- *
- * https://craftcms.com/docs/plugins/utilities
- *
- * @author    craftpulse
+ * @author    CraftPulse
  * @package   Typesense
- * @since     1.0.0
+ * @since     5.9.0
  */
 class TypesenseUtility extends Utility
 {
-    // Static
+    // Static Methods
     // =========================================================================
 
     /**
-     * Returns the display name of this utility.
-     *
-     * @return string The display name of this utility.
+     * @inheritdoc
      */
     public static function displayName(): string
     {
-        return Craft::t('typesense', 'TypesenseUtility');
+        return Craft::t('typesense', 'Typesense');
     }
 
     /**
-     * Returns the utility’s unique identifier.
-     *
-     * The ID should be in `kebab-case`, as it will be visible in the URL (`admin/utilities/the-handle`).
+     * @inheritdoc
      */
     public static function id(): string
     {
-        return 'typesense-typesense-utility';
+        return 'typesense';
     }
 
     /**
-     * Returns the path to the utility's SVG icon.
-     *
-     * @return string|null The path to the utility SVG icon
+     * @inheritdoc
      */
-    public static function icon(): string|null
+    public static function icon(): ?string
     {
-        return Craft::getAlias("@craftpulse/typesense/assetbundles/typesenseutility/dist/img/TypesenseUtility-icon.svg");
+        return Craft::getAlias('@craftpulse/typesense/icon.svg');
     }
 
     /**
-     * Returns the number that should be shown in the utility’s nav item badge.
-     *
-     * If `0` is returned, no badge will be shown
-     */
-    public static function badgeCount(): int
-    {
-        return 0;
-    }
-
-    /**
-     * Returns the utility's content HTML.
+     * @inheritdoc
      */
     public static function contentHtml(): string
     {
-        Craft::$app->getView()->registerAssetBundle(TypesenseUtilityAsset::class);
-        return Craft::$app->getView()->renderTemplate('typesense/_components/utilities/TypesenseUtility_content');
+        $plugin = Typesense::$plugin;
+        /** @var \craftpulse\typesense\models\Settings $settings */
+        $settings = $plugin->getSettings();
+
+        return Craft::$app->getView()->renderTemplate('typesense/_components/utilities/typesense', [
+            'status' => $plugin->getClient()->getStatus(),
+            'collections' => self::_collectionRows(),
+            'suspended' => $settings->syncSuspended,
+            'canManage' => Craft::$app->getUser()->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS),
+        ]);
+    }
+
+    // Private Methods
+    // =========================================================================
+
+    /**
+     * Builds the collections overview rows: name, document count, and drift status.
+     *
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    private static function _collectionRows(): array
+    {
+        $plugin = Typesense::$plugin;
+        $client = $plugin->getClient()->client();
+        $findings = [];
+
+        foreach ($plugin->getDrift()->diff() as $finding) {
+            $findings[$finding['target']] = $finding['status'];
+        }
+
+        $rows = [];
+
+        foreach ($plugin->getCollectionRegistry()->getAll() as $collection) {
+            $target = $plugin->getCollectionRegistry()->resolveName(
+                $collection,
+                Craft::$app->getSites()->getPrimarySite()->id,
+            );
+            $documents = null;
+
+            if ($client !== null) {
+                try {
+                    $documents = (int)$client->collections[$target]->retrieve()['num_documents'];
+                } catch (Throwable) {
+                    $documents = null;
+                }
+            }
+
+            $rows[] = [
+                'name' => $collection->getName(),
+                'target' => $target,
+                'strategy' => $collection->getMultisiteStrategy()->value,
+                'documents' => $documents,
+                'drift' => $findings[$target] ?? Drift::STATUS_MISSING,
+            ];
+        }
+
+        return $rows;
     }
 }

@@ -1,0 +1,96 @@
+{# @var status array #}
+{# @var collections array #}
+{# @var suspended bool #}
+{# @var canManage bool #}
+{% import '_includes/forms.twig' as forms %}
+
+<h2>{{ 'Server status'|t('typesense') }}</h2>
+{% if not status.configured %}
+    <p>{{ 'Typesense is not configured. Add an admin API key in the plugin settings.'|t('typesense') }}</p>
+{% elseif not status.connected %}
+    <p><span class="status red"></span> {{ 'Not connected.'|t('typesense') }}</p>
+{% else %}
+    <p>
+        <span class="status green"></span>
+        {{ 'Connected to Typesense {version}.'|t('typesense', { version: status.version ?? '?' }) }}
+    </p>
+    {% if not status.supported and status.unsupportedReason %}
+        <blockquote class="note warning">{{ status.unsupportedReason }}</blockquote>
+    {% else %}
+        <p>{{ 'Available features:'|t('typesense') }}</p>
+        <ul>
+            {% for flag, enabled in status.flags %}
+                {% if enabled %}<li><code>{{ flag }}</code></li>{% endif %}
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endif %}
+
+<hr>
+
+<h2>{{ 'Collections'|t('typesense') }}</h2>
+{% if collections is empty %}
+    <p>{{ 'No collections are declared.'|t('typesense') }}</p>
+{% else %}
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>{{ 'Collection'|t('typesense') }}</th>
+                <th>{{ 'Target'|t('typesense') }}</th>
+                <th>{{ 'Strategy'|t('typesense') }}</th>
+                <th>{{ 'Documents'|t('typesense') }}</th>
+                <th>{{ 'Drift'|t('typesense') }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in collections %}
+                <tr>
+                    <td>{{ row.name }}</td>
+                    <td><code>{{ row.target }}</code></td>
+                    <td>{{ row.strategy }}</td>
+                    <td>{{ row.documents is null ? '?' : row.documents }}</td>
+                    <td>
+                        {% if row.drift == 'inSync' %}
+                            <span class="status green"></span> {{ 'In sync'|t('typesense') }}
+                        {% elseif row.drift == 'drifted' %}
+                            <span class="status orange"></span> {{ 'Drifted'|t('typesense') }}
+                        {% else %}
+                            <span class="status red"></span> {{ 'Missing'|t('typesense') }}
+                        {% endif %}
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <p class="light">{{ 'Run `craft typesense/config/diff` for the full drift report.'|t('typesense') }}</p>
+{% endif %}
+
+{% if canManage %}
+    <hr>
+    <h2>{{ 'Actions'|t('typesense') }}</h2>
+    <div class="buttons">
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/sync') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn submit">{{ 'Sync all'|t('typesense') }}</button>
+        </form>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/flush') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn">{{ 'Flush all'|t('typesense') }}</button>
+        </form>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/toggle-suspend') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn">
+                {{ suspended ? 'Resume sync'|t('typesense') : 'Suspend sync'|t('typesense') }}
+            </button>
+        </form>
+    </div>
+    {% if suspended %}
+        <p><span class="status orange"></span> {{ 'Sync is currently suspended.'|t('typesense') }}</p>
+    {% endif %}
+{% endif %}
