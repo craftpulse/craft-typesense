@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 - Added the collections registry (`Collections`): merges config-file and event-registered collections into one map, resolves name collisions in favour of the config file (flagging the overridden name), and resolves Typesense target names through the environment-prefix resolver.
 - Added the Schema service: Craft-field to Typesense-type derivation (extensible via `Schema::EVENT_DEFINE_TYPE_MAP`), geopoint normalization ([lat, lng] order, zero-coordinate skip), and a computed-field registry (`Schema::EVENT_REGISTER_COMPUTED_FIELDS`).
 - Added the `Collections::EVENT_REGISTER_COLLECTIONS` event so other plugins and project code can register their own collections.
+- Added the redone sync engine: element save/restore/delete/move listeners (gated on a configured client and the suspend switch), incremental upserts and deletes batched by collection and site and debounced to the end of the request, memory-bounded full syncs with Craft Cloud-safe continuation slicing and progress reporting, and tracked-ID reconciliation replacing the legacy export-diff-delete.
+- Added the Documents transformer with both the closure path and a generated (field-mapping plus computed-field) path, reserved elementId/siteId fields for reliable deletion and site filtering, status-based delete signalling, multiple documents per element, relation dependency tracking (re-index on related-element change), and the `Documents::EVENT_BEFORE_INDEX_DOCUMENT` / `EVENT_AFTER_INDEX_DOCUMENT` events.
+- Added multisite strategies (`collectionPerSite` and `sharedWithSiteFilter`) threaded through the registry name resolver and job batching.
+- Added the `typesense_sync_state` and `typesense_sync_dependencies` tables (schema version 5.9.0), created on fresh install and via an idempotent update migration.
 
 ### Removed
 - Removed the Vue build chain and the VuePress documentation site generator. Documentation now lives as plain Markdown in `docs/`.

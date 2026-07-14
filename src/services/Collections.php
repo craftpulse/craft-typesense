@@ -10,8 +10,10 @@
 
 namespace craftpulse\typesense\services;
 
+use Craft;
 use craft\base\Component;
 use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\events\RegisterCollectionsEvent;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
@@ -107,31 +109,56 @@ class Collections extends Component
 
     /**
      * Resolves a collection's Typesense target name, applying the environment
-     * prefix via the client's resolver.
+     * prefix via the client's resolver (the single source of truth), plus the
+     * site handle suffix for the collectionPerSite multisite strategy.
      *
      * @param Collection|string $collection
+     * @param int|null $siteId
      * @return string
      * @author CraftPulse
      */
-    public function resolveName(Collection|string $collection): string
+    public function resolveName(Collection|string $collection, ?int $siteId = null): string
     {
-        $name = $collection instanceof Collection ? $collection->getName() : $collection;
+        $base = $collection instanceof Collection ? $collection->getName() : $collection;
 
-        return Typesense::$plugin->getClient()->prefixedCollectionName($name);
+        if (
+            $collection instanceof Collection
+            && $siteId !== null
+            && $collection->getMultisiteStrategy() === MultisiteStrategy::CollectionPerSite
+        ) {
+            $site = Craft::$app->getSites()->getSiteById($siteId);
+
+            if ($site !== null) {
+                $base .= '_' . $site->handle;
+            }
+        }
+
+        return Typesense::$plugin->getClient()->prefixedCollectionName($base);
     }
 
     /**
      * Returns the Typesense create-collection payload for a collection, with the
-     * name resolved to its prefixed target.
+     * name resolved to its prefixed target and the reserved elementId and siteId
+     * fields added (used for deletion and site filtering).
      *
      * @param Collection $collection
+     * @param int|null $siteId
      * @return array<string, mixed>
      * @author CraftPulse
      */
-    public function getCreateSchema(Collection $collection): array
+    public function getCreateSchema(Collection $collection, ?int $siteId = null): array
     {
         $schema = $collection->toSchema();
-        $schema['name'] = $this->resolveName($collection);
+        $schema['name'] = $this->resolveName($collection, $siteId);
+        $existing = array_column($schema['fields'], 'name');
+
+        if (!in_array(Documents::FIELD_ELEMENT_ID, $existing, true)) {
+            $schema['fields'][] = ['name' => Documents::FIELD_ELEMENT_ID, 'type' => 'int64'];
+        }
+
+        if (!in_array(Documents::FIELD_SITE_ID, $existing, true)) {
+            $schema['fields'][] = ['name' => Documents::FIELD_SITE_ID, 'type' => 'int32', 'facet' => true];
+        }
 
         return $schema;
     }

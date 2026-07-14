@@ -12,6 +12,7 @@ namespace craftpulse\typesense\builders;
 
 use craft\elements\Entry;
 use craftpulse\typesense\enums\MultisiteStrategy;
+use craftpulse\typesense\models\FieldMapping;
 use craftpulse\typesense\models\ServerCapabilities;
 
 /**
@@ -103,6 +104,11 @@ class Collection
      * @var array<int, string> The attached computed-field names.
      */
     private array $_computedFields = [];
+
+    /**
+     * @var FieldMapping[] The field mappings for the generated document path.
+     */
+    private array $_mapping = [];
 
     /**
      * @var array<int, string>|null Collection-level token separators.
@@ -394,6 +400,21 @@ class Collection
         return $this;
     }
 
+    /**
+     * Sets the field mappings for the generated document path (used when no
+     * transform is set).
+     *
+     * @param FieldMapping ...$mappings
+     * @return self
+     * @author CraftPulse
+     */
+    public function mapping(FieldMapping ...$mappings): self
+    {
+        $this->_mapping = array_values($mappings);
+
+        return $this;
+    }
+
     // Accessors
     // -------------------------------------------------------------------------
 
@@ -512,6 +533,15 @@ class Collection
     public function getComputedFieldNames(): array
     {
         return $this->_computedFields;
+    }
+
+    /**
+     * @return FieldMapping[]
+     * @author CraftPulse
+     */
+    public function getMapping(): array
+    {
+        return $this->_mapping;
     }
 
     // Emission + validation

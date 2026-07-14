@@ -89,7 +89,7 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public string $schemaVersion = '1.0.0';
+    public string $schemaVersion = '5.9.0';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
@@ -136,6 +136,7 @@ class Typesense extends Plugin
 
         $this->_registerComponents();
         $this->installEventListeners();
+        $this->getSync()->registerEventListeners();
         $this->_registerVariable();
 
         // Add in our console commands

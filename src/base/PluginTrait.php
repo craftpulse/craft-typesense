@@ -6,7 +6,9 @@ use craftpulse\typesense\assetbundles\typesense\TypesenseAsset;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\CollectionService;
+use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Schema;
+use craftpulse\typesense\services\Sync;
 use craftpulse\typesense\services\SynonymService;
 use craftpulse\typesense\Typesense;
 use nystudio107\pluginvite\services\VitePluginService;
@@ -42,6 +44,16 @@ trait PluginTrait
         return $this->get('schema');
     }
 
+    public function getDocuments(): Documents
+    {
+        return $this->get('documents');
+    }
+
+    public function getSync(): Sync
+    {
+        return $this->get('sync');
+    }
+
     public function getVite(): VitePluginService
     {
         return $this->get('vite');
@@ -57,6 +69,8 @@ trait PluginTrait
             'collections' => CollectionService::class,
             'collectionRegistry' => Collections::class,
             'schema' => Schema::class,
+            'documents' => Documents::class,
+            'sync' => Sync::class,
             'synonyms' => SynonymService::class,
             'client' => Client::class,
             // Register the vite service
