@@ -156,6 +156,18 @@ class Settings extends Model
     public bool $analyticsEnabled = false;
 
     /**
+     * @var bool Whether to associate analytics events with a user id. Off by
+     * default: no per-user data is collected unless the operator opts in.
+     */
+    public bool $analyticsUserIdEnabled = false;
+
+    /**
+     * @var int Retention guidance, in days, surfaced in the dashboard (0 means
+     * no plugin-managed retention; Typesense keeps aggregates until overwritten).
+     */
+    public int $analyticsRetentionDays = 0;
+
+    /**
      * @var bool Whether element sync is globally suspended (for bulk imports).
      */
     public bool $syncSuspended = false;
@@ -296,8 +308,8 @@ class Settings extends Model
             'in',
             'range' => self::managedByOptions(),
         ];
-        $rules[] = [['analyticsEnabled', 'syncSuspended'], 'boolean'];
-        $rules[] = [['queuePriority'], 'integer', 'min' => 0];
+        $rules[] = [['analyticsEnabled', 'analyticsUserIdEnabled', 'syncSuspended'], 'boolean'];
+        $rules[] = [['queuePriority', 'analyticsRetentionDays'], 'integer', 'min' => 0];
         $rules[] = [
             ['connectionTimeoutSeconds', 'healthcheckIntervalSeconds', 'numRetries', 'retryIntervalSeconds'],
             'validateNumericOrEnv',

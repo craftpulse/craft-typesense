@@ -11,6 +11,7 @@
 namespace craftpulse\typesense\base;
 
 use craftpulse\typesense\services\Aliases;
+use craftpulse\typesense\services\Analytics;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
@@ -319,6 +320,19 @@ trait PluginTrait
     }
 
     /**
+     * @return Analytics
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getAnalytics(): Analytics
+    {
+        /** @var Analytics $analytics */
+        $analytics = $this->get('analytics');
+
+        return $analytics;
+    }
+
+    /**
      * @return Experiments
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -429,6 +443,7 @@ trait PluginTrait
             'presets' => Presets::class,
             'relevance' => Relevance::class,
             'aliases' => Aliases::class,
+            'analytics' => Analytics::class,
             'experiments' => Experiments::class,
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,
