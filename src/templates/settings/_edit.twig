@@ -38,7 +38,9 @@
         {% set notice %}
             {{ 'Settings are read-only because allowAdminChanges is disabled in this environment.'|t('typesense') }}
         {% endset %}
-        <div class="readable">
+        {# Sits above every tab pane so the read-only notice shows on all tabs;
+           the bottom margin keeps it clear of the first tab's fields. #}
+        <div class="readable" style="margin-bottom: 24px;">
             <blockquote class="note">{{ notice }}</blockquote>
         </div>
     {% endif %}

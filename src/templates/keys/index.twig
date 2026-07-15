@@ -16,7 +16,7 @@
     <p class="light">{{ 'Create and manage Typesense API keys. The full key value is shown only once, at creation, and is never stored by the plugin.'|t('typesense') }}</p>
 
     {% if keys is empty %}
-        <p class="light">{{ 'No API keys on the server yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No API keys on the server yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>
@@ -62,7 +62,7 @@
     <p class="light">{{ 'Reusable filter templates for front-end scoped keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense') }}</p>
 
     {% if profiles is empty %}
-        <p class="light">{{ 'No profiles yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No profiles yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>

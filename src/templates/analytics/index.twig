@@ -43,13 +43,15 @@
         </blockquote>
     {% else %}
         {% if readouts is empty %}
-            <p class="light">{{ 'No analytics rules yet.'|t('typesense') }}</p>
-            <form method="post" accept-charset="UTF-8">
-                {{ csrfInput() }}
-                {{ actionInput('typesense/analytics/set-up-rules') }}
-                {{ redirectInput('typesense/analytics') }}
-                <button type="submit" class="btn submit">{{ 'Set up recommended rules'|t('typesense') }}</button>
-            </form>
+            <div class="zilch">
+                <p>{{ 'No analytics rules yet.'|t('typesense') }}</p>
+                <form method="post" accept-charset="UTF-8">
+                    {{ csrfInput() }}
+                    {{ actionInput('typesense/analytics/set-up-rules') }}
+                    {{ redirectInput('typesense/analytics') }}
+                    <button type="submit" class="btn submit">{{ 'Set up recommended rules'|t('typesense') }}</button>
+                </form>
+            </div>
         {% else %}
             {% for readout in readouts %}
                 <h2>

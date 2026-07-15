@@ -15,7 +15,7 @@
 
     <h2>{{ 'Aliases'|t('typesense') }}</h2>
     {% if aliases is empty %}
-        <p class="light">{{ 'No aliases yet. Rebuild a collection to move it behind an alias.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No aliases yet. Rebuild a collection to move it behind an alias.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>
@@ -39,7 +39,7 @@
 
     <h2>{{ 'Zero-downtime rebuild'|t('typesense') }}</h2>
     {% if collections is empty %}
-        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>

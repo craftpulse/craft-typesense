@@ -52,6 +52,13 @@ Craft.Typesense.MappingDesigner = Garnish.Base.extend(
             var $card = $trigger.closest('.ts-map-card');
             var self = this;
 
+            // Destroy any previously-opened HUD before reassigning, so opening
+            // card after card does not leak Garnish.HUD instances and listeners.
+            if (this.hud) {
+                this.hud.destroy();
+                this.hud = null;
+            }
+
             // Seed the HUD from the card's server-rendered control template.
             var bodyHtml =
                 $card.find('.ts-map-card__controls').html() +

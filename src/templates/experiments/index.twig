@@ -15,7 +15,7 @@
     <p class="light">{{ 'Split search traffic between variant compositions (preset, scoped-key profile, analytics tag). The click-through comparison lives in the analytics dashboard.'|t('typesense') }}</p>
 
     {% if experiments is empty %}
-        <p class="light">{{ 'No experiments yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No experiments yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>

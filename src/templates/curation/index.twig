@@ -11,7 +11,7 @@
     <p class="light">{{ 'Pick a collection to manage its curation rules (pins, hides, and boosts).'|t('typesense') }}</p>
 
     {% if collections is empty %}
-        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>

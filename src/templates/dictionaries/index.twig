@@ -15,7 +15,7 @@
     <h2>{{ 'Stopwords'|t('typesense') }}</h2>
 
     {% if collections is empty %}
-        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+        <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>
