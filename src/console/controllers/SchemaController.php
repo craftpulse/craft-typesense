@@ -13,6 +13,7 @@ namespace craftpulse\typesense\console\controllers;
 use Craft;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\jobs\ApplySchema;
+use craftpulse\typesense\jobs\RebuildCollection;
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -58,6 +59,45 @@ class SchemaController extends Controller
         }
 
         $this->stdout("Queued {$queued} schema-apply job(s)." . PHP_EOL);
+
+        return ExitCode::OK;
+    }
+
+    /**
+     * Queues a zero-downtime rebuild for every collection (or one, by handle):
+     * a fresh physical collection, copied documents, an atomic alias swap, and
+     * cleanup of the old physical collection.
+     *
+     * @param string|null $handle Rebuild only this collection.
+     * @return int
+     * @author CraftPulse
+     */
+    public function actionRebuild(?string $handle = null): int
+    {
+        $registry = Typesense::$plugin->getCollectionRegistry();
+        $priority = Typesense::$plugin->getSync()->getQueuePriority();
+        $queue = Craft::$app->getQueue();
+        $queued = 0;
+
+        foreach ($registry->getAll() as $collection) {
+            if ($handle !== null && $collection->getName() !== $handle) {
+                continue;
+            }
+
+            $siteIds = $collection->getMultisiteStrategy() === MultisiteStrategy::CollectionPerSite
+                ? Craft::$app->getSites()->getAllSiteIds()
+                : [Craft::$app->getSites()->getPrimarySite()->id];
+
+            foreach ($siteIds as $siteId) {
+                $queue->priority($priority)->push(new RebuildCollection([
+                    'collectionHandle' => $collection->getName(),
+                    'siteId' => $siteId,
+                ]));
+                $queued++;
+            }
+        }
+
+        $this->stdout("Queued {$queued} rebuild job(s)." . PHP_EOL);
 
         return ExitCode::OK;
     }

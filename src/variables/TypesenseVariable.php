@@ -33,6 +33,25 @@ class TypesenseVariable
     // =========================================================================
 
     /**
+     * Resolves an A/B experiment into a chosen variant and its derived scoped
+     * search key (embedding the variant's analytics tag and applying its
+     * scoped-key profile), for splitting front-end search traffic. Returns null
+     * for an unknown or disabled experiment.
+     *
+     * {% set ab = craft.typesense.experiment('hero-ranking') %}
+     * {# ab.variant, ab.key, ab.tag, ab.preset #}
+     *
+     * @param string $handle
+     * @return array{variant: string, key: string, tag: string, preset: string}|null
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function experiment(string $handle): ?array
+    {
+        return Typesense::$plugin->getExperiments()->keyFor($handle);
+    }
+
+    /**
      * Returns the facet-sidebar region builder, for composing a custom search
      * layout. Wrap it in your own `<form data-signals>` alongside a results
      * region.

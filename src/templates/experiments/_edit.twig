@@ -1,0 +1,71 @@
+{# =========================================================================
+   Typesense Pro - A/B experiment editor
+   =========================================================================
+   @var experiment  craftpulse\typesense\models\Experiment
+   @var isNew       bool
+   @var collections string[]
+   @var profiles    string[]  scoped-key profile handles
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = isNew ? 'New experiment'|t('typesense') : experiment.name %}
+{% set selectedSubnavItem = 'experiments' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'A/B experiments'|t('typesense'), url: url('typesense/experiments') }] %}
+
+{% set profileOptions = [{ label: '(none)'|t('typesense'), value: '' }]|merge(profiles|map(p => { label: p, value: p })) %}
+
+{% block content %}
+    {{ actionInput('typesense/experiments/save') }}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('typesense'),
+        id: 'name',
+        name: 'name',
+        value: experiment.name,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('typesense'),
+        instructions: 'Referenced from Twig: craft.typesense.experiment("handle").'|t('typesense'),
+        id: 'handle',
+        name: 'handle',
+        value: experiment.handle,
+        disabled: not isNew,
+        required: true,
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Collection'|t('typesense'),
+        id: 'collection',
+        name: 'collection',
+        options: collections|map(c => { label: c, value: c }),
+        value: experiment.collection,
+    }) }}
+
+    {{ forms.lightswitchField({
+        label: 'Active'|t('typesense'),
+        id: 'enabled',
+        name: 'enabled',
+        on: experiment.enabled,
+    }) }}
+
+    {{ forms.editableTableField({
+        label: 'Variants'|t('typesense'),
+        instructions: 'Each variant is served to a weighted share of traffic. The analytics tag attributes results to the variant (requires an analytics-capable server).'|t('typesense'),
+        id: 'variants',
+        name: 'variants',
+        cols: {
+            handle: { heading: 'Handle'|t('typesense'), type: 'singleline' },
+            name: { heading: 'Name'|t('typesense'), type: 'singleline' },
+            weight: { heading: 'Weight'|t('typesense'), type: 'number' },
+            profile: { heading: 'Scoped-key profile'|t('typesense'), type: 'select', options: profileOptions },
+            preset: { heading: 'Preset'|t('typesense'), type: 'singleline' },
+            analyticsTag: { heading: 'Analytics tag'|t('typesense'), type: 'singleline' },
+        },
+        rows: experiment.variants,
+        addRowLabel: 'Add a variant'|t('typesense'),
+    }) }}
+{% endblock %}

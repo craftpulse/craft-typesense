@@ -1,0 +1,51 @@
+{# =========================================================================
+   Typesense Pro - A/B experiments
+   =========================================================================
+   @var experiments craftpulse\typesense\models\Experiment[]
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = 'A/B experiments'|t('typesense') %}
+{% set selectedSubnavItem = 'experiments' %}
+
+{% block actionButton %}
+    <a class="btn submit add icon" href="{{ url('typesense/experiments/new') }}">{{ 'New experiment'|t('typesense') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="light">{{ 'Split search traffic between variant compositions (preset, scoped-key profile, analytics tag). The click-through comparison lives in the analytics dashboard.'|t('typesense') }}</p>
+
+    {% if experiments is empty %}
+        <p class="light">{{ 'No experiments yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Experiment'|t('typesense') }}</th>
+                    <th>{{ 'Collection'|t('typesense') }}</th>
+                    <th>{{ 'Variants'|t('typesense') }}</th>
+                    <th>{{ 'Status'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle, experiment in experiments %}
+                    <tr>
+                        <td><a href="{{ url('typesense/experiments/' ~ handle) }}">{{ experiment.name }}</a> <code>{{ handle }}</code></td>
+                        <td><code>{{ experiment.collection }}</code></td>
+                        <td>{{ experiment.variants|length }}</td>
+                        <td>{{ experiment.enabled ? 'Active'|t('typesense') : 'Paused'|t('typesense') }}</td>
+                        <td class="thin">
+                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this experiment?'|t('typesense') }}">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/experiments/delete') }}
+                                {{ hiddenInput('handle', handle) }}
+                                {{ redirectInput('typesense/experiments') }}
+                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

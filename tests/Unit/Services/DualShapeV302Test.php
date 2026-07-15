@@ -148,6 +148,42 @@ it('returns real hits from a search on the 30.2 server', function() {
     });
 })->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
 
+it('clones a collection schema via src_name on the 30.2 server', function() {
+    withV302(function() {
+        $client = Typesense::$plugin->getClient()->client();
+        $source = 'ts_v302_clone_src';
+        $target = 'ts_v302_clone_dst';
+
+        expect(Typesense::$plugin->getClient()->getServerCapabilities()?->collectionCloning())->toBeTrue();
+
+        foreach ([$source, $target] as $name) {
+            try {
+                $client->collections[$name]->delete();
+            } catch (Throwable) {
+                // not present
+            }
+        }
+
+        try {
+            $client->collections->create(['name' => $source, 'fields' => [['name' => 'title', 'type' => 'string']]]);
+
+            expect(Typesense::$plugin->getAliases()->clone($source, $target))->toBeTrue();
+
+            // The clone carries the source schema.
+            $fields = array_column($client->collections[$target]->retrieve()['fields'] ?? [], 'name');
+            expect($fields)->toContain('title');
+        } finally {
+            foreach ([$source, $target] as $name) {
+                try {
+                    $client->collections[$name]->delete();
+                } catch (Throwable) {
+                    // already gone
+                }
+            }
+        }
+    });
+})->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
+
 it('upserts, lists, and deletes a synonym through the global synonym_sets path', function() {
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)

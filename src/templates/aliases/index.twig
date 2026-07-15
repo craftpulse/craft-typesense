@@ -1,0 +1,83 @@
+{# =========================================================================
+   Typesense Pro - aliases manager
+   =========================================================================
+   @var aliases         array   logical name => physical target
+   @var collections     string[]
+   @var supportsCloning bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Aliases'|t('typesense') %}
+{% set selectedSubnavItem = 'aliases' %}
+
+{% block content %}
+    <p class="light">{{ 'Aliases point a stable logical name at a physical collection, so a zero-downtime rebuild can swap the target atomically. Front-end code always references the logical name.'|t('typesense') }}</p>
+
+    <h2>{{ 'Aliases'|t('typesense') }}</h2>
+    {% if aliases is empty %}
+        <p class="light">{{ 'No aliases yet. Rebuild a collection to move it behind an alias.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Logical name'|t('typesense') }}</th>
+                    <th>{{ 'Physical target'|t('typesense') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for name, target in aliases %}
+                    <tr>
+                        <td><code>{{ name }}</code></td>
+                        <td><code>{{ target }}</code></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <hr>
+
+    <h2>{{ 'Zero-downtime rebuild'|t('typesense') }}</h2>
+    {% if collections is empty %}
+        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Collection'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle in collections %}
+                    <tr>
+                        <td><code>{{ handle }}</code></td>
+                        <td class="thin">
+                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Queue a zero-downtime rebuild of this collection?'|t('typesense') }}">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/aliases/rebuild') }}
+                                {{ hiddenInput('collection', handle) }}
+                                {{ redirectInput('typesense/aliases') }}
+                                <button type="submit" class="btn small">{{ 'Rebuild'|t('typesense') }}</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    {% if supportsCloning %}
+        <hr>
+        <h2>{{ 'Clone a collection'|t('typesense') }}</h2>
+        <p class="light">{{ 'Copies a collection’s schema (not its documents) into a new collection.'|t('typesense') }}</p>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/aliases/clone') }}
+            {{ redirectInput('typesense/aliases') }}
+            {{ forms.textField({ label: 'Source'|t('typesense'), name: 'source', required: true }) }}
+            {{ forms.textField({ label: 'New name'|t('typesense'), name: 'target', required: true }) }}
+            <div class="buttons"><button type="submit" class="btn submit">{{ 'Clone'|t('typesense') }}</button></div>
+        </form>
+    {% endif %}
+{% endblock %}

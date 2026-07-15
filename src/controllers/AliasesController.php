@@ -1,0 +1,138 @@
+<?php
+/**
+ * Typesense plugin for Craft CMS 5.x
+ *
+ * Craft Plugin that synchronises with Typesense
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
+ */
+
+namespace craftpulse\typesense\controllers;
+
+use Craft;
+use craftpulse\typesense\controllers\base\ProController;
+use craftpulse\typesense\enums\MultisiteStrategy;
+use craftpulse\typesense\jobs\RebuildCollection;
+use craftpulse\typesense\Typesense;
+use yii\web\NotFoundHttpException;
+use yii\web\Response;
+
+/**
+ * The Pro aliases manager: lists the server's aliases (logical name to physical
+ * target), triggers a queue-backed zero-downtime rebuild of a collection, and
+ * clones a collection's schema (capability-gated). Gated by the edition and
+ * `typesense:manageCollections`.
+ *
+ * @author    CraftPulse
+ * @package   Typesense
+ * @since     5.9.0
+ */
+class AliasesController extends ProController
+{
+    // Public Methods
+    // =========================================================================
+
+    /**
+     * @inheritdoc
+     * @param \yii\base\Action $action
+     * @return bool
+     * @throws \yii\web\ForbiddenHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @throws \yii\web\BadRequestHttpException
+     */
+    public function beforeAction($action): bool
+    {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
+        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+
+        return true;
+    }
+
+    /**
+     * Clones a collection's schema into a new collection (capability-gated).
+     *
+     * @return Response|null
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionClone(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+
+        $source = trim((string)$this->request->getRequiredBodyParam('source'));
+        $target = trim((string)$this->request->getRequiredBodyParam('target'));
+
+        if ($target === '' || !Typesense::$plugin->getAliases()->clone($source, $target)) {
+            return $this->asFailure(Craft::t('typesense', 'Could not clone the collection.'));
+        }
+
+        return $this->asSuccess(Craft::t('typesense', 'Cloned {source} to {target}.', ['source' => $source, 'target' => $target]), [
+            'redirect' => 'typesense/aliases',
+        ]);
+    }
+
+    /**
+     * The aliases manager: the server's aliases and the collections eligible for
+     * a zero-downtime rebuild.
+     *
+     * @return Response
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionIndex(): Response
+    {
+        $capabilities = Typesense::$plugin->getClient()->getServerCapabilities();
+
+        return $this->renderTemplate('typesense/aliases/index', [
+            'aliases' => Typesense::$plugin->getAliases()->all(),
+            'collections' => array_keys(Typesense::$plugin->getCollectionRegistry()->getAll()),
+            'supportsCloning' => $capabilities?->collectionCloning() ?? false,
+        ]);
+    }
+
+    /**
+     * Queues a zero-downtime rebuild for a collection (all its sites).
+     *
+     * @return Response|null
+     * @throws NotFoundHttpException
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionRebuild(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+
+        $handle = (string)$this->request->getRequiredBodyParam('collection');
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
+
+        if ($collection === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        $priority = Typesense::$plugin->getSync()->getQueuePriority();
+        $queue = Craft::$app->getQueue();
+        $siteIds = $collection->getMultisiteStrategy() === MultisiteStrategy::CollectionPerSite
+            ? Craft::$app->getSites()->getAllSiteIds()
+            : [Craft::$app->getSites()->getPrimarySite()->id];
+
+        foreach ($siteIds as $siteId) {
+            $queue->priority($priority)->push(new RebuildCollection([
+                'collectionHandle' => $handle,
+                'siteId' => $siteId,
+            ]));
+        }
+
+        return $this->asSuccess(Craft::t('typesense', 'Rebuild queued. The alias keeps serving the current collection until the swap.'), [
+            'redirect' => 'typesense/aliases',
+        ]);
+    }
+}

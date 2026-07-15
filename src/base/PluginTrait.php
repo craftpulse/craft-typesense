@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\base;
 
+use craftpulse\typesense\services\Aliases;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
@@ -20,6 +21,7 @@ use craftpulse\typesense\services\CurationIndex;
 use craftpulse\typesense\services\Dictionaries;
 use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
+use craftpulse\typesense\services\Experiments;
 use craftpulse\typesense\services\Inspector;
 use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
@@ -304,6 +306,32 @@ trait PluginTrait
     }
 
     /**
+     * @return Aliases
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getAliases(): Aliases
+    {
+        /** @var Aliases $aliases */
+        $aliases = $this->get('aliases');
+
+        return $aliases;
+    }
+
+    /**
+     * @return Experiments
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getExperiments(): Experiments
+    {
+        /** @var Experiments $experiments */
+        $experiments = $this->get('experiments');
+
+        return $experiments;
+    }
+
+    /**
      * @return Schema
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -400,6 +428,8 @@ trait PluginTrait
             'curationIndex' => CurationIndex::class,
             'presets' => Presets::class,
             'relevance' => Relevance::class,
+            'aliases' => Aliases::class,
+            'experiments' => Experiments::class,
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,
             'client' => Client::class,
