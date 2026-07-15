@@ -30,6 +30,11 @@
     {{ actionInput('typesense/relevance/save') }}
     {{ hiddenInput('uid', definition.uid) }}
 
+    <p class="light">
+        {{ 'Preview pending weight and preset changes before you commit them in the'|t('typesense') }}
+        <a href="{{ url('typesense/playground/' ~ definition.name) }}">{{ 'search playground'|t('typesense') }}</a>{{ ' (diff mode).'|t('typesense') }}
+    </p>
+
     <h2>{{ 'Boost rules'|t('typesense') }}</h2>
     <blockquote class="note">
         {{ 'Boost rules bake into an indexed score at index time (the deterministic alternative to _eval). Changing them requires re-syncing the collection to take effect.'|t('typesense') }}
