@@ -23,6 +23,7 @@ use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craftpulse\typesense\fieldlayoutelements\MappingField;
 use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
+use craftpulse\typesense\helpers\Locale;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
 
@@ -225,37 +226,91 @@ class MappingSources extends Component
         $isFacetable = in_array($derivedType, ['string', 'string[]', 'int32', 'int64', 'bool'], true);
         $isObject = in_array($derivedType, ['object', 'object[]'], true);
 
+        $info = static fn(string $text): string => '<span class="info">' . $text . '</span>';
+
         $controls = [
             ['key' => 'indexable', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Indexed')],
         ];
 
         if ($isFacetable) {
-            $controls[] = ['key' => 'facet', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Facet')];
+            $controls[] = [
+                'key' => 'facet',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Facet'),
+                'instructions' => Craft::t('typesense', 'Allow filtering and counting by this field.') . $info(Craft::t('typesense', 'Makes the field available to <code>facet_by</code> for facet counts and filter UIs. Facet fields carry extra memory and index cost.')),
+            ];
         }
 
         if ($isText || $isNumeric || $derivedType === 'bool') {
-            $controls[] = ['key' => 'sortable', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Sortable')];
+            $controls[] = [
+                'key' => 'sortable',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Sortable'),
+                'instructions' => Craft::t('typesense', 'Allow ordering results by this field.') . $info(Craft::t('typesense', 'Makes the field usable in <code>sort_by</code>. Numeric fields are always sortable; marking a string field sortable builds an extra sort index.')),
+            ];
         }
 
         if ($isText) {
-            $controls[] = ['key' => 'weight', 'type' => 'number', 'label' => Craft::t('typesense', 'Search weight')];
-            $controls[] = ['key' => 'infix', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Infix search')];
-            $controls[] = ['key' => 'stem', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Stemming')];
-            $controls[] = ['key' => 'locale', 'type' => 'text', 'label' => Craft::t('typesense', 'Locale')];
+            $controls[] = [
+                'key' => 'weight',
+                'type' => 'number',
+                'label' => Craft::t('typesense', 'Search weight'),
+                'instructions' => Craft::t('typesense', 'How strongly a match in this field counts toward relevance.') . $info(Craft::t('typesense', 'Higher weights rank matches in this field above matches in lower-weighted fields. Compiled into the collection’s <code>query_by_weights</code>.')),
+            ];
+            $controls[] = [
+                'key' => 'infix',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Infix search'),
+                'instructions' => Craft::t('typesense', 'Match substrings in the middle of words.') . $info(Craft::t('typesense', 'Enables mid-string matching (for example matching "apple" in "pineapple"). Typesense builds an extra in-memory infix index for the field, so it raises memory use; enable it only where you need it.')),
+            ];
+            $controls[] = [
+                'key' => 'stem',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Stemming'),
+                'instructions' => Craft::t('typesense', 'Match different forms of the same word.') . $info(Craft::t('typesense', 'Applies the language’s stemmer so "running" also matches "run". Stemming is language-dependent, so set the Locale below to the field’s language.')),
+            ];
+            $controls[] = [
+                'key' => 'locale',
+                'type' => 'language',
+                'label' => Craft::t('typesense', 'Locale'),
+                'options' => $this->_localeOptions(),
+                'instructions' => Craft::t('typesense', 'The language used to tokenize and stem this field.') . $info(Craft::t('typesense', 'Typesense scopes tokenization and stemming to an ISO language code (for example en, nl, ja) via the field’s <code>locale</code>. The region is dropped on save, so en-GB is stored as en.')),
+            ];
         }
 
         if ($isObject) {
-            $controls[] = ['key' => 'embed', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Index nested fields')];
+            $controls[] = [
+                'key' => 'embed',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Index nested fields'),
+                'instructions' => Craft::t('typesense', 'Index the fields inside this object.') . $info(Craft::t('typesense', 'Enables <code>enable_nested_fields</code> so each key of the object becomes independently searchable and filterable.')),
+            ];
         }
 
-        $controls[] = ['key' => 'type', 'type' => 'select', 'label' => Craft::t('typesense', 'Type override'), 'options' => $this->_typeOverrideOptions($derivedType)];
+        $controls[] = [
+            'key' => 'type',
+            'type' => 'select',
+            'label' => Craft::t('typesense', 'Type override'),
+            'options' => $this->_typeOverrideOptions($derivedType),
+            'instructions' => Craft::t('typesense', 'Store this field as a different Typesense type.') . $info(Craft::t('typesense', 'Overrides the server-derived type with a compatible one (for example indexing a number as a string). Leave as the derived type unless you have a reason to change it.')),
+        ];
 
         if ($isAsset) {
             // Auto image embedding is experimental; the pipeline lands later.
-            $controls[] = ['key' => 'imageEmbed', 'type' => 'checkbox', 'label' => Craft::t('typesense', 'Embed image (experimental)')];
+            $controls[] = [
+                'key' => 'imageEmbed',
+                'type' => 'checkbox',
+                'label' => Craft::t('typesense', 'Embed image (experimental)'),
+                'instructions' => Craft::t('typesense', 'Generate a CLIP image embedding from this asset.') . $info(Craft::t('typesense', 'Sends the asset image to the server’s CLIP model at index time for image and cross-modal search. Experimental, and adds index-time cost per asset.')),
+            ];
         }
 
-        $controls[] = ['key' => 'description', 'type' => 'text', 'label' => Craft::t('typesense', 'Description (for natural-language search)')];
+        $controls[] = [
+            'key' => 'description',
+            'type' => 'text',
+            'label' => Craft::t('typesense', 'Description'),
+            'instructions' => Craft::t('typesense', 'A plain-language description of what this field holds.') . $info(Craft::t('typesense', 'Used by natural-language (conversational) search to reason about the field. Has no effect on ordinary keyword search.')),
+        ];
 
         return $controls;
     }
@@ -384,6 +439,35 @@ class MappingSources extends Component
         }
 
         return array_values($fields);
+    }
+
+    /**
+     * The locale options for the mapping slideout: a blank "server default" plus
+     * the site's languages, normalised to the ISO language subtag Typesense
+     * expects (deduped, so en-GB and en collapse to en). The mapping slideout is
+     * rendered as PHP field HTML (not a Twig template), so it uses a select of
+     * languages rather than the forms.languageMenuField macro the Twig editors use.
+     *
+     * @return array<int, array{label: string, value: string}>
+     * @author CraftPulse
+     */
+    private function _localeOptions(): array
+    {
+        $options = [['label' => Craft::t('typesense', 'Default (server)'), 'value' => '']];
+        $seen = [];
+
+        foreach (Craft::$app->getI18n()->getSiteLocaleIds() as $id) {
+            $language = Locale::toTypesense($id);
+
+            if ($language === null || isset($seen[$language])) {
+                continue;
+            }
+
+            $seen[$language] = true;
+            $options[] = ['label' => $language, 'value' => $language];
+        }
+
+        return $options;
     }
 
     /**

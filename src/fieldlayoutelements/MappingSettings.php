@@ -224,24 +224,36 @@ trait MappingSettings
     private function _controlHtml(string $key, array $control): string
     {
         $label = (string)($control['label'] ?? $key);
+        $instructions = (string)($control['instructions'] ?? '');
         $prop = $this->_prop($key);
 
         return match ((string)$control['type']) {
             'checkbox' => Cp::lightswitchFieldHtml([
                 'label' => $label,
+                'instructions' => $instructions,
                 'id' => $prop,
                 'name' => $prop,
                 'on' => (bool)$this->{$prop},
             ]),
             'number' => Cp::textFieldHtml([
                 'label' => $label,
+                'instructions' => $instructions,
                 'type' => 'number',
                 'id' => $prop,
                 'name' => $prop,
                 'value' => $this->{$prop},
             ]),
+            'language' => Cp::selectFieldHtml([
+                'label' => $label,
+                'instructions' => $instructions,
+                'id' => $prop,
+                'name' => $prop,
+                'options' => (array)($control['options'] ?? []),
+                'value' => (string)($this->{$prop} ?? ''),
+            ]),
             'select' => Cp::selectFieldHtml([
                 'label' => $label,
+                'instructions' => $instructions,
                 'id' => $prop,
                 'name' => $prop,
                 'options' => array_map(
@@ -252,6 +264,7 @@ trait MappingSettings
             ]),
             default => Cp::textFieldHtml([
                 'label' => $label,
+                'instructions' => $instructions,
                 'id' => $prop,
                 'name' => $prop,
                 'value' => $this->{$prop},

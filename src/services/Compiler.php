@@ -19,6 +19,7 @@ use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\fieldlayoutelements\MappingElementInterface;
+use craftpulse\typesense\helpers\Locale;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\models\FieldMapping;
 use craftpulse\typesense\Typesense;
@@ -226,8 +227,10 @@ class Compiler extends Component
             $field->stem();
         }
 
-        if (!empty($settings['locale'])) {
-            $field->locale((string)$settings['locale']);
+        $locale = Locale::toTypesense((string)($settings['locale'] ?? ''));
+
+        if ($locale !== null) {
+            $field->locale($locale);
         }
 
         return $field;
