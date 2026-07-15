@@ -39,6 +39,20 @@ widen the embedded one.
 | `limit_multi_searches` | Cap the number of searches per multi-search. |
 | `cache_ttl` | Server-side cache duration for the key's results. |
 
+## Profiles (Pro)
+
+In the Pro edition you can save named scoped-key profiles (per-site or per-tenant
+filter templates) in the control panel and reference them by handle, so the
+locked filter lives in one reviewable place instead of being repeated across
+templates:
+
+```twig
+{% set searchKey = craft.typesense.scopedSearchKey({ profile: 'tenant-a' }) %}
+```
+
+The profile's locked filter takes precedence over any ad-hoc parameters. See
+`docs/pro-keys.md`.
+
 ## From the console
 
 ```bash

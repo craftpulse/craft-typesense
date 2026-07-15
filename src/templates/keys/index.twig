@@ -77,7 +77,7 @@
                 {% for handle, profile in profiles %}
                     <tr>
                         <td><a href="{{ url('typesense/keys/profile/' ~ handle) }}">{{ profile.name }}</a> <code>{{ handle }}</code></td>
-                        <td><code>{{ profile.filterBy ?: '—' }}</code></td>
+                        <td>{% if profile.filterBy %}<code>{{ profile.filterBy }}</code>{% else %}{{ 'None'|t('typesense') }}{% endif %}</td>
                         <td>{{ profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense') }}</td>
                         <td class="thin">
                             <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this profile?'|t('typesense') }}">

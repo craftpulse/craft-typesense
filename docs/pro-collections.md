@@ -23,6 +23,7 @@ Pro registers a granular permission set under the Typesense heading:
 | `typesense:manageSettings` | The settings screen (Free and Pro). |
 | `typesense:manageCollections` | The collections cockpit and mapping UI. |
 | `typesense:manageCuration` | The curation manager. |
+| `typesense:manageKeys` | The API keys manager and scoped-key profiles. |
 | `typesense:viewAnalytics` | The analytics dashboard. |
 
 Nav items and screens key off both the edition and the matching permission.
