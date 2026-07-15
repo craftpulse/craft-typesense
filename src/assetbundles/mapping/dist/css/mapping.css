@@ -1,0 +1,76 @@
+/**
+ * Typesense field mapping designer styles.
+ *
+ * Borrows the field-layout-designer card look (.fld-* visual language) without
+ * the designer's drag/authoring behaviour: a grid of read-only field cards, a
+ * disclosure trigger per card, and a summary line of the current mapping.
+ */
+
+.ts-map {
+    margin-top: 14px;
+}
+
+.ts-map__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+}
+
+.ts-map-card {
+    border: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    border-radius: var(--large-border-radius, 5px);
+    background: var(--white, #fff);
+    padding: 0;
+}
+
+.ts-map-card__trigger {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+    background: none;
+    border: 0;
+    cursor: pointer;
+    border-radius: var(--large-border-radius, 5px);
+}
+
+.ts-map-card__trigger:focus {
+    outline: none;
+    box-shadow: var(--focus-ring, 0 0 0 1px var(--hairline-color), 0 0 0 3px rgba(38, 133, 238, 0.7));
+}
+
+.ts-map-card__name {
+    font-weight: bold;
+    color: var(--text-color, #3f4d5a);
+}
+
+.ts-map-card__type {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 11px;
+    color: var(--light-text-color, #8f98a3);
+}
+
+.ts-map-card__kind {
+    display: inline-block;
+    margin-left: 6px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--light-text-color, #8f98a3);
+}
+
+.ts-map-card__summary {
+    display: block;
+    margin-top: 4px;
+    font-size: 12px;
+    color: var(--light-text-color, #8f98a3);
+}
+
+.ts-map-card__controls {
+    display: none;
+}
+
+.ts-map-hud .field {
+    margin-bottom: 12px;
+}

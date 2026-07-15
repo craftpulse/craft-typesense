@@ -17,6 +17,9 @@ use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\elements\Tag;
 use craft\elements\User;
+use craft\helpers\Json;
+use craft\web\assets\cp\CpAsset;
+use craftpulse\typesense\assetbundles\mapping\MappingAsset;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
@@ -137,6 +140,33 @@ class CollectionsController extends ProController
     }
 
     /**
+     * Renders the field mapping screen for a CP-managed collection.
+     *
+     * @param string $uid
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionMapping(string $uid): Response
+    {
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
+
+        if ($definition === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        $this->getView()->registerAssetBundle(CpAsset::class);
+        $this->getView()->registerAssetBundle(MappingAsset::class);
+
+        return $this->renderTemplate('typesense/collections/_mapping', [
+            'definition' => $definition,
+            'descriptors' => Typesense::$plugin->getMappingSources()->descriptorsFor($definition),
+        ]);
+    }
+
+    /**
      * Persists a CP-managed collection definition to project config.
      *
      * @return Response|null
@@ -173,6 +203,50 @@ class CollectionsController extends ProController
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Collection saved.'), 'definition', [
             'redirect' => 'typesense/collections',
+        ]);
+    }
+
+    /**
+     * Persists the field mapping (keyed by field UID) for a CP-managed
+     * collection to project config. Each `mappings[<uid>]` body param is a JSON
+     * object of the field's chosen options.
+     *
+     * @return Response|null
+     * @throws NotFoundHttpException
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \Throwable
+     * @author CraftPulse
+     */
+    public function actionSaveMapping(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(self::PERMISSION_MANAGE_COLLECTIONS);
+
+        $uid = (string)$this->request->getRequiredBodyParam('uid');
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
+
+        if ($definition === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        $posted = $this->request->getBodyParam('mappings', []);
+        $mappings = [];
+
+        if (is_array($posted)) {
+            foreach ($posted as $fieldUid => $json) {
+                $decoded = Json::decodeIfJson((string)$json);
+
+                if (is_array($decoded) && $decoded !== []) {
+                    $mappings[(string)$fieldUid] = $decoded;
+                }
+            }
+        }
+
+        $definition->mappings = $mappings;
+        Typesense::$plugin->getManagedCollections()->save($definition);
+
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [
+            'redirect' => 'typesense/collections/{uid}/mapping',
         ]);
     }
 

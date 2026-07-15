@@ -66,5 +66,8 @@
 
     {% if isNew %}
         <p class="light">{{ 'Save the collection, then map its fields from the mapping screen.'|t('typesense') }}</p>
+    {% else %}
+        <hr>
+        <a href="{{ url('typesense/collections/' ~ definition.uid ~ '/mapping') }}" class="btn">{{ 'Map fields'|t('typesense') }}</a>
     {% endif %}
 {% endblock %}

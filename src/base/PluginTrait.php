@@ -21,6 +21,7 @@ use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
 use craftpulse\typesense\services\ManagedCollections;
+use craftpulse\typesense\services\MappingSources;
 use craftpulse\typesense\services\Notifications;
 use craftpulse\typesense\services\Presets;
 use craftpulse\typesense\services\Schema;
@@ -194,6 +195,19 @@ trait PluginTrait
     }
 
     /**
+     * @return MappingSources
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getMappingSources(): MappingSources
+    {
+        /** @var MappingSources $mappingSources */
+        $mappingSources = $this->get('mappingSources');
+
+        return $mappingSources;
+    }
+
+    /**
      * @return Notifications
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -307,6 +321,7 @@ trait PluginTrait
             'keys' => Keys::class,
             'drift' => Drift::class,
             'managedCollections' => ManagedCollections::class,
+            'mappingSources' => MappingSources::class,
             'notifications' => Notifications::class,
             'synonyms' => Synonyms::class,
             'curation' => Curation::class,
