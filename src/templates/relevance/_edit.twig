@@ -3,11 +3,12 @@
    =========================================================================
    @var definition      craftpulse\typesense\models\CollectionDefinition
    @var relevance       array
-   @var embedding       array
-   @var modelOptions    array
-   @var providers       array
-   @var supportsBuckets bool
-   @var supportsMmr     bool
+   @var embedding            array
+   @var modelOptions         array
+   @var providers            array
+   @var experimentalFeatures array
+   @var supportsBuckets      bool
+   @var supportsMmr          bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms.twig' as forms %}
@@ -178,4 +179,15 @@
     {{ forms.textField({ label: 'api_key (env reference)'|t('typesense'), id: 'embed_api_key', name: 'embed_api_key', value: embedding.config.api_key ?? '' }) }}
     {{ forms.textField({ label: 'url (Azure / Cloudflare)'|t('typesense'), id: 'embed_url', name: 'embed_url', value: embedding.config.url ?? '' }) }}
     {{ forms.textField({ label: 'openai_url (custom endpoint)'|t('typesense'), id: 'embed_openai_url', name: 'embed_openai_url', value: embedding.config.openai_url ?? '' }) }}
+
+    {% if experimentalFeatures is not empty %}
+        <hr>
+        <h2>{{ 'Experimental AI features'|t('typesense') }}</h2>
+        <p class="light">{{ 'Available on this server, shown with their honest trade-offs. Configure conversation (RAG) models and use the search helpers (craft.typesense.ask, naturalLanguageSearch); each is opt-in.'|t('typesense') }}</p>
+        {% for feature in experimentalFeatures %}
+            <blockquote class="note warning">
+                <strong>{{ feature.label }}</strong>: {{ feature.reason }}
+            </blockquote>
+        {% endfor %}
+    {% endif %}
 {% endblock %}

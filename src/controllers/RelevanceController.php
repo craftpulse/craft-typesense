@@ -82,6 +82,7 @@ class RelevanceController extends ProController
             'embedding' => $definition->embedding,
             'modelOptions' => $modelOptions,
             'providers' => $embeddings::PROVIDERS,
+            'experimentalFeatures' => Typesense::$plugin->getAiModels()->experimentalFeatures(),
             'supportsBuckets' => $capabilities?->textMatchBuckets() ?? false,
             'supportsMmr' => $capabilities?->mmr() ?? false,
         ]);

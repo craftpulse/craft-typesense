@@ -142,6 +142,48 @@ class Search extends Component
     }
 
     /**
+     * Runs a conversational (RAG) search: the query retrieves context and the
+     * configured model generates an answer (`$result['conversation']['answer']`).
+     * EXPERIMENTAL: each call makes a per-search LLM request (cost). Pass a
+     * `conversation_id` in `$params` to continue a conversation.
+     *
+     * @param string $handle
+     * @param string $modelId
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function conversationalSearch(string $handle, string $modelId, array $params): array
+    {
+        $params['conversation'] = true;
+        $params['conversation_model_id'] = $modelId;
+
+        return $this->search($handle, $params);
+    }
+
+    /**
+     * Runs a natural-language search: the query is a plain sentence the model
+     * translates into search parameters. Version-gated (v29+); on servers without
+     * it the plugin runs a plain search instead (hide, never badge). EXPERIMENTAL:
+     * the model can emit invalid filter syntax that is retried.
+     *
+     * @param string $handle
+     * @param string $modelId
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function naturalLanguageSearch(string $handle, string $modelId, array $params): array
+    {
+        if (Typesense::$plugin->getClient()->getServerCapabilities()?->nlSearch() ?? false) {
+            $params['nl_query'] = true;
+            $params['nl_model_id'] = $modelId;
+        }
+
+        return $this->search($handle, $params);
+    }
+
+    /**
      * Finds items similar to a given document by its vector, using vector-query
      * by id (empty vector plus an id). The vector field is excluded from the
      * response to keep the payload small.

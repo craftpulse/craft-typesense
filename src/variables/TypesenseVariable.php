@@ -47,6 +47,28 @@ class TypesenseVariable
     }
 
     /**
+     * Runs a conversational (RAG) search and returns the result, including the
+     * generated answer at `result.conversation.answer`. Experimental: each call
+     * makes a per-search LLM request (cost). Requires a configured conversation
+     * model.
+     *
+     * {% set answer = craft.typesense.ask('products', 'red running shoes under 100', 'shop-advisor', { query_by: 'title,embedding' }) %}
+     *
+     * @param string $handle
+     * @param string $question
+     * @param string $modelId
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function ask(string $handle, string $question, string $modelId, array $params = []): array
+    {
+        $params['q'] = $question;
+
+        return Typesense::$plugin->getSearch()->conversationalSearch($handle, $modelId, $params);
+    }
+
+    /**
      * Resolves an A/B experiment into a chosen variant and its derived scoped
      * search key (embedding the variant's analytics tag and applying its
      * scoped-key profile), for splitting front-end search traffic. Returns null
