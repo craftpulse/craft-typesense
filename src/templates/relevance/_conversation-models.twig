@@ -52,7 +52,7 @@
     <form method="post" accept-charset="UTF-8">
         {{ csrfInput() }}
         {{ actionInput('typesense/relevance/save-conversation-model') }}
-        {{ forms.textField({ first: true, label: 'ID'|t('typesense'), name: 'id', required: true }) }}
+        {{ forms.textField({ first: true, label: 'ID'|t('typesense'), name: 'id', class: 'code', required: true }) }}
         {{ forms.textField({ label: 'Model name'|t('typesense'), instructions: 'For example openai/gpt-4o-mini.'|t('typesense'), name: 'model_name', required: true }) }}
         {{ forms.textField({ label: 'API key (env reference)'|t('typesense'), instructions: 'Enter the environment reference, for example $OPENAI_API_KEY, never the raw key.'|t('typesense'), name: 'api_key', required: true }) }}
         {{ forms.textField({ label: 'History collection'|t('typesense'), instructions: 'Created automatically if it does not exist.'|t('typesense'), name: 'history_collection', value: 'conversation_store', required: true }) }}

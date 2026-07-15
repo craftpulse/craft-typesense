@@ -217,8 +217,15 @@ class KeysController extends ProController
         $this->requirePermission(self::PERMISSION_MANAGE_KEYS);
 
         $request = $this->request;
+
+        // On an edit the handle is locked (Craft convention), so it arrives as a
+        // hidden originalHandle rather than the disabled field; use it to update
+        // the existing profile in place instead of newing up a duplicate.
+        $original = trim((string)$request->getBodyParam('originalHandle', ''));
+        $handle = trim((string)$request->getBodyParam('handle', ''));
+
         $profile = new KeyProfile();
-        $profile->handle = (string)$request->getBodyParam('handle', '');
+        $profile->handle = $original !== '' ? $original : $handle;
         $profile->name = (string)$request->getBodyParam('name', '');
         $profile->filterBy = (string)$request->getBodyParam('filterBy', '');
         $profile->includeFields = (string)$request->getBodyParam('includeFields', '');

@@ -27,10 +27,12 @@
     {{ forms.textField({
         first: true,
         label: 'Name'|t('typesense'),
-        instructions: 'The logical collection name. Letters, numbers, underscores, and hyphens.'|t('typesense'),
+        instructions: 'The logical collection name. Letters, numbers, underscores, and hyphens. Locked once the collection is created.'|t('typesense'),
         id: 'name',
         name: 'name',
+        class: 'code',
         value: definition.name,
+        disabled: not isNew,
         required: true,
         errors: definition.getErrors('name'),
     }) }}

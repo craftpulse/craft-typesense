@@ -33,10 +33,15 @@
         instructions: 'Referenced from Twig: craft.typesense.experiment("handle").'|t('typesense'),
         id: 'handle',
         name: 'handle',
+        class: 'code',
         value: experiment.handle,
         disabled: not isNew,
         required: true,
     }) }}
+
+    {% if isNew %}
+        {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
+    {% endif %}
 
     {{ forms.selectField({
         label: 'Collection'|t('typesense'),

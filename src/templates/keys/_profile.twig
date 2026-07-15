@@ -13,6 +13,7 @@
 
 {% block content %}
     {{ actionInput('typesense/keys/save-profile') }}
+    {% if not isNew %}{{ hiddenInput('originalHandle', profile.handle) }}{% endif %}
 
     {{ forms.textField({
         first: true,
@@ -28,10 +29,15 @@
         instructions: 'Referenced from Twig: craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense'),
         id: 'handle',
         name: 'handle',
+        class: 'code',
         value: profile.handle,
         disabled: not isNew,
         required: true,
     }) }}
+
+    {% if isNew %}
+        {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
+    {% endif %}
 
     {{ forms.textField({
         label: 'Locked filter (filter_by)'|t('typesense'),
