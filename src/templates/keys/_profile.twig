@@ -1,0 +1,79 @@
+{# =========================================================================
+   Typesense Pro - scoped-key profile editor
+   =========================================================================
+   @var profile craftpulse\typesense\models\KeyProfile
+   @var isNew   bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = isNew ? 'New profile'|t('typesense') : profile.name %}
+{% set selectedSubnavItem = 'keys' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'API keys'|t('typesense'), url: url('typesense/keys') }] %}
+
+{% block content %}
+    {{ actionInput('typesense/keys/save-profile') }}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('typesense'),
+        id: 'name',
+        name: 'name',
+        value: profile.name,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('typesense'),
+        instructions: 'Referenced from Twig: craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense'),
+        id: 'handle',
+        name: 'handle',
+        value: profile.handle,
+        disabled: not isNew,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Locked filter (filter_by)'|t('typesense'),
+        instructions: 'The filter the derived key is locked to (for example a site or tenant). The browser cannot widen it.'|t('typesense'),
+        id: 'filterBy',
+        name: 'filterBy',
+        value: profile.filterBy,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Include fields'|t('typesense'),
+        instructions: 'Optional comma-separated allow-list of returnable fields.'|t('typesense'),
+        id: 'includeFields',
+        name: 'includeFields',
+        value: profile.includeFields,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Exclude fields'|t('typesense'),
+        instructions: 'Optional comma-separated deny-list of returnable fields.'|t('typesense'),
+        id: 'excludeFields',
+        name: 'excludeFields',
+        value: profile.excludeFields,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Expires in (seconds)'|t('typesense'),
+        instructions: 'Applied from the moment each key is derived. 0 for no expiry.'|t('typesense'),
+        type: 'number',
+        id: 'expiresIn',
+        name: 'expiresIn',
+        value: profile.expiresIn,
+        size: 10,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Limit hits'|t('typesense'),
+        instructions: 'Cap the number of hits per search (0 for no cap).'|t('typesense'),
+        type: 'number',
+        id: 'limitHits',
+        name: 'limitHits',
+        value: profile.limitHits,
+        size: 10,
+    }) }}
+{% endblock %}

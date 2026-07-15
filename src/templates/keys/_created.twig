@@ -1,0 +1,52 @@
+{# =========================================================================
+   Typesense Pro - API key created (show-once)
+   =========================================================================
+   The full key value is rendered here exactly once. It is never stored by the
+   plugin (no database, no project config, no logs), so it cannot be recovered
+   after this screen. The keys.js asset opens it in a Garnish modal.
+
+   @var key        array     the creation response (includes the full value)
+   @var rotatingId int|null  the old key to offer for deletion (rotate flow)
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Key created'|t('typesense') %}
+{% set selectedSubnavItem = 'keys' %}
+{% set crumbs = [{ label: 'API keys'|t('typesense'), url: url('typesense/keys') }] %}
+
+{% block content %}
+    <p class="light">{{ 'Your key was created. Copy the value now, from the dialog: it will never be shown again.'|t('typesense') }}</p>
+    <p><a class="btn" href="{{ url('typesense/keys') }}">{{ 'Back to keys'|t('typesense') }}</a></p>
+
+    <div id="ts-key-modal" class="modal fitted ts-key-modal" style="display:none">
+        <div class="body">
+            <h2>{{ 'Copy your API key now'|t('typesense') }}</h2>
+            <blockquote class="note warning">
+                {{ 'This is the only time the full value is shown. It is not stored by the plugin and cannot be recovered. If you lose it, delete the key and create a new one.'|t('typesense') }}
+            </blockquote>
+
+            <div class="field">
+                <div class="input">
+                    <input type="text" class="text fullwidth code ts-key-modal__value" readonly value="{{ key.value }}" onclick="this.select()">
+                </div>
+            </div>
+
+            <p class="light"><code>{{ key.value_prefix ?? '' }}…</code> · {{ key.description ?? '' }}</p>
+        </div>
+        <div class="footer">
+            <div class="buttons right">
+                {% if rotatingId %}
+                    <form method="post" accept-charset="UTF-8" style="display:inline" data-confirm="{{ 'Delete the previous key now?'|t('typesense') }}">
+                        {{ csrfInput() }}
+                        {{ actionInput('typesense/keys/delete-key') }}
+                        {{ hiddenInput('id', rotatingId) }}
+                        {{ redirectInput('typesense/keys') }}
+                        <button type="submit" class="btn delete">{{ 'Delete the old key'|t('typesense') }}</button>
+                    </form>
+                {% endif %}
+                <button type="button" class="btn ts-key-modal__copy">{{ 'Copy'|t('typesense') }}</button>
+                <button type="button" class="btn submit ts-key-modal__done">{{ 'Done'|t('typesense') }}</button>
+            </div>
+        </div>
+    </div>
+{% endblock %}

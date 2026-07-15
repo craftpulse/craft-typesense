@@ -1,0 +1,65 @@
+{# =========================================================================
+   Typesense Pro - API key creation
+   =========================================================================
+   @var actions     string[]  the offered action scopes
+   @var collections string[]  the declared collection handles
+   @var prefill     array|null  a key being rotated (prefills scopes)
+   @var rotatingId  int|null    the id of the key being replaced
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Create a key'|t('typesense') %}
+{% set selectedSubnavItem = 'keys' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'API keys'|t('typesense'), url: url('typesense/keys') }] %}
+
+{% set selectedActions = prefill.actions ?? ['documents:search'] %}
+{% set selectedCollections = prefill.collections ?? [] %}
+
+{% block content %}
+    {{ actionInput('typesense/keys/save-key') }}
+    {% if rotatingId %}{{ hiddenInput('rotatingId', rotatingId) }}{% endif %}
+
+    {% if rotatingId %}
+        <blockquote class="note">
+            {{ 'You are rotating a key. Create the replacement now; you can delete the old key once the new value is in hand.'|t('typesense') }}
+        </blockquote>
+    {% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Description'|t('typesense'),
+        instructions: 'Shown in the key list (the value itself is never stored).'|t('typesense'),
+        id: 'description',
+        name: 'description',
+        value: prefill.description ?? '',
+    }) }}
+
+    {{ forms.checkboxSelectField({
+        label: 'Action scopes'|t('typesense'),
+        instructions: 'What this key may do. Front-end search keys need only documents:search.'|t('typesense'),
+        id: 'actions',
+        name: 'actions',
+        options: actions|map(a => { label: a, value: a }),
+        values: selectedActions,
+    }) }}
+
+    {{ forms.checkboxSelectField({
+        label: 'Collection restrictions'|t('typesense'),
+        instructions: 'Limit the key to these collections. Leave all unchecked for every collection.'|t('typesense'),
+        id: 'collections',
+        name: 'collections',
+        options: collections|map(c => { label: c, value: c }),
+        values: selectedCollections,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Expires in (seconds)'|t('typesense'),
+        instructions: 'Optional. Leave blank or 0 for a key that never expires.'|t('typesense'),
+        type: 'number',
+        id: 'expiresIn',
+        name: 'expiresIn',
+        value: 0,
+        size: 10,
+    }) }}
+{% endblock %}

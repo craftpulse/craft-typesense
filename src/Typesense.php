@@ -41,6 +41,7 @@ use craftpulse\typesense\base\PluginTrait;
 use craftpulse\typesense\controllers\AnalyticsController;
 use craftpulse\typesense\controllers\CollectionsController;
 use craftpulse\typesense\controllers\CurationController;
+use craftpulse\typesense\controllers\KeysController;
 
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\elementactions\Reindex;
@@ -286,6 +287,13 @@ class Typesense extends Plugin
                 ];
             }
 
+            if ($currentUser->checkPermission(KeysController::PERMISSION_MANAGE_KEYS)) {
+                $subNavs['keys'] = [
+                    'label' => Craft::t('typesense', 'API keys'),
+                    'url' => 'typesense/keys',
+                ];
+            }
+
             if ($currentUser->checkPermission(AnalyticsController::PERMISSION_VIEW_ANALYTICS)) {
                 $subNavs['analytics'] = [
                     'label' => Craft::t('typesense', 'Analytics'),
@@ -457,6 +465,10 @@ class Typesense extends Plugin
             $routes['typesense/dictionaries'] = 'typesense/dictionaries/index';
             $routes['typesense/dictionaries/stemming'] = 'typesense/dictionaries/stemming';
             $routes['typesense/dictionaries/<collection:[\w\-]+>'] = 'typesense/dictionaries/stopwords';
+            $routes['typesense/keys'] = 'typesense/keys/index';
+            $routes['typesense/keys/new'] = 'typesense/keys/create';
+            $routes['typesense/keys/profile'] = 'typesense/keys/edit-profile';
+            $routes['typesense/keys/profile/<handle:[\w\-]+>'] = 'typesense/keys/edit-profile';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
         }
 
@@ -483,6 +495,9 @@ class Typesense extends Plugin
             ];
             $permissions[CurationController::PERMISSION_MANAGE_CURATION] = [
                 'label' => Craft::t('typesense', 'Manage curation'),
+            ];
+            $permissions[KeysController::PERMISSION_MANAGE_KEYS] = [
+                'label' => Craft::t('typesense', 'Manage API keys'),
             ];
             $permissions[AnalyticsController::PERMISSION_VIEW_ANALYTICS] = [
                 'label' => Craft::t('typesense', 'View analytics'),

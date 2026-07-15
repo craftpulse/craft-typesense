@@ -93,17 +93,27 @@ class TypesenseVariable
 
     /**
      * Derives a scoped search key for the front end from the search-only key.
+     * Pass `profile` to apply a control-panel scoped-key profile (its locked
+     * filter and restrictions take precedence over ad-hoc parameters).
      *
      * {{ craft.typesense.scopedSearchKey({ filter_by: 'siteId:=1', expires_at: now.timestamp + 3600 }) }}
+     * {{ craft.typesense.scopedSearchKey({ profile: 'tenant-a' }) }}
      *
-     * @param array<string, mixed> $parameters
+     * @param array<string, mixed> $parameters May include a `profile` handle.
      * @return string
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
     public function scopedSearchKey(array $parameters = []): string
     {
-        return Typesense::$plugin->getKeys()->generateScopedSearchKey($parameters);
+        $profile = $parameters['profile'] ?? null;
+        unset($parameters['profile']);
+
+        return Typesense::$plugin->getKeys()->generateScopedSearchKey(
+            $parameters,
+            null,
+            $profile !== null ? (string)$profile : null,
+        );
     }
 
     /**

@@ -1,0 +1,96 @@
+{# =========================================================================
+   Typesense Pro - API keys manager
+   =========================================================================
+   @var keys     array  server keys (value prefixes only)
+   @var profiles craftpulse\typesense\models\KeyProfile[]
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = 'API keys'|t('typesense') %}
+{% set selectedSubnavItem = 'keys' %}
+
+{% block actionButton %}
+    <a class="btn submit add icon" href="{{ url('typesense/keys/new') }}">{{ 'Create a key'|t('typesense') }}</a>
+{% endblock %}
+
+{% block content %}
+    <p class="light">{{ 'Create and manage Typesense API keys. The full key value is shown only once, at creation, and is never stored by the plugin.'|t('typesense') }}</p>
+
+    {% if keys is empty %}
+        <p class="light">{{ 'No API keys on the server yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Description'|t('typesense') }}</th>
+                    <th>{{ 'Prefix'|t('typesense') }}</th>
+                    <th>{{ 'Actions'|t('typesense') }}</th>
+                    <th>{{ 'Collections'|t('typesense') }}</th>
+                    <th>{{ 'Expires'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for key in keys %}
+                    <tr>
+                        <td>{{ key.description ?? '' }}</td>
+                        <td><code>{{ key.value_prefix ?? '' }}…</code></td>
+                        <td>{% for action in key.actions ?? [] %}<code>{{ action }}</code>{{ not loop.last ? ' ' }}{% endfor %}</td>
+                        <td>{% for c in key.collections ?? [] %}<code>{{ c }}</code>{{ not loop.last ? ' ' }}{% endfor %}</td>
+                        <td>{{ key.expires_at is defined and key.expires_at < 64000000000 ? key.expires_at|date('short') : 'Never'|t('typesense') }}</td>
+                        <td class="thin nowrap">
+                            <a class="btn small" href="{{ url('typesense/keys/new', { from: key.id }) }}" title="{{ 'Rotate (create a replacement, then delete this one)'|t('typesense') }}">{{ 'Rotate'|t('typesense') }}</a>
+                            <form method="post" accept-charset="UTF-8" style="display:inline" data-confirm="{{ 'Delete this key? Any client using it will stop working immediately.'|t('typesense') }}">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/keys/delete-key') }}
+                                {{ hiddenInput('id', key.id) }}
+                                {{ redirectInput('typesense/keys') }}
+                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <hr>
+
+    <header class="ts-keys-profiles-header">
+        <h2>{{ 'Scoped-key profiles'|t('typesense') }}</h2>
+        <a class="btn small add icon" href="{{ url('typesense/keys/profile') }}">{{ 'New profile'|t('typesense') }}</a>
+    </header>
+    <p class="light">{{ 'Reusable filter templates for front-end scoped keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense') }}</p>
+
+    {% if profiles is empty %}
+        <p class="light">{{ 'No profiles yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Profile'|t('typesense') }}</th>
+                    <th>{{ 'Filter'|t('typesense') }}</th>
+                    <th>{{ 'Expires in'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle, profile in profiles %}
+                    <tr>
+                        <td><a href="{{ url('typesense/keys/profile/' ~ handle) }}">{{ profile.name }}</a> <code>{{ handle }}</code></td>
+                        <td><code>{{ profile.filterBy ?: '—' }}</code></td>
+                        <td>{{ profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense') }}</td>
+                        <td class="thin">
+                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this profile?'|t('typesense') }}">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/keys/delete-profile') }}
+                                {{ hiddenInput('handle', handle) }}
+                                {{ redirectInput('typesense/keys') }}
+                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
