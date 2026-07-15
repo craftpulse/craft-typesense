@@ -50,7 +50,7 @@ Opening a card's panel reveals the applicable controls:
 | Locale | string, string[] | The stemming/tokenisation locale. |
 | Type override | all | Change the field's type within a bounded, server-approved set. |
 | Index nested fields | object, object[] | Index the object's nested fields. |
-| Embed image (experimental) | asset sources | Auto-embed the asset image (experimental; the pipeline lands later). |
+| Embed image | asset sources | Auto-embed the asset image with CLIP for image search (see `docs/pro-vector-ai.md`). |
 | Description | all | A natural-language description of the field. |
 
 Applying the panel writes the choices back to the card and, on Save, persists
