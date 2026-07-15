@@ -183,6 +183,14 @@ class Documents extends Component
             }
         }
 
+        // Bake the additive boost score at index time (the deterministic
+        // alternative to the first-match-wins _eval bug).
+        $boostRules = $collection->getBoostRules();
+
+        if ($boostRules !== []) {
+            $document[$collection->getBoostField()] = Typesense::$plugin->getRelevance()->boostScore($element, $boostRules);
+        }
+
         return $document;
     }
 

@@ -27,6 +27,7 @@ use craftpulse\typesense\services\ManagedCollections;
 use craftpulse\typesense\services\MappingSources;
 use craftpulse\typesense\services\Notifications;
 use craftpulse\typesense\services\Presets;
+use craftpulse\typesense\services\Relevance;
 use craftpulse\typesense\services\Schema;
 use craftpulse\typesense\services\Search;
 use craftpulse\typesense\services\Sync;
@@ -290,6 +291,19 @@ trait PluginTrait
     }
 
     /**
+     * @return Relevance
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getRelevance(): Relevance
+    {
+        /** @var Relevance $relevance */
+        $relevance = $this->get('relevance');
+
+        return $relevance;
+    }
+
+    /**
      * @return Schema
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -385,6 +399,7 @@ trait PluginTrait
             'curation' => Curation::class,
             'curationIndex' => CurationIndex::class,
             'presets' => Presets::class,
+            'relevance' => Relevance::class,
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,
             'client' => Client::class,

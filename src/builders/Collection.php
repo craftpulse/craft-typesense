@@ -101,6 +101,17 @@ class Collection
     private ?array $_preset = null;
 
     /**
+     * @var array<int, array<string, mixed>> Additive boost rules baked into an
+     * indexed boost_score field at index time.
+     */
+    private array $_boostRules = [];
+
+    /**
+     * @var string The document key the boost score is baked into.
+     */
+    private string $_boostField = 'boost_score';
+
+    /**
      * @var array<int, string> The attached computed-field names.
      */
     private array $_computedFields = [];
@@ -402,6 +413,25 @@ class Collection
     }
 
     /**
+     * Additive boost rules, baked into the indexed boost_score field at index
+     * time (the deterministic alternative to the first-match-wins `_eval` bug).
+     * Each rule: `weight`, `match` (`all`|`any`), and `conditions`
+     * (`field`, `operator`, `value`).
+     *
+     * @param array<int, array<string, mixed>> $rules
+     * @param string $field
+     * @return self
+     * @author CraftPulse
+     */
+    public function boost(array $rules, string $field = 'boost_score'): self
+    {
+        $this->_boostRules = array_values($rules);
+        $this->_boostField = $field;
+
+        return $this;
+    }
+
+    /**
      * Config-seeded synonym definitions. Each entry: id, synonyms[], optional
      * root (one-way), locale.
      *
@@ -583,6 +613,24 @@ class Collection
     public function getPreset(): ?array
     {
         return $this->_preset;
+    }
+
+    /**
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    public function getBoostRules(): array
+    {
+        return $this->_boostRules;
+    }
+
+    /**
+     * @return string
+     * @author CraftPulse
+     */
+    public function getBoostField(): string
+    {
+        return $this->_boostField;
     }
 
     /**

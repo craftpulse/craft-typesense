@@ -75,6 +75,14 @@ class CollectionDefinition extends Model
      */
     public array $metadata = [];
 
+    /**
+     * @var array<string, mixed> Relevance tuning authored in the presets editor:
+     * `boostRules` (additive rules compiled to an indexed `boost_score`),
+     * `textMatchBuckets`, `grouping` (`field`, `limit`), `mmr` (`enabled`,
+     * `lambda`), and `searchPreset` (raw Typesense preset parameters).
+     */
+    public array $relevance = [];
+
     // Public Methods
     // =========================================================================
 
@@ -89,7 +97,7 @@ class CollectionDefinition extends Model
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
         $rules[] = [['enabled'], 'boolean'];
-        $rules[] = [['mappings', 'metadata'], 'safe'];
+        $rules[] = [['mappings', 'metadata', 'relevance'], 'safe'];
 
         return $rules;
     }
@@ -110,6 +118,7 @@ class CollectionDefinition extends Model
             'enabled' => $this->enabled,
             'mappings' => $this->mappings,
             'metadata' => $this->metadata,
+            'relevance' => $this->relevance,
         ];
     }
 }

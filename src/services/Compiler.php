@@ -100,13 +100,34 @@ class Compiler extends Component
             }
         }
 
+        $relevance = $definition->relevance;
+        $boostRules = is_array($relevance['boostRules'] ?? null) ? array_values(array_filter(
+            $relevance['boostRules'],
+            static fn($rule): bool => is_array($rule) && !empty($rule['conditions']),
+        )) : [];
+
+        if ($boostRules !== []) {
+            $fields[] = Field::make('boost_score', 'float')->optional()->sort();
+            $collection->boost($boostRules);
+        }
+
         $collection->fields(...$fields)->mapping(...$mappings);
 
+        $preset = [];
+
         if ($queryBy !== []) {
-            $collection->preset([
-                'query_by' => implode(',', $queryBy),
-                'query_by_weights' => implode(',', $weights),
-            ]);
+            $preset['query_by'] = implode(',', $queryBy);
+            $preset['query_by_weights'] = implode(',', $weights);
+        }
+
+        $preset += Typesense::$plugin->getRelevance()->presetFragment(
+            $relevance,
+            Typesense::$plugin->getClient()->getServerCapabilities(),
+            $boostRules !== [],
+        );
+
+        if ($preset !== []) {
+            $collection->preset($preset);
         }
 
         if ($descriptions !== []) {
