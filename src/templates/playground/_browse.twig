@@ -1,0 +1,41 @@
+{# =========================================================================
+   Typesense Pro - document browser
+   =========================================================================
+   A read-only, paged, filterable view of a collection's actual indexed
+   documents, with a per-document JSON detail HUD.
+
+   @var handle string
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = handle ~ ' ' ~ ('documents'|t('typesense')) %}
+{% set selectedSubnavItem = 'playground' %}
+{% set crumbs = [{ label: 'Search playground'|t('typesense'), url: url('typesense/playground') }] %}
+
+{% block actionButton %}
+    <a class="btn" href="{{ url('typesense/playground/' ~ handle) }}">{{ 'Query console'|t('typesense') }}</a>
+{% endblock %}
+
+{% block content %}
+    <div class="ts-db" data-collection="{{ handle }}">
+        <div class="ts-db-toolbar">
+            {{ forms.text({ placeholder: 'filter_by'|t('typesense'), class: 'ts-db-filter' }) }}
+            {{ forms.text({ placeholder: 'sort_by'|t('typesense'), class: 'ts-db-sort' }) }}
+            <button type="button" class="btn ts-db-apply">{{ 'Apply'|t('typesense') }}</button>
+            <span class="ts-db-stats light" role="status"></span>
+        </div>
+
+        <div class="ts-db-rows">
+            <p class="light">{{ 'Loading documents...'|t('typesense') }}</p>
+        </div>
+
+        <div class="ts-db-pagination">
+            <button type="button" class="btn ts-db-prev">{{ 'Previous'|t('typesense') }}</button>
+            <button type="button" class="btn ts-db-next">{{ 'Next'|t('typesense') }}</button>
+        </div>
+    </div>
+
+    {% js %}
+        new Craft.Typesense.DocumentBrowser('.ts-db');
+    {% endjs %}
+{% endblock %}

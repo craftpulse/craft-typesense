@@ -257,6 +257,10 @@ class Typesense extends Plugin
                     'label' => Craft::t('typesense', 'Collections'),
                     'url' => 'typesense/collections',
                 ];
+                $subNavs['playground'] = [
+                    'label' => Craft::t('typesense', 'Playground'),
+                    'url' => 'typesense/playground',
+                ];
             }
 
             if ($currentUser->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
@@ -421,6 +425,9 @@ class Typesense extends Plugin
             $routes['typesense/collections/new'] = 'typesense/collections/edit';
             $routes['typesense/collections/<uid:[\w\-]+>/mapping'] = 'typesense/collections/mapping';
             $routes['typesense/collections/<uid:[\w\-]+>'] = 'typesense/collections/edit';
+            $routes['typesense/playground'] = 'typesense/playground/index';
+            $routes['typesense/playground/<collection:[\w\-]+>/browse'] = 'typesense/playground/browse';
+            $routes['typesense/playground/<collection:[\w\-]+>'] = 'typesense/playground/query';
             $routes['typesense/curation'] = 'typesense/curation/index';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
         }

@@ -1,0 +1,56 @@
+/**
+ * Typesense search playground + document browser styles.
+ */
+
+.ts-pg {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) 1fr;
+    gap: 24px;
+}
+
+.ts-pg__form .field {
+    margin-bottom: 12px;
+}
+
+.ts-pg__results {
+    min-width: 0;
+}
+
+.ts-pg-diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+.ts-pg-diff-summary {
+    margin-top: 16px;
+}
+
+.ts-pg-diff-summary li {
+    margin-bottom: 4px;
+}
+
+.ts-db-toolbar {
+    display: flex;
+    gap: 8px;
+    align-items: flex-end;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+}
+
+.ts-db-json {
+    max-height: 60vh;
+    overflow: auto;
+    background: var(--gray-050, #f3f7fc);
+    padding: 12px;
+    border-radius: var(--large-border-radius, 5px);
+    font-size: 12px;
+    white-space: pre;
+}
+
+.ts-db-pagination {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+}

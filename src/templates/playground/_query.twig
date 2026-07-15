@@ -1,0 +1,60 @@
+{# =========================================================================
+   Typesense Pro - search playground (query console)
+   =========================================================================
+   A live query console for one collection: tune the params, run against the
+   real server, and inspect ranked hits with their text-match scores and timing.
+   Diff mode previews how a pending overlay (weights/preset) would reorder the
+   results before anything is saved.
+
+   @var handle          string
+   @var initialFilterBy string
+   @var initialQuery    string
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = handle ~ ' ' ~ ('query console'|t('typesense')) %}
+{% set selectedSubnavItem = 'playground' %}
+{% set crumbs = [{ label: 'Search playground'|t('typesense'), url: url('typesense/playground') }] %}
+
+{% block actionButton %}
+    <a class="btn" href="{{ url('typesense/playground/' ~ handle ~ '/browse') }}">{{ 'Document browser'|t('typesense') }}</a>
+{% endblock %}
+
+{% block content %}
+    <div class="ts-pg" data-collection="{{ handle }}">
+        <div class="ts-pg__form">
+            {{ forms.textField({ label: 'Query (q)'|t('typesense'), id: 'q', value: initialQuery, inputAttributes: { 'data-param': 'q' } }) }}
+            {{ forms.textField({ label: 'query_by'|t('typesense'), instructions: 'Comma-separated fields to search.'|t('typesense'), id: 'queryBy', inputAttributes: { 'data-param': 'queryBy' } }) }}
+            {{ forms.textField({ label: 'query_by_weights'|t('typesense'), id: 'queryByWeights', inputAttributes: { 'data-param': 'queryByWeights' } }) }}
+            {{ forms.textField({ label: 'filter_by'|t('typesense'), id: 'filterBy', value: initialFilterBy, inputAttributes: { 'data-param': 'filterBy' } }) }}
+            {{ forms.textField({ label: 'sort_by'|t('typesense'), id: 'sortBy', inputAttributes: { 'data-param': 'sortBy' } }) }}
+            {{ forms.textField({ label: 'facet_by'|t('typesense'), instructions: 'Set a field to see facet counts.'|t('typesense'), id: 'facetBy', inputAttributes: { 'data-param': 'facetBy' } }) }}
+            {{ forms.textField({ label: 'preset'|t('typesense'), id: 'preset', inputAttributes: { 'data-param': 'preset' } }) }}
+            {{ forms.textField({ label: 'num_typos'|t('typesense'), type: 'number', id: 'numTypos', inputAttributes: { 'data-param': 'numTypos', min: 0, max: 4 } }) }}
+            {{ forms.textField({ label: 'drop_tokens_threshold'|t('typesense'), type: 'number', id: 'dropTokensThreshold', inputAttributes: { 'data-param': 'dropTokensThreshold', min: 0 } }) }}
+            {{ forms.checkboxField({ label: 'prefix'|t('typesense'), id: 'prefix', checked: true, inputAttributes: { 'data-param': 'prefix' } }) }}
+            {{ forms.textField({ label: 'per_page'|t('typesense'), type: 'number', id: 'perPage', value: 20, inputAttributes: { 'data-param': 'perPage', min: 1, max: 250 } }) }}
+
+            <div class="buttons">
+                <button type="button" class="btn submit ts-pg-run">{{ 'Run'|t('typesense') }}</button>
+            </div>
+
+            <hr>
+            <h2>{{ 'Preview pending edits'|t('typesense') }}</h2>
+            <p class="light">{{ 'Enter proposed weights or a preset, then diff against the current results.'|t('typesense') }}</p>
+            {{ forms.textField({ label: 'Pending query_by_weights'|t('typesense'), id: 'overlayWeights', inputAttributes: { 'data-overlay': 'queryByWeights' } }) }}
+            {{ forms.textField({ label: 'Pending preset'|t('typesense'), id: 'overlayPreset', inputAttributes: { 'data-overlay': 'preset' } }) }}
+            <div class="buttons">
+                <button type="button" class="btn ts-pg-diff">{{ 'Diff'|t('typesense') }}</button>
+            </div>
+        </div>
+
+        <div class="ts-pg__results ts-pg-results" role="region" aria-live="polite" aria-label="{{ 'Search results'|t('typesense') }}">
+            <p class="light">{{ 'Run a query to see ranked hits.'|t('typesense') }}</p>
+        </div>
+    </div>
+
+    {% js %}
+        new Craft.Typesense.Playground('.ts-pg');
+    {% endjs %}
+{% endblock %}

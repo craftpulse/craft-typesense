@@ -88,7 +88,7 @@ Full docs live in [`docs/`](docs/):
 - [Synonyms, curation and presets](docs/synonyms.md)
 - [Scoped search keys](docs/scoped-keys.md)
 - [Console commands](docs/console.md), [Control panel utility](docs/utility.md)
-- [Collections cockpit (Pro)](docs/pro-collections.md), [Field mapping (Pro)](docs/mapping.md)
+- [Collections cockpit (Pro)](docs/pro-collections.md), [Field mapping (Pro)](docs/mapping.md), [Search playground (Pro)](docs/playground.md)
 - [Drift detection](docs/drift.md), [Backup and restore](docs/backup.md)
 - [Server versions and capabilities](docs/capabilities.md), [Settings](docs/settings.md)
 - [Extending (for plugin authors)](docs/extending.md)
