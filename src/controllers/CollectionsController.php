@@ -114,10 +114,14 @@ class CollectionsController extends ProController
             throw new NotFoundHttpException('Collection not found.');
         }
 
+        $suspend = Typesense::$plugin->getSyncSuspend();
+
         return $this->renderTemplate('typesense/collections/_edit', [
             'definition' => $definition,
             'sourceOptions' => $this->_sourceOptions(),
             'isNew' => $definition->uid === null,
+            'suspended' => $suspend->isCollectionSuspended($definition->name),
+            'globallySuspended' => $suspend->isGloballySuspended(),
         ]);
     }
 
@@ -212,6 +216,31 @@ class CollectionsController extends ProController
         }
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Collection saved.'), 'definition', [], 'typesense/collections');
+    }
+
+    /**
+     * Toggles the runtime sync-suspend state for one collection. Gated by
+     * manageCollections (the cockpit surface); the toggle is database state, so
+     * it works even when allowAdminChanges is disabled.
+     *
+     * @return Response|null
+     * @throws \yii\web\BadRequestHttpException
+     * @author CraftPulse
+     */
+    public function actionToggleSuspend(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(self::PERMISSION_MANAGE_COLLECTIONS);
+
+        $collection = (string)$this->request->getRequiredBodyParam('collection');
+        $suspended = Typesense::$plugin->getSyncSuspend()->toggle($collection);
+
+        return $this->asSuccess(
+            $suspended
+                ? Craft::t('typesense', 'Sync suspended.')
+                : Craft::t('typesense', 'Sync resumed.'),
+            ['suspended' => $suspended],
+        );
     }
 
     /**

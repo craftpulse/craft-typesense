@@ -36,6 +36,7 @@ use craftpulse\typesense\services\Relevance;
 use craftpulse\typesense\services\Schema;
 use craftpulse\typesense\services\Search;
 use craftpulse\typesense\services\Sync;
+use craftpulse\typesense\services\SyncSuspend;
 use craftpulse\typesense\services\Synonyms;
 use craftpulse\typesense\Typesense;
 use yii\base\InvalidConfigException;
@@ -418,6 +419,19 @@ trait PluginTrait
     }
 
     /**
+     * @return SyncSuspend
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getSyncSuspend(): SyncSuspend
+    {
+        /** @var SyncSuspend $syncSuspend */
+        $syncSuspend = $this->get('syncSuspend');
+
+        return $syncSuspend;
+    }
+
+    /**
      * @return Synonyms
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -461,6 +475,7 @@ trait PluginTrait
             'schema' => Schema::class,
             'documents' => Documents::class,
             'sync' => Sync::class,
+            'syncSuspend' => SyncSuspend::class,
             'legacyConfig' => LegacyConfig::class,
             'configGenerator' => ConfigGenerator::class,
             'compatibility' => Compatibility::class,

@@ -62,15 +62,12 @@ class TypesenseUtility extends Utility
     public static function contentHtml(): string
     {
         $plugin = Typesense::$plugin;
-        /** @var \craftpulse\typesense\models\Settings $settings */
-        $settings = $plugin->getSettings();
-
         $user = Craft::$app->getUser();
 
         return Craft::$app->getView()->renderTemplate('typesense/_components/utilities/typesense', [
             'status' => $plugin->getClient()->getStatus(),
             'collections' => self::_collectionRows(),
-            'suspended' => $settings->syncSuspended,
+            'suspended' => $plugin->getSyncSuspend()->isGloballySuspended(),
             'canManage' => $user->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS),
             'ops' => self::_ops(),
             // Ops actions are Pro and gated by the index-management permission;
@@ -144,6 +141,7 @@ class TypesenseUtility extends Utility
                 'strategy' => $collection->getMultisiteStrategy()->value,
                 'documents' => $documents,
                 'drift' => $findings[$target] ?? Drift::STATUS_MISSING,
+                'suspended' => $plugin->getSyncSuspend()->isCollectionSuspended($collection->getName()),
             ];
         }
 

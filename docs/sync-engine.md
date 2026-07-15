@@ -54,9 +54,39 @@ source element that depends on it is re-indexed.
 
 ## Suspend
 
-The global suspend switch (a setting) stops all event-driven and full-sync work
-while it is on. Use it during bulk imports (for example Feed Me), then run a full
-sync afterward. Console and utility toggles for suspend arrive in a later phase.
+Suspend pauses automatic (event-driven) indexing. It is runtime database state,
+not a project-config setting, so it toggles freely in every environment (even
+when `allowAdminChanges` is disabled) and never churns project config across
+environments. There are two levels:
+
+- **Global suspend** stops event-driven indexing for every collection. Toggle it
+  from the Typesense utility, or with `craft typesense/sync/suspend` and
+  `craft typesense/sync/resume`.
+- **Per-collection suspend** stops event-driven indexing for one collection.
+  Toggle it from the utility's collection table, from the collection's edit
+  screen (the Suspend sync switch in the meta sidebar), or with
+  `craft typesense/sync/suspend <collection>` and
+  `craft typesense/sync/resume <collection>`.
+
+The sync engine treats an element as suspended when the global switch is on OR
+its collection is individually suspended. Manual full syncs (the utility's
+Sync all, `craft typesense/sync/all`, and `craft typesense/sync/collection`)
+still run, so the normal recovery is: suspend, import, resume, full sync.
+
+### Bulk imports (for example Feed Me)
+
+A bulk import saves many elements quickly; letting every save queue an index job
+floods the queue. Suspend indexing for the duration instead:
+
+1. Suspend the affected collection (or globally, for a large import):
+   `craft typesense/sync/suspend heroes` (or the utility toggle).
+2. Run the import (Feed Me, a console reseed, a large content migration).
+3. Resume: `craft typesense/sync/resume heroes`.
+4. Catch up in one pass: `craft typesense/sync/collection heroes` (or Sync all).
+
+Because suspend is database state, a suspend left on by a crashed import is
+visible in the utility and cleared with a single resume, with no project-config
+change to deploy.
 
 ## Multisite strategies
 

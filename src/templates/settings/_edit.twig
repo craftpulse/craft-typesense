@@ -235,14 +235,11 @@
     </div>
 
     <div id="syncQueue" class="hidden">
-        {{ forms.lightswitchField({
-            label: 'Suspend sync'|t('typesense'),
-            instructions: 'When on, element changes stop syncing to Typesense. Use during bulk imports (for example Feed Me).'|t('typesense'),
-            id: 'syncSuspended',
-            name: 'settings[syncSuspended]',
-            on: settings.syncSuspended,
-            disabled: readOnly,
-        }) }}
+        <div class="readable">
+            <blockquote class="note">
+                {{ 'Suspend sync (globally or per collection) lives in the Typesense utility, so it toggles even when allowAdminChanges is disabled.'|t('typesense') }}
+            </blockquote>
+        </div>
 
         {{ forms.textField({
             label: 'Queue priority'|t('typesense'),

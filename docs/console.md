@@ -12,8 +12,8 @@ description: The typesense/* console command reference
 | `typesense/sync/collection <handle>` | Queues a full sync of one collection. |
 | `typesense/sync/flush` | Queues a flush (delete and re-sync) of every collection. |
 | `typesense/sync/refresh` | Queues reconciliation of every collection (removes orphaned documents). |
-| `typesense/sync/suspend` | Suspends element sync (for bulk imports). |
-| `typesense/sync/resume` | Resumes element sync. |
+| `typesense/sync/suspend [collection]` | Suspends element sync globally, or for one collection when a handle is given (for bulk imports). |
+| `typesense/sync/resume [collection]` | Resumes element sync globally, or for one collection. |
 
 `typesense/default/sync` and `typesense/default/flush` remain as backwards
 compatible aliases. Run `craft queue/run` (or a queue daemon) to process the

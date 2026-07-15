@@ -42,6 +42,7 @@
                 <th>{{ 'Strategy'|t('typesense') }}</th>
                 <th>{{ 'Documents'|t('typesense') }}</th>
                 <th>{{ 'Drift'|t('typesense') }}</th>
+                <th>{{ 'Sync'|t('typesense') }}</th>
             </tr>
         </thead>
         <tbody>
@@ -58,6 +59,25 @@
                             <span class="status orange"></span> {{ 'Drifted'|t('typesense') }}
                         {% else %}
                             <span class="status red"></span> {{ 'Missing'|t('typesense') }}
+                        {% endif %}
+                    </td>
+                    <td class="thin">
+                        {% if suspended %}
+                            <span class="status" title="{{ 'Globally suspended'|t('typesense') }}"></span> {{ 'Suspended (global)'|t('typesense') }}
+                        {% elseif row.suspended %}
+                            <span class="status orange"></span> {{ 'Suspended'|t('typesense') }}
+                        {% else %}
+                            <span class="status green"></span> {{ 'Active'|t('typesense') }}
+                        {% endif %}
+
+                        {% if canManage and not suspended %}
+                            <form method="post" accept-charset="UTF-8" style="display:inline">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/utility/toggle-suspend') }}
+                                {{ hiddenInput('collection', row.name) }}
+                                {{ redirectInput('utilities/typesense') }}
+                                <button type="submit" class="btn small">{{ row.suspended ? 'Resume'|t('typesense') : 'Suspend'|t('typesense') }}</button>
+                            </form>
                         {% endif %}
                     </td>
                 </tr>

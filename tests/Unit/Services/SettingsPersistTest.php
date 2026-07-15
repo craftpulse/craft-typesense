@@ -37,15 +37,15 @@ it('excludes fluent collections from the serialised settings', function() {
 it('round-trips a scalar settings save without touching collections', function() {
     /** @var Settings $settings */
     $settings = Typesense::$plugin->getSettings();
-    $original = $settings->syncSuspended;
+    $original = $settings->analyticsEnabled;
 
-    $settings->syncSuspended = !$original;
+    $settings->analyticsEnabled = !$original;
 
-    // Serialising the toggled settings (the suspend-toggle path) is closure-free.
+    // Serialising a toggled scalar setting is closure-free (project-config safe).
     $array = $settings->toArray();
-    expect($array)->toHaveKey('syncSuspended')
-        ->and($array['syncSuspended'])->toBe(!$original)
+    expect($array)->toHaveKey('analyticsEnabled')
+        ->and($array['analyticsEnabled'])->toBe(!$original)
         ->and($array)->not->toHaveKey('collections');
 
-    $settings->syncSuspended = $original;
+    $settings->analyticsEnabled = $original;
 });

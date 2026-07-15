@@ -10,8 +10,6 @@
 
 namespace craftpulse\typesense\console\controllers;
 
-use Craft;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -96,50 +94,38 @@ class SyncController extends Controller
     }
 
     /**
-     * Suspends element sync (for bulk imports).
+     * Suspends element sync: globally, or for one collection when a handle is
+     * given (for bulk imports).
      *
+     * @param string|null $collection The collection to suspend, or null for all.
      * @return int
      * @author CraftPulse
      */
-    public function actionSuspend(): int
+    public function actionSuspend(?string $collection = null): int
     {
-        $this->_setSuspended(true);
-        $this->stdout('Sync suspended.' . PHP_EOL);
+        Typesense::$plugin->getSyncSuspend()->suspend($collection);
+        $this->stdout(($collection !== null
+            ? "Sync suspended for '$collection'."
+            : 'Sync suspended.') . PHP_EOL);
 
         return ExitCode::OK;
     }
 
     /**
-     * Resumes element sync.
+     * Resumes element sync: globally, or for one collection when a handle is
+     * given.
      *
+     * @param string|null $collection The collection to resume, or null for all.
      * @return int
      * @author CraftPulse
      */
-    public function actionResume(): int
+    public function actionResume(?string $collection = null): int
     {
-        $this->_setSuspended(false);
-        $this->stdout('Sync resumed.' . PHP_EOL);
+        Typesense::$plugin->getSyncSuspend()->resume($collection);
+        $this->stdout(($collection !== null
+            ? "Sync resumed for '$collection'."
+            : 'Sync resumed.') . PHP_EOL);
 
         return ExitCode::OK;
-    }
-
-    // Private Methods
-    // =========================================================================
-
-    /**
-     * Persists the sync-suspend flag through the full settings model.
-     *
-     * @param bool $suspended
-     * @return void
-     * @author CraftPulse
-     */
-    private function _setSuspended(bool $suspended): void
-    {
-        $plugin = Typesense::$plugin;
-        /** @var Settings $settings */
-        $settings = $plugin->getSettings();
-        $settings->syncSuspended = $suspended;
-
-        Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray());
     }
 }

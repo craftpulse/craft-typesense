@@ -19,7 +19,7 @@ use craft\behaviors\EnvAttributeParserBehavior;
  *
  * Backs the plugin's project-config settings: connection (single node, cluster,
  * or Typesense Cloud), client resilience, queue options, per-feature managedBy
- * defaults, analytics opt-in, the global sync-suspend switch, and the collection
+ * defaults, analytics opt-in, and the collection
  * name prefix. Connection and numeric values support environment variables via
  * EnvAttributeParserBehavior and resolve through craft\helpers\App::parseEnv().
  *
@@ -166,11 +166,6 @@ class Settings extends Model
      * no plugin-managed retention; Typesense keeps aggregates until overwritten).
      */
     public int $analyticsRetentionDays = 0;
-
-    /**
-     * @var bool Whether element sync is globally suspended (for bulk imports).
-     */
-    public bool $syncSuspended = false;
 
     /**
      * @var bool Whether to email an alert on repeated sync-job failures or an
@@ -328,7 +323,7 @@ class Settings extends Model
             'in',
             'range' => self::managedByOptions(),
         ];
-        $rules[] = [['analyticsEnabled', 'analyticsUserIdEnabled', 'syncSuspended'], 'boolean'];
+        $rules[] = [['analyticsEnabled', 'analyticsUserIdEnabled'], 'boolean'];
         $rules[] = [['queuePriority', 'analyticsRetentionDays'], 'integer', 'min' => 0];
         $rules[] = [
             ['connectionTimeoutSeconds', 'healthcheckIntervalSeconds', 'numRetries', 'retryIntervalSeconds'],

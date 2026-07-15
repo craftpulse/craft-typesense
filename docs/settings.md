@@ -41,8 +41,12 @@ well-formed empty result rather than raising a 500.
 
 | Setting | Description |
 | --- | --- |
-| Suspend sync | When on, element changes stop syncing to Typesense. Use during bulk imports. |
 | Queue priority | The priority assigned to Typesense sync jobs. Lower runs sooner. |
+
+Suspend is no longer a setting. It is runtime state, so it lives in the Typesense
+utility (global and per-collection) and on each collection's edit screen, and
+works even when `allowAdminChanges` is disabled. See
+[the sync engine](sync-engine.md#suspend).
 
 ## Ownership
 

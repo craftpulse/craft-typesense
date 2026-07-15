@@ -57,19 +57,40 @@ function dropSyncTestCollection(): void
 // =========================================================================
 
 it('is enabled when configured and not suspended', function() {
-    $settings = Typesense::$plugin->getSettings();
-    $original = $settings->syncSuspended;
     $sync = Typesense::$plugin->getSync();
+    $suspend = Typesense::$plugin->getSyncSuspend();
 
     try {
-        $settings->syncSuspended = false;
+        $suspend->resume();
         expect($sync->isEnabled())->toBeTrue();
 
-        $settings->syncSuspended = true;
+        $suspend->suspend();
         expect($sync->isSuspended())->toBeTrue()
             ->and($sync->isEnabled())->toBeFalse();
     } finally {
-        $settings->syncSuspended = $original;
+        $suspend->resume();
+    }
+});
+
+it('reports a collection suspended when the global switch or its own row is set', function() {
+    $suspend = Typesense::$plugin->getSyncSuspend();
+
+    try {
+        $suspend->suspend('heroes');
+        expect($suspend->isCollectionSuspended('heroes'))->toBeTrue()
+            ->and($suspend->isCollectionSuspended('minor-heroes'))->toBeFalse()
+            ->and($suspend->isGloballySuspended())->toBeFalse()
+            ->and($suspend->suspendedCollections())->toContain('heroes');
+
+        $suspend->resume('heroes');
+        expect($suspend->isCollectionSuspended('heroes'))->toBeFalse();
+
+        // The global switch reports every collection as suspended.
+        $suspend->suspend();
+        expect($suspend->isSuspended('heroes'))->toBeTrue();
+    } finally {
+        $suspend->resume('heroes');
+        $suspend->resume();
     }
 });
 

@@ -10,11 +10,15 @@ home in Free. It shows:
 - **Server status:** the connected version, health, support state, and the
   capability list for that version.
 - **Collections:** each collection's resolved Typesense target, multisite
-  strategy, document count, and drift indicator.
+  strategy, document count, drift indicator, and per-collection sync state with a
+  Suspend/Resume toggle.
 - **Actions** (for users with the `typesense:manageSettings` permission): queue a
-  full sync, flush and re-sync, or toggle the sync-suspend switch. The action
-  buttons post to control-panel action URLs (built with `UrlHelper::actionUrl`),
-  so they work regardless of how the site's base URL differs from the CP URL.
+  full sync, flush and re-sync, or toggle the global sync-suspend switch. The
+  action buttons post to control-panel action URLs (built with
+  `UrlHelper::actionUrl`), so they work regardless of how the site's base URL
+  differs from the CP URL. Suspend is runtime database state (see
+  [the sync engine](sync-engine.md#suspend)), so the toggles work even when
+  `allowAdminChanges` is disabled.
 
 ## Drift
 

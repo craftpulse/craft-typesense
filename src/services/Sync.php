@@ -99,7 +99,7 @@ class Sync extends Component
      */
     public function isSuspended(): bool
     {
-        return $this->_settings()->syncSuspended;
+        return Typesense::$plugin->getSyncSuspend()->isGloballySuspended();
     }
 
     /**
@@ -156,11 +156,16 @@ class Sync extends Component
         }
 
         $siteId = (int)$element->siteId;
+        $suspend = Typesense::$plugin->getSyncSuspend();
 
         foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
             $type = $collection->getElementType();
 
             if (!$element instanceof $type) {
+                continue;
+            }
+
+            if ($suspend->isCollectionSuspended($collection->getName())) {
                 continue;
             }
 
@@ -189,13 +194,20 @@ class Sync extends Component
         }
 
         $siteId = (int)$element->siteId;
+        $suspend = Typesense::$plugin->getSyncSuspend();
 
         foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
             $type = $collection->getElementType();
 
-            if ($element instanceof $type) {
-                $this->_queueDelete($collection, $siteId, (int)$element->id);
+            if (!$element instanceof $type) {
+                continue;
             }
+
+            if ($suspend->isCollectionSuspended($collection->getName())) {
+                continue;
+            }
+
+            $this->_queueDelete($collection, $siteId, (int)$element->id);
         }
 
         $this->queueDependents($element);

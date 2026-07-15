@@ -47,4 +47,11 @@ abstract class Table
      * scans every override to find an element's pins.
      */
     public const CURATION_INDEX = '{{%typesense_curation_index}}';
+
+    /**
+     * @var string Runtime sync-suspend state (one row per suspended collection,
+     * plus a sentinel row for the global suspend). Kept out of project config so
+     * it toggles even when allowAdminChanges is disabled.
+     */
+    public const SYNC_SUSPEND = '{{%typesense_sync_suspend}}';
 }

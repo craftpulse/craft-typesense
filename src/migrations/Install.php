@@ -56,6 +56,35 @@ class Install extends Migration
 
         self::createSyncTables($this);
         self::createCurationIndexTable($this);
+        self::createSuspendTable($this);
+    }
+
+    /**
+     * Creates the runtime sync-suspend table (one row per suspended collection,
+     * plus a sentinel row for the global suspend). Idempotent and shared with the
+     * update migration so fresh installs and upgrades stay in lockstep.
+     *
+     * @param Migration $migration
+     * @return void
+     * @author CraftPulse
+     */
+    public static function createSuspendTable(Migration $migration): void
+    {
+        $db = $migration->db;
+
+        if ($db->getTableSchema(Table::SYNC_SUSPEND) !== null) {
+            return;
+        }
+
+        $migration->createTable(Table::SYNC_SUSPEND, [
+            'id' => $migration->primaryKey(),
+            'collection' => $migration->string()->notNull(),
+            'dateCreated' => $migration->dateTime()->notNull(),
+            'dateUpdated' => $migration->dateTime()->notNull(),
+            'uid' => $migration->uid(),
+        ]);
+
+        $migration->createIndex(null, Table::SYNC_SUSPEND, ['collection'], true);
     }
 
     /**

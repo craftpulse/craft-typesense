@@ -12,7 +12,6 @@ namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craft\web\Controller;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use yii\web\Response;
 
@@ -71,7 +70,9 @@ class UtilityController extends Controller
     }
 
     /**
-     * Toggles the global sync-suspend switch.
+     * Toggles the sync-suspend switch: globally, or for one collection when a
+     * `collection` body param is posted. Suspend is runtime database state, so
+     * this works even when allowAdminChanges is disabled.
      *
      * @return Response|null
      * @author CraftPulse
@@ -80,13 +81,12 @@ class UtilityController extends Controller
     {
         $this->requirePostRequest();
 
-        $plugin = Typesense::$plugin;
-        /** @var Settings $settings */
-        $settings = $plugin->getSettings();
-        $settings->syncSuspended = !$settings->syncSuspended;
-        Craft::$app->getPlugins()->savePluginSettings($plugin, $settings->toArray());
+        $collection = $this->request->getBodyParam('collection');
+        $collection = is_string($collection) && $collection !== '' ? $collection : null;
 
-        $this->setSuccessFlash($settings->syncSuspended
+        $suspended = Typesense::$plugin->getSyncSuspend()->toggle($collection);
+
+        $this->setSuccessFlash($suspended
             ? Craft::t('typesense', 'Sync suspended.')
             : Craft::t('typesense', 'Sync resumed.'));
 

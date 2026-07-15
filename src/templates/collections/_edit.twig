@@ -73,3 +73,36 @@
         <a href="{{ url('typesense/collections/' ~ definition.uid ~ '/mapping') }}" class="btn">{{ 'Map fields'|t('typesense') }}</a>
     {% endif %}
 {% endblock %}
+
+{% block details %}
+    {% if not isNew %}
+        <div class="meta">
+            {{ forms.lightswitchField({
+                label: 'Suspend sync'|t('typesense'),
+                instructions: globallySuspended
+                    ? 'Sync is globally suspended in the utility.'|t('typesense')
+                    : 'Pause automatic indexing for this collection (for bulk imports). Runtime state, not project config.'|t('typesense'),
+                id: 'ts-suspend',
+                name: 'suspendState',
+                on: suspended,
+                disabled: globallySuspended,
+            }) }}
+        </div>
+
+        {% js %}
+            (function() {
+                var $sw = $('#ts-suspend');
+                $sw.on('change', function() {
+                    var on = $(this).hasClass('on');
+                    Craft.sendActionRequest('POST', 'typesense/collections/toggle-suspend', {
+                        data: { collection: {{ definition.name|json_encode|raw }} }
+                    }).then(function() {
+                        Craft.cp.displayNotice(Craft.t('typesense', on ? 'Sync suspended.' : 'Sync resumed.'));
+                    }).catch(function() {
+                        Craft.cp.displayError(Craft.t('typesense', 'Could not update sync state.'));
+                    });
+                });
+            })();
+        {% endjs %}
+    {% endif %}
+{% endblock %}
