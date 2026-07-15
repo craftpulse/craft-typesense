@@ -109,6 +109,25 @@ class Dictionaries extends Component
     }
 
     /**
+     * The ids of every stopword set on the server. Stopword sets are server-global
+     * and applied per search via the `stopwords` search parameter, so a collection
+     * can default to any of them. See https://typesense.org/docs/30.2/api/stopwords.html.
+     *
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public function stopwordSets(): array
+    {
+        $response = Typesense::$plugin->getClient()->request('GET', '/stopwords');
+        $sets = is_array($response['stopwords'] ?? null) ? $response['stopwords'] : [];
+
+        return array_values(array_filter(array_map(
+            static fn($set): string => (string)($set['id'] ?? ''),
+            $sets,
+        ), static fn(string $id): bool => $id !== ''));
+    }
+
+    /**
      * The stopwords set name for a collection.
      *
      * @param Collection $collection

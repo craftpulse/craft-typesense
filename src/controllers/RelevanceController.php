@@ -85,6 +85,7 @@ class RelevanceController extends ProController
             'relevance' => $definition->relevance,
             'supportsBuckets' => $capabilities?->textMatchBuckets() ?? false,
             'supportsMmr' => $capabilities?->mmr() ?? false,
+            'stopwordSetOptions' => $this->_stopwordSetOptions(),
             'navItems' => CollectionsController::editScreenNavItems($definition),
         ]);
     }
@@ -338,6 +339,29 @@ class RelevanceController extends ProController
     }
 
     /**
+     * The stopword-set select options for the relevance editor: a blank "none"
+     * plus the server's stopword sets. Fail-soft, so an unreachable server yields
+     * just "none" rather than breaking the screen.
+     *
+     * @return array<int, array{label: string, value: string}>
+     * @author CraftPulse
+     */
+    private function _stopwordSetOptions(): array
+    {
+        $options = [['label' => Craft::t('typesense', 'None'), 'value' => '']];
+
+        try {
+            foreach (Typesense::$plugin->getDictionaries()->stopwordSets() as $id) {
+                $options[] = ['label' => $id, 'value' => $id];
+            }
+        } catch (\Throwable) {
+            // Fail-soft: an unreachable server just yields the "none" option.
+        }
+
+        return $options;
+    }
+
+    /**
      * Builds the relevance definition from the editor's posted fields.
      *
      * @return array<string, mixed>
@@ -354,6 +378,14 @@ class RelevanceController extends ProController
             if ($value !== '') {
                 $searchPreset[$key] = $value;
             }
+        }
+
+        // The chosen server stopword set becomes the collection's default
+        // `stopwords` search parameter, applied via its mirrored preset.
+        $stopwordSet = trim((string)$request->getBodyParam('stopwordSet', ''));
+
+        if ($stopwordSet !== '') {
+            $searchPreset['stopwords'] = $stopwordSet;
         }
 
         return [

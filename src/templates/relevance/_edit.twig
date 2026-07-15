@@ -2,10 +2,11 @@
    Typesense Pro - collection edit screen: Relevance tab
    =========================================================================
    @var definition      craftpulse\typesense\models\CollectionDefinition
-   @var relevance       array
-   @var supportsBuckets bool
-   @var supportsMmr     bool
-   @var navItems        array  the collection edit screen's permission-filtered nav
+   @var relevance         array
+   @var supportsBuckets   bool
+   @var supportsMmr       bool
+   @var stopwordSetOptions array  the server stopword sets (plus none)
+   @var navItems          array  the collection edit screen's permission-filtered nav
    ========================================================================= #}
 {% extends 'typesense/collections/_layout' %}
 {% import '_includes/forms.twig' as forms %}
@@ -115,6 +116,18 @@
             ~ 'The minimum word length before a two-typo correction applies. Typesense search parameter <code>min_len_2typo</code>.'|t('typesense')
             ~ '</span>',
         id: 'min_len_2typo', name: 'min_len_2typo', value: preset.min_len_2typo ?? '', size: 6,
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Stopword set'|t('typesense'),
+        instructions: 'A server stopword set whose words are dropped from every query against this collection.'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'Applied as the default <code>stopwords</code> search parameter (via the collection’s preset). Stopword sets are server-global; manage them under Typesense, then Dictionaries.'|t('typesense')
+            ~ '</span>',
+        id: 'stopwordSet',
+        name: 'stopwordSet',
+        options: stopwordSetOptions,
+        value: preset.stopwords ?? '',
     }) }}
 
     <hr>

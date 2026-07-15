@@ -86,3 +86,13 @@ relationship and its cascade behaviour are explicit and reviewable in code. The
 mapping UI maps an element's own fields; it does not author JOINs. A collection
 that needs references belongs in the config file (see
 [Fluent config](fluent-config.md)).
+
+## Stemming and locale
+
+A text field's slideout can turn on stemming, set a Locale (the language used to
+tokenize and stem it, stored as the ISO subtag Typesense expects), and select a
+server stemming dictionary. Choosing a dictionary writes the field's
+`stem_dictionary` and turns on stemming automatically (Typesense implies
+`stem: true`). Stemming dictionaries are server-global; import them under
+Dictionaries. See
+[stemming](https://typesense.org/docs/30.2/api/stemming.html).

@@ -70,3 +70,12 @@ them, so a downgraded server never receives a parameter it would reject.
 The editor links into the search playground's diff mode, which previews a pending
 overlay of weight and preset changes against the current ranking (entered,
 dropped, moved) before anything is saved. See `docs/playground.md`.
+
+## Stopword set
+
+The Relevance section can point the collection at a server stopword set. The
+chosen set is applied as the collection's default `stopwords` search parameter
+(through its mirrored preset), so those words are dropped from every query
+against the collection. Stopword sets are server-global (managed under
+Dictionaries), so several collections can share one. See
+[stopwords](https://typesense.org/docs/30.2/api/stopwords.html).
