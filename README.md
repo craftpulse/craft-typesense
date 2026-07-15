@@ -88,11 +88,18 @@ Full docs live in [`docs/`](docs/):
 - [Synonyms, curation and presets](docs/synonyms.md)
 - [Scoped search keys](docs/scoped-keys.md)
 - [Console commands](docs/console.md), [Control panel utility](docs/utility.md)
-- [Collections cockpit (Pro)](docs/pro-collections.md), [Field mapping (Pro)](docs/mapping.md), [Search playground (Pro)](docs/playground.md)
 - [Drift detection](docs/drift.md), [Backup and restore](docs/backup.md)
 - [Server versions and capabilities](docs/capabilities.md), [Settings](docs/settings.md)
 - [Extending (for plugin authors)](docs/extending.md)
 - [Upgrading to 5.9.0](docs/upgrading.md)
+
+Pro control panel:
+
+- [Collections cockpit](docs/pro-collections.md), [Field mapping](docs/mapping.md), [Search playground](docs/playground.md)
+- [Curation](docs/pro-curation.md), [Synonyms and dictionaries](docs/pro-synonyms.md), [Indexing inspector](docs/inspector.md)
+- [Relevance tuning](docs/pro-relevance.md), [Aliases and zero-downtime rebuilds](docs/pro-aliases.md)
+- [API key management](docs/pro-keys.md), [A/B testing](docs/pro-ab-testing.md)
+- [Analytics and ops](docs/pro-analytics.md), [Vector and AI](docs/pro-vector-ai.md)
 
 ## Upgrading from 5.8.x
 
