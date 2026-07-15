@@ -58,6 +58,16 @@ class Inspector extends Component
      */
     public const STATE_INDEXED = 'indexed';
 
+    // Private Properties
+    // =========================================================================
+
+    /**
+     * @var array<string, array<string, mixed>> Request-scoped inspection cache,
+     * keyed by "{elementId}-{siteId}", so several callers in one request (both
+     * sidebars, the console command) inspect an element only once.
+     */
+    private array $_inspections = [];
+
     // Public Methods
     // =========================================================================
 
@@ -73,6 +83,12 @@ class Inspector extends Component
     public function inspectElement(ElementInterface $element, ?int $siteId = null): array
     {
         $siteId ??= (int)$element->siteId;
+        $cacheKey = $element->id . '-' . $siteId;
+
+        if (isset($this->_inspections[$cacheKey])) {
+            return $this->_inspections[$cacheKey];
+        }
+
         $registry = Typesense::$plugin->getCollectionRegistry();
 
         $collections = [];
@@ -87,7 +103,7 @@ class Inspector extends Component
             $collections[] = $this->_inspectCollection($collection, $element, $siteId);
         }
 
-        return [
+        return $this->_inspections[$cacheKey] = [
             'elementId' => (int)$element->id,
             'siteId' => $siteId,
             'status' => (string)$element->getStatus(),

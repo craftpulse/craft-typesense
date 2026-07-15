@@ -29,22 +29,25 @@ it('returns the results, facets and pagination fragments with real hits', functi
         ->assertSee('id="ts-facets"', false)
         ->assertSee('id="ts-pagination"', false)
         ->assertSee('Found 488 results', false)
-        // Each result carries the Datastar click-tracking binding to the event
-        // endpoint (progressive; no-JS visitors never fire it).
+        // Each result is a real anchor to the element (I5) and carries the
+        // Datastar click-tracking binding to the event endpoint, sending the CSRF
+        // token as a header so the anonymous POST passes Craft's CSRF check (I1).
+        ->assertSee('<a class="ts-results__title', false)
+        ->assertSee('href="http', false)
         ->assertSee('data-on:click="@post(', false)
-        ->assertSee('typesense/search/track-event', false);
+        ->assertSee('typesense/search/track-event', false)
+        ->assertSee("headers: {'X-CSRF-Token'", false);
 });
 
-it('fails soft with well-formed fragments for an unknown collection', function() {
+it('404s an unknown collection (the anonymous proxy has no raw-client fallback)', function() {
     $url = UrlHelper::actionUrl('typesense/search/results', [
         'collection' => 'does_not_exist',
         'q' => 'anything',
     ]);
 
-    $this->get($url)
-        ->assertOk()
-        ->assertSee('id="ts-results"', false)
-        ->assertSee('No results.', false);
+    // The trust boundary (C1): the anonymous endpoint only serves collections
+    // explicitly flagged searchable; an unknown handle 404s.
+    $this->withExceptionHandling()->get($url)->assertStatus(404);
 });
 
 it('server-renders the whole widget for the no-JavaScript path', function() {

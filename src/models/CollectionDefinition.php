@@ -64,6 +64,12 @@ class CollectionDefinition extends Model
     public bool $enabled = true;
 
     /**
+     * @var bool Whether the anonymous front-end search endpoint may query this
+     * collection. Off by default.
+     */
+    public bool $searchable = false;
+
+    /**
      * @var array<string, array<string, mixed>> Per-field mappings, keyed by
      * field UID (authored in the mapping UI).
      */
@@ -104,7 +110,7 @@ class CollectionDefinition extends Model
         $rules[] = [['name', 'elementType', 'multisite'], 'required'];
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
-        $rules[] = [['enabled'], 'boolean'];
+        $rules[] = [['enabled', 'searchable'], 'boolean'];
         $rules[] = [['mappings', 'metadata', 'relevance', 'embedding'], 'safe'];
 
         return $rules;
@@ -124,6 +130,7 @@ class CollectionDefinition extends Model
             'source' => $this->source,
             'multisite' => $this->multisite,
             'enabled' => $this->enabled,
+            'searchable' => $this->searchable,
             'mappings' => $this->mappings,
             'metadata' => $this->metadata,
             'relevance' => $this->relevance,

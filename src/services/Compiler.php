@@ -63,6 +63,7 @@ class Compiler extends Component
     {
         $collection = Collection::make($definition->name)
             ->elementType($definition->elementType)
+            ->searchable($definition->searchable)
             ->multisite(MultisiteStrategy::tryFrom($definition->multisite) ?? MultisiteStrategy::SharedWithSiteFilter);
 
         $query = $this->_elementQuery($definition);

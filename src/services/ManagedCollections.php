@@ -151,6 +151,7 @@ class ManagedCollections extends Component
         $definition->source = isset($config['source']) ? (string)$config['source'] : null;
         $definition->multisite = (string)($config['multisite'] ?? '');
         $definition->enabled = (bool)($config['enabled'] ?? true);
+        $definition->searchable = (bool)($config['searchable'] ?? false);
         $definition->mappings = is_array($config['mappings'] ?? null) ? $config['mappings'] : [];
         $definition->metadata = is_array($config['metadata'] ?? null) ? $config['metadata'] : [];
         $definition->relevance = is_array($config['relevance'] ?? null) ? $config['relevance'] : [];

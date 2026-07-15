@@ -615,6 +615,10 @@ class Typesense extends Plugin
                     return;
                 }
 
+                if (!$this->_registryTargetsElement($element)) {
+                    return;
+                }
+
                 $collections = $this->_curatableCollections($element);
 
                 if ($collections === []) {
@@ -660,6 +664,12 @@ class Typesense extends Plugin
                     return;
                 }
 
+                // Short-circuit before any query or Typesense call: most element
+                // edits are for types no collection targets.
+                if (!$this->_registryTargetsElement($element)) {
+                    return;
+                }
+
                 $inspection = $this->getInspector()->inspectElement($element);
 
                 if ($inspection['collections'] === []) {
@@ -671,6 +681,29 @@ class Typesense extends Plugin
                 ]);
             }
         );
+    }
+
+    /**
+     * Whether any registered collection targets the element's type. A cheap
+     * class-only check (no element queries, no Typesense calls) so the entry-edit
+     * sidebars can bail immediately for element types no collection indexes,
+     * which is the common case on most element edits.
+     *
+     * @param ElementInterface $element
+     * @return bool
+     * @author CraftPulse
+     */
+    private function _registryTargetsElement(ElementInterface $element): bool
+    {
+        foreach ($this->getCollectionRegistry()->getAll() as $collection) {
+            $type = $collection->getElementType();
+
+            if ($element instanceof $type) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     /**

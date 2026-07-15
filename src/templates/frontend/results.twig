@@ -10,14 +10,24 @@
    Variables:
    - result:  the Typesense response (fail-soft: may be empty)
    - options: the normalised request (q, facets, page, perPage, ...)
+   - urls:    element URLs keyed by element id (resolved server-side)
+   - trackEndpoint / csrfToken: the analytics event endpoint and its CSRF token
 
-   Click tracking: each result posts a click event to the analytics endpoint
-   through Datastar (progressive: no-JS visitors simply do not fire it). Events
+   Each result is a real <a href> to the element, so it works for keyboard and
+   assistive tech. Clicking it posts a click event to the analytics endpoint
+   through Datastar (progressive: no-JS visitors still follow the link, they just
+   do not fire the beacon). The CSRF token travels as a header (Datastar's
+   @post headers option), so the anonymous POST passes Craft's CSRF check. Events
    are only recorded when analytics is enabled; the admin key stays server-side.
+
+   Styling here is Tailwind (the demo's throwaway CDN approach). Override this
+   template under templates/_typesense/results.twig for your own markup/pipeline.
    ========================================================================= #}
 {%- set hits = result.hits ?? [] -%}
 {%- set found = result.found ?? 0 -%}
-{%- set trackEndpoint = craft.typesense.eventEndpoint() -%}
+{%- set urls = urls ?? {} -%}
+{%- set trackEndpoint = trackEndpoint ?? craft.typesense.eventEndpoint() -%}
+{%- set csrfToken = csrfToken ?? craft.app.request.csrfToken -%}
 {%- set query = options.q ?? '' -%}
 
 <div id="ts-results" class="ts-results" aria-live="polite">
@@ -33,12 +43,15 @@
         <ul class="ts-results__list space-y-3">
             {%- for hit in hits -%}
                 {%- set doc = hit.document ?? {} -%}
+                {%- set elementId = doc.elementId ?? '' -%}
+                {%- set href = urls[elementId] ?? '#' -%}
                 {%- set clickUrl = trackEndpoint ~ '?type=click&name=search_click&docId=' ~ (doc.id ?? '')|url_encode ~ '&q=' ~ query|url_encode -%}
                 <li class="ts-results__item rounded border border-gray-200 bg-white px-4 py-3">
-                    <h3 class="ts-results__title font-semibold text-gray-900"
-                        data-on:click="@post('{{ clickUrl }}')">
+                    <a class="ts-results__title font-semibold text-gray-900"
+                       href="{{ href }}"
+                       data-on:click="@post('{{ clickUrl }}', {headers: {'X-CSRF-Token': '{{ csrfToken }}'}})">
                         {{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}
-                    </h3>
+                    </a>
                 </li>
             {%- endfor -%}
         </ul>

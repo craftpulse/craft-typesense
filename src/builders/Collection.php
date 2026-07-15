@@ -101,6 +101,13 @@ class Collection
     private ?array $_preset = null;
 
     /**
+     * @var bool Whether the anonymous front-end search endpoint may query this
+     * collection. Off by default: the server-keyed proxy must never expose a
+     * collection unless it is explicitly opted in.
+     */
+    private bool $_searchable = false;
+
+    /**
      * @var array<int, array<string, mixed>> Additive boost rules baked into an
      * indexed boost_score field at index time.
      */
@@ -419,6 +426,22 @@ class Collection
     }
 
     /**
+     * Opts this collection into the anonymous front-end search endpoint. Off by
+     * default, so the server-keyed proxy never exposes a collection unless the
+     * author explicitly allows it.
+     *
+     * @param bool $value
+     * @return self
+     * @author CraftPulse
+     */
+    public function searchable(bool $value = true): self
+    {
+        $this->_searchable = $value;
+
+        return $this;
+    }
+
+    /**
      * Additive boost rules, baked into the indexed boost_score field at index
      * time (the deterministic alternative to the first-match-wins `_eval` bug).
      * Each rule: `weight`, `match` (`all`|`any`), and `conditions`
@@ -652,6 +675,17 @@ class Collection
     public function getBoostField(): string
     {
         return $this->_boostField;
+    }
+
+    /**
+     * Whether the anonymous front-end search endpoint may query this collection.
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isSearchable(): bool
+    {
+        return $this->_searchable;
     }
 
     /**

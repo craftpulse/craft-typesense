@@ -197,6 +197,26 @@ class Settings extends Model
     // =========================================================================
 
     /**
+     * @inheritdoc
+     *
+     * Excludes `collections` from the serialised representation: on a fluent
+     * config install it holds Collection builder objects that carry closures
+     * (elementQuery, transform), which cannot be serialised into project config.
+     * The config-file collections are never persisted; they always come from
+     * `config/typesense.php`. Dropping the field here keeps `toArray()` (and thus
+     * `savePluginSettings()`) safe on every install.
+     *
+     * @return array<int|string, mixed>
+     */
+    public function fields(): array
+    {
+        $fields = parent::fields();
+        unset($fields['collections']);
+
+        return $fields;
+    }
+
+    /**
      * Returns the list of valid server-type values.
      *
      * @return array<int, string>
