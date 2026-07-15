@@ -12,7 +12,9 @@ namespace craftpulse\typesense\utilities;
 
 use Craft;
 use craft\base\Utility;
+use craft\db\Query;
 use craftpulse\typesense\controllers\OpsController;
+use craftpulse\typesense\db\Table;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
 use Throwable;
@@ -52,7 +54,11 @@ class TypesenseUtility extends Utility
      */
     public static function icon(): ?string
     {
-        return Craft::getAlias('@craftpulse/typesense/icon.svg');
+        // The absolute path to the plugin's brand icon, resolved from this file's
+        // location rather than a plugin alias (the plugin's registered alias uses
+        // the legacy namespace, so an alias lookup returned an unresolved path and
+        // the sidebar showed an empty placeholder).
+        return dirname(__DIR__) . '/icon.svg';
     }
 
     /**
@@ -117,6 +123,19 @@ class TypesenseUtility extends Utility
             $findings[$finding['target']] = $finding['status'];
         }
 
+        // The most recent sync timestamp per collection, from the sync-state
+        // table (one query, keyed by collection handle across its sites).
+        $lastSync = [];
+
+        foreach ((new Query())->select(['collectionHandle', 'lastSyncedAt'])->from(Table::SYNC_STATE)->all() as $state) {
+            $handle = (string)$state['collectionHandle'];
+            $syncedAt = $state['lastSyncedAt'] ?? null;
+
+            if ($syncedAt !== null && ($lastSync[$handle] ?? '') < $syncedAt) {
+                $lastSync[$handle] = $syncedAt;
+            }
+        }
+
         $rows = [];
 
         foreach ($plugin->getCollectionRegistry()->getAll() as $collection) {
@@ -141,6 +160,7 @@ class TypesenseUtility extends Utility
                 'documents' => $documents,
                 'drift' => $findings[$target] ?? Drift::STATUS_MISSING,
                 'suspended' => $plugin->getSyncSuspend()->isCollectionSuspended($collection->getName()),
+                'lastSync' => $lastSync[$collection->getName()] ?? null,
             ];
         }
 

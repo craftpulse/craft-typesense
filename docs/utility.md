@@ -4,21 +4,37 @@ description: The Typesense utility, drift, and alerting
 ---
 # Control panel utility
 
-The Typesense utility (Utilities, then Typesense) is the read-only operations
-home in Free. It shows:
+The Typesense utility (Utilities, then Typesense) is the operations home. It is
+shaped after Craft's own utilities: each section leads with a heading, surfaces
+state as a data table, then offers one action per block with a description above
+a solid button. It shows:
 
 - **Server status:** the connected version, health, support state, and the
-  capability list for that version.
-- **Collections:** each collection's resolved Typesense target, multisite
-  strategy, document count, drift indicator, and per-collection sync state with a
-  Suspend/Resume toggle.
-- **Actions** (for users with the `typesense:manageSettings` permission): queue a
-  full sync, flush and re-sync, or toggle the global sync-suspend switch. The
-  action buttons post to control-panel action URLs (built with
-  `UrlHelper::actionUrl`), so they work regardless of how the site's base URL
-  differs from the CP URL. Suspend is runtime database state (see
+  per-capability availability table for that version.
+- **Collections:** one row per declared collection with its resolved Typesense
+  target, document count, schema-drift indicator, last sync time, and sync state.
+  A per-row action menu (the same `disclosureMenu` row-action idiom as the
+  aliases and API-keys screens) queues **Sync**, **Apply schema**, **Suspend /
+  Resume sync**, or **Flush** for that single collection.
+- **Global operations** (for users with the `typesense:manageOps` permission):
+  queue a sync of every collection, toggle the global sync-suspend master switch,
+  or flush every collection. Every action posts to a control-panel action URL
+  (built with `UrlHelper::actionUrl`), so it works regardless of how the site's
+  base URL differs from the CP URL. Destructive actions (flush) confirm first.
+  Suspend is runtime database state (see
   [the sync engine](sync-engine.md#suspend)), so the toggles work even when
   `allowAdminChanges` is disabled.
+- **Server operations** (Pro, `typesense:manageOps`): the server memory, disk,
+  and CPU readout, plus database compaction, query-cache clearing, and snapshots.
+
+### Apply schema vs. rebuild
+
+The per-collection **Apply schema** action queues an additive schema apply: it
+creates the collection if it is missing and adds any newly declared fields. It
+never rewrites documents. Because Typesense re-creates a collection to change a
+field's type (there is no in-place type change), a structural change is not
+applied here — use the zero-downtime **Rebuild** on the
+[Aliases screen](pro-aliases.md) for that.
 
 ## Drift
 

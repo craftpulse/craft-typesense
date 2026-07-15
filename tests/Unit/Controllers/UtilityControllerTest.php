@@ -49,3 +49,30 @@ it('forbids the sync action for a user who holds only manageSettings (gate moved
         ->post(UrlHelper::actionUrl('typesense/utility/sync'))
         ->assertForbidden();
 });
+
+it('queues a global sync and redirects', function() {
+    Craft::$app->edition = CmsEdition::Pro;
+
+    $this->actingAsAdmin()
+        ->withExceptionHandling()
+        ->post(UrlHelper::actionUrl('typesense/utility/sync'))
+        ->assertRedirect();
+});
+
+it('requires a collection for the apply-schema action', function() {
+    Craft::$app->edition = CmsEdition::Pro;
+
+    $this->actingAsAdmin()
+        ->withExceptionHandling()
+        ->post(UrlHelper::actionUrl('typesense/utility/apply-schema'))
+        ->assertStatus(400);
+});
+
+it('404s the apply-schema action for an unknown collection', function() {
+    Craft::$app->edition = CmsEdition::Pro;
+
+    $this->actingAsAdmin()
+        ->withExceptionHandling()
+        ->post(UrlHelper::actionUrl('typesense/utility/apply-schema'), ['collection' => 'does-not-exist'])
+        ->assertNotFound();
+});

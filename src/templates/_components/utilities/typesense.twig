@@ -1,57 +1,83 @@
-{# @var status array #}
-{# @var collections array #}
-{# @var suspended bool #}
-{# @var canManage bool #}
-{# @var ops array #}
-{# @var canRunOps bool #}
+{# =========================================================================
+   Typesense CP utility
+   =========================================================================
+   Shaped after the Blitz cache utility idiom: each section leads with a clear
+   heading, surfaces state as a data table, then offers one action per block
+   with a description line above a solid button. Per-collection operations use
+   the same disclosure-menu row-action idiom as the aliases/keys screens (core
+   settings/plugins/index.twig, via the disclosureMenu Twig function): Craft
+   wires the POST, CSRF, and confirm, so no custom JS is needed.
+
+   @var status     array {configured, connected, supported, version, flags, unsupportedReason}
+   @var collections array {name, target, strategy, documents, drift, suspended, lastSync}
+   @var suspended  bool   the global suspend master switch
+   @var canManage  bool   holds typesense:manageOps
+   @var ops        array  server metrics (Pro), or empty
+   @var canRunOps  bool   Pro and holds typesense:manageOps
+   ========================================================================= #}
 {% import '_includes/forms.twig' as forms %}
 
+{# ---------------------------------------------------------------------------
+   Server status
+   --------------------------------------------------------------------------- #}
 <h2>{{ 'Server status'|t('typesense') }}</h2>
 {% if not status.configured %}
-    <p>{{ 'Typesense is not configured. Add an admin API key in the plugin settings.'|t('typesense') }}</p>
+    <p><span class="status"></span> {{ 'Typesense is not configured. Add an admin API key in the plugin settings.'|t('typesense') }}</p>
 {% elseif not status.connected %}
     <p><span class="status red"></span> {{ 'Not connected.'|t('typesense') }}</p>
 {% else %}
-    <p>
-        <span class="status green"></span>
-        {{ 'Connected to Typesense {version}.'|t('typesense', { version: status.version ?? '?' }) }}
-    </p>
+    <p><span class="status green"></span> {{ 'Connected to Typesense {version}.'|t('typesense', { version: status.version ?? '?' }) }}</p>
     {% if not status.supported and status.unsupportedReason %}
         <blockquote class="note warning">{{ status.unsupportedReason }}</blockquote>
     {% else %}
-        <p>{{ 'Available features:'|t('typesense') }}</p>
-        <ul>
-            {% for flag, enabled in status.flags %}
-                {% if enabled %}<li><code>{{ flag }}</code></li>{% endif %}
-            {% endfor %}
-        </ul>
+        <table class="data fullwidth" style="margin-top: 10px;">
+            <tbody>
+                {% for flag, enabled in status.flags %}
+                    <tr>
+                        <th scope="row"><code>{{ flag }}</code></th>
+                        <td class="thin">
+                            {% if enabled %}
+                                <span class="status green"></span> {{ 'Available'|t('typesense') }}
+                            {% else %}
+                                <span class="status"></span> {{ 'Unavailable'|t('typesense') }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     {% endif %}
 {% endif %}
 
 <hr>
 
+{# ---------------------------------------------------------------------------
+   Collections
+   --------------------------------------------------------------------------- #}
 <h2>{{ 'Collections'|t('typesense') }}</h2>
+<p class="light">{{ 'Document count, schema drift, last sync, and suspend state per collection. Use the row menu to sync, flush, apply schema, or suspend a single collection.'|t('typesense') }}</p>
 {% if collections is empty %}
-    <p>{{ 'No collections are declared.'|t('typesense') }}</p>
+    <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
 {% else %}
     <table class="data fullwidth">
         <thead>
             <tr>
-                <th>{{ 'Collection'|t('typesense') }}</th>
-                <th>{{ 'Target'|t('typesense') }}</th>
-                <th>{{ 'Strategy'|t('typesense') }}</th>
-                <th>{{ 'Documents'|t('typesense') }}</th>
-                <th>{{ 'Drift'|t('typesense') }}</th>
-                <th>{{ 'Sync'|t('typesense') }}</th>
+                <th scope="col">{{ 'Collection'|t('typesense') }}</th>
+                <th scope="col">{{ 'Documents'|t('typesense') }}</th>
+                <th scope="col">{{ 'Schema'|t('typesense') }}</th>
+                <th scope="col">{{ 'Last sync'|t('typesense') }}</th>
+                <th scope="col">{{ 'Sync state'|t('typesense') }}</th>
+                {% if canManage %}<th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>{% endif %}
             </tr>
         </thead>
         <tbody>
             {% for row in collections %}
                 <tr>
-                    <td>{{ row.name }}</td>
-                    <td><code>{{ row.target }}</code></td>
-                    <td>{{ row.strategy }}</td>
-                    <td>{{ row.documents is null ? '?' : row.documents }}</td>
+                    <td>
+                        <strong>{{ row.name }}</strong><br>
+                        <code class="light">{{ row.target }}</code>
+                    </td>
+                    <td>{{ row.documents is null ? '—' : row.documents|number }}</td>
                     <td>
                         {% if row.drift == 'inSync' %}
                             <span class="status green"></span> {{ 'In sync'|t('typesense') }}
@@ -61,25 +87,56 @@
                             <span class="status red"></span> {{ 'Missing'|t('typesense') }}
                         {% endif %}
                     </td>
-                    <td class="thin">
+                    <td>
+                        {% if row.lastSync %}
+                            {{ row.lastSync|date('short') }} {{ row.lastSync|time('short') }}
+                        {% else %}
+                            <span class="light">{{ 'Never'|t('typesense') }}</span>
+                        {% endif %}
+                    </td>
+                    <td>
                         {% if suspended %}
-                            <span class="status" title="{{ 'Globally suspended'|t('typesense') }}"></span> {{ 'Suspended (global)'|t('typesense') }}
+                            <span class="status orange"></span> {{ 'Suspended (global)'|t('typesense') }}
                         {% elseif row.suspended %}
                             <span class="status orange"></span> {{ 'Suspended'|t('typesense') }}
                         {% else %}
                             <span class="status green"></span> {{ 'Active'|t('typesense') }}
                         {% endif %}
-
-                        {% if canManage and not suspended %}
-                            <form method="post" accept-charset="UTF-8" style="display:inline">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/utility/toggle-suspend') }}
-                                {{ hiddenInput('collection', row.name) }}
-                                {{ redirectInput('utilities/typesense') }}
-                                <button type="submit" class="btn small">{{ row.suspended ? 'Resume'|t('typesense') : 'Suspend'|t('typesense') }}</button>
-                            </form>
-                        {% endif %}
                     </td>
+                    {% if canManage %}
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {{ disclosureMenu([
+                                {
+                                    label: 'Sync'|t('typesense'),
+                                    action: 'typesense/utility/sync',
+                                    params: { collection: row.name },
+                                },
+                                {
+                                    label: 'Apply schema'|t('typesense'),
+                                    action: 'typesense/utility/apply-schema',
+                                    params: { collection: row.name },
+                                    confirm: 'Apply schema for {name}? This creates the collection if missing and adds any newly declared fields. Changing a field’s type is not applied in place — use Rebuild on the Aliases screen for structural changes.'|t('typesense', { name: row.name }),
+                                },
+                                {
+                                    label: row.suspended ? 'Resume sync'|t('typesense') : 'Suspend sync'|t('typesense'),
+                                    action: 'typesense/utility/toggle-suspend',
+                                    params: { collection: row.name },
+                                },
+                                {
+                                    label: 'Flush'|t('typesense'),
+                                    action: 'typesense/utility/flush',
+                                    params: { collection: row.name },
+                                    confirm: 'Flush {name}? Every document is deleted and re-synced from scratch.'|t('typesense', { name: row.name }),
+                                    destructive: true,
+                                },
+                            ], {
+                                buttonAttributes: {
+                                    class: ['action-btn', 'hairline'],
+                                    hiddenLabel: 'Actions'|t('typesense'),
+                                },
+                            }) }}
+                        </td>
+                    {% endif %}
                 </tr>
             {% endfor %}
         </tbody>
@@ -87,22 +144,70 @@
     <p class="light">{{ 'Run `craft typesense/config/diff` for the full drift report.'|t('typesense') }}</p>
 {% endif %}
 
+{% if canManage %}
+    <hr>
+
+    {# -----------------------------------------------------------------------
+       Global sync operations
+       ----------------------------------------------------------------------- #}
+    <h2>{{ 'Global operations'|t('typesense') }}</h2>
+
+    <div style="margin: 24px 0;">
+        <p class="light">{{ 'Queue a sync of every declared collection. Existing documents are updated in place; nothing is deleted.'|t('typesense') }}</p>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/sync') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn submit">{{ 'Sync all collections'|t('typesense') }}</button>
+        </form>
+    </div>
+
+    <div style="margin: 24px 0;">
+        <p class="light">{{ 'Suspend halts all sync writes until you resume; element edits queued while suspended are dropped, so a full sync is recommended afterwards. Suspend is runtime state and works even when admin changes are disabled.'|t('typesense') }}</p>
+        <form method="post" accept-charset="UTF-8">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/toggle-suspend') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn">
+                {{ suspended ? 'Resume all syncing'|t('typesense') : 'Suspend all syncing'|t('typesense') }}
+            </button>
+        </form>
+        {% if suspended %}
+            <p style="margin-top: 8px;"><span class="status orange"></span> {{ 'Syncing is currently suspended.'|t('typesense') }}</p>
+        {% endif %}
+    </div>
+
+    <div style="margin: 24px 0;">
+        <p class="light">{{ 'Delete every document from every collection and re-sync from scratch. Search results are incomplete until the re-sync finishes.'|t('typesense') }}</p>
+        <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Flush all collections? Every document is deleted and re-synced from scratch.'|t('typesense') }}">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/utility/flush') }}
+            {{ redirectInput('utilities/typesense') }}
+            <button type="submit" class="btn">{{ 'Flush all collections'|t('typesense') }}</button>
+        </form>
+    </div>
+{% endif %}
+
 {% if ops is not empty %}
     <hr>
+
+    {# -----------------------------------------------------------------------
+       Server operations (Pro)
+       ----------------------------------------------------------------------- #}
     <h2>{{ 'Server operations'|t('typesense') }}</h2>
     <table class="data fullwidth">
         <tbody>
             <tr>
-                <th>{{ 'Memory used'|t('typesense') }}</th>
-                <td>{{ (ops.memoryUsedBytes / 1024 / 1024)|number_format(1) }} MB {% if ops.memoryTotalBytes %}/ {{ (ops.memoryTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
+                <th scope="row">{{ 'Memory used'|t('typesense') }}</th>
+                <td>{{ (ops.memoryUsedBytes / 1024 / 1024)|number_format(1) }} MB{% if ops.memoryTotalBytes %} / {{ (ops.memoryTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
             </tr>
             <tr>
-                <th>{{ 'Disk used'|t('typesense') }}</th>
-                <td>{{ (ops.diskUsedBytes / 1024 / 1024)|number_format(1) }} MB {% if ops.diskTotalBytes %}/ {{ (ops.diskTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
+                <th scope="row">{{ 'Disk used'|t('typesense') }}</th>
+                <td>{{ (ops.diskUsedBytes / 1024 / 1024)|number_format(1) }} MB{% if ops.diskTotalBytes %} / {{ (ops.diskTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
             </tr>
             {% if ops.cpuActivePercentage %}
                 <tr>
-                    <th>{{ 'CPU active'|t('typesense') }}</th>
+                    <th scope="row">{{ 'CPU active'|t('typesense') }}</th>
                     <td>{{ ops.cpuActivePercentage }}%</td>
                 </tr>
             {% endif %}
@@ -110,13 +215,18 @@
     </table>
 
     {% if canRunOps %}
-        <div class="buttons">
+        <div style="margin: 24px 0;">
+            <p class="light">{{ 'Reclaim disk space by compacting the on-disk database. Safe to run on a live server.'|t('typesense') }}</p>
             <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Compact the database now?'|t('typesense') }}">
                 {{ csrfInput() }}
                 {{ actionInput('typesense/ops/compact') }}
                 {{ redirectInput('utilities/typesense') }}
                 <button type="submit" class="btn">{{ 'Compact database'|t('typesense') }}</button>
             </form>
+        </div>
+
+        <div style="margin: 24px 0;">
+            <p class="light">{{ 'Clear the in-memory query cache. The next searches repopulate it.'|t('typesense') }}</p>
             <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Clear the query cache?'|t('typesense') }}">
                 {{ csrfInput() }}
                 {{ actionInput('typesense/ops/clear-cache') }}
@@ -124,47 +234,20 @@
                 <button type="submit" class="btn">{{ 'Clear cache'|t('typesense') }}</button>
             </form>
         </div>
-        <form method="post" accept-charset="UTF-8" class="ts-ops-snapshot">
-            {{ csrfInput() }}
-            {{ actionInput('typesense/ops/snapshot') }}
-            {{ redirectInput('utilities/typesense') }}
-            {{ forms.textField({
-                label: 'Snapshot to server path'|t('typesense'),
-                instructions: 'An absolute path on the Typesense server the snapshot is written to.'|t('typesense'),
-                name: 'snapshotPath',
-                placeholder: '/data/snapshots/manual',
-            }) }}
-            <button type="submit" class="btn">{{ 'Take snapshot'|t('typesense') }}</button>
-        </form>
-    {% endif %}
-{% endif %}
 
-{% if canManage %}
-    <hr>
-    <h2>{{ 'Actions'|t('typesense') }}</h2>
-    <div class="buttons">
-        <form method="post" accept-charset="UTF-8">
-            {{ csrfInput() }}
-            {{ actionInput('typesense/utility/sync') }}
-            {{ redirectInput('utilities/typesense') }}
-            <button type="submit" class="btn submit">{{ 'Sync all'|t('typesense') }}</button>
-        </form>
-        <form method="post" accept-charset="UTF-8">
-            {{ csrfInput() }}
-            {{ actionInput('typesense/utility/flush') }}
-            {{ redirectInput('utilities/typesense') }}
-            <button type="submit" class="btn">{{ 'Flush all'|t('typesense') }}</button>
-        </form>
-        <form method="post" accept-charset="UTF-8">
-            {{ csrfInput() }}
-            {{ actionInput('typesense/utility/toggle-suspend') }}
-            {{ redirectInput('utilities/typesense') }}
-            <button type="submit" class="btn">
-                {{ suspended ? 'Resume sync'|t('typesense') : 'Suspend sync'|t('typesense') }}
-            </button>
-        </form>
-    </div>
-    {% if suspended %}
-        <p><span class="status orange"></span> {{ 'Sync is currently suspended.'|t('typesense') }}</p>
+        <div style="margin: 24px 0;">
+            <p class="light">{{ 'Write a point-in-time snapshot to an absolute path on the Typesense server.'|t('typesense') }}</p>
+            <form method="post" accept-charset="UTF-8">
+                {{ csrfInput() }}
+                {{ actionInput('typesense/ops/snapshot') }}
+                {{ redirectInput('utilities/typesense') }}
+                {{ forms.textField({
+                    label: 'Snapshot to server path'|t('typesense'),
+                    name: 'snapshotPath',
+                    placeholder: '/data/snapshots/manual',
+                }) }}
+                <button type="submit" class="btn">{{ 'Take snapshot'|t('typesense') }}</button>
+            </form>
+        </div>
     {% endif %}
 {% endif %}
