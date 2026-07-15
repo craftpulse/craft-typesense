@@ -28,7 +28,11 @@ it('returns the results, facets and pagination fragments with real hits', functi
         ->assertSee('id="ts-results"', false)
         ->assertSee('id="ts-facets"', false)
         ->assertSee('id="ts-pagination"', false)
-        ->assertSee('Found 488 results', false);
+        ->assertSee('Found 488 results', false)
+        // Each result carries the Datastar click-tracking binding to the event
+        // endpoint (progressive; no-JS visitors never fire it).
+        ->assertSee('data-on:click="@post(', false)
+        ->assertSee('typesense/search/track-event', false);
 });
 
 it('fails soft with well-formed fragments for an unknown collection', function() {

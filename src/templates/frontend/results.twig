@@ -10,9 +10,15 @@
    Variables:
    - result:  the Typesense response (fail-soft: may be empty)
    - options: the normalised request (q, facets, page, perPage, ...)
+
+   Click tracking: each result posts a click event to the analytics endpoint
+   through Datastar (progressive: no-JS visitors simply do not fire it). Events
+   are only recorded when analytics is enabled; the admin key stays server-side.
    ========================================================================= #}
 {%- set hits = result.hits ?? [] -%}
 {%- set found = result.found ?? 0 -%}
+{%- set trackEndpoint = craft.typesense.eventEndpoint() -%}
+{%- set query = options.q ?? '' -%}
 
 <div id="ts-results" class="ts-results" aria-live="polite">
     <p class="ts-results__count text-sm text-gray-500 mb-4">
@@ -27,8 +33,10 @@
         <ul class="ts-results__list space-y-3">
             {%- for hit in hits -%}
                 {%- set doc = hit.document ?? {} -%}
+                {%- set clickUrl = trackEndpoint ~ '?type=click&name=search_click&docId=' ~ (doc.id ?? '')|url_encode ~ '&q=' ~ query|url_encode -%}
                 <li class="ts-results__item rounded border border-gray-200 bg-white px-4 py-3">
-                    <h3 class="ts-results__title font-semibold text-gray-900">
+                    <h3 class="ts-results__title font-semibold text-gray-900"
+                        data-on:click="@post('{{ clickUrl }}')">
                         {{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}
                     </h3>
                 </li>

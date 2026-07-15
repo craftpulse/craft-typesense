@@ -62,19 +62,21 @@ class SearchController extends Controller
     {
         $this->requirePostRequest();
 
+        // Read from GET+POST: the Datastar binding carries the values as query
+        // params on the POST (no per-hit signal store on the results fragment).
         $request = $this->request;
-        $type = (string)$request->getBodyParam('type', 'click');
+        $type = (string)$request->getParam('type', 'click');
         $type = in_array($type, ['click', 'conversion'], true) ? $type : 'click';
 
         $data = array_filter([
-            'doc_id' => (string)$request->getBodyParam('docId', ''),
-            'q' => (string)$request->getBodyParam('q', ''),
-            'user_id' => (string)$request->getBodyParam('userId', ''),
+            'doc_id' => (string)$request->getParam('docId', ''),
+            'q' => (string)$request->getParam('q', ''),
+            'user_id' => (string)$request->getParam('userId', ''),
         ], static fn(string $value): bool => $value !== '');
 
         Typesense::$plugin->getAnalytics()->sendEvent(
             $type,
-            (string)$request->getBodyParam('name', $type),
+            (string)$request->getParam('name', $type),
             $data,
         );
 
