@@ -62,7 +62,12 @@ class Collections extends Component
             $collections[$collection->getName()] = $collection;
         }
 
-        // Config-file collections win over event-registered ones.
+        // Control-panel-managed collections win over event-registered ones.
+        foreach ($this->_managedCollections() as $collection) {
+            $collections[$collection->getName()] = $collection;
+        }
+
+        // Config-file collections win over everything.
         foreach ($this->_configCollections() as $collection) {
             $collections[$collection->getName()] = $collection;
         }
@@ -91,16 +96,20 @@ class Collections extends Component
      */
     public function getOverriddenNames(): array
     {
-        $eventNames = [];
+        $lowerNames = [];
 
         foreach ($this->_eventCollections() as $collection) {
-            $eventNames[$collection->getName()] = true;
+            $lowerNames[$collection->getName()] = true;
+        }
+
+        foreach ($this->_managedCollections() as $collection) {
+            $lowerNames[$collection->getName()] = true;
         }
 
         $overridden = [];
 
         foreach ($this->_configCollections() as $collection) {
-            if (isset($eventNames[$collection->getName()])) {
+            if (isset($lowerNames[$collection->getName()])) {
                 $overridden[] = $collection->getName();
             }
         }
@@ -186,6 +195,27 @@ class Collections extends Component
             } elseif ($collection instanceof TypesenseCollectionIndex) {
                 // Legacy config: adapt it through the compatibility shim.
                 $collections[] = Typesense::$plugin->getLegacyConfig()->adapt($collection);
+            }
+        }
+
+        return $collections;
+    }
+
+    /**
+     * The enabled control-panel-managed collections, each compiled from its
+     * project-config definition into a runtime collection.
+     *
+     * @return array<int, Collection>
+     * @author CraftPulse
+     */
+    private function _managedCollections(): array
+    {
+        $collections = [];
+        $compiler = Typesense::$plugin->getCompiler();
+
+        foreach (Typesense::$plugin->getManagedCollections()->getAll() as $definition) {
+            if ($definition->enabled) {
+                $collections[] = $compiler->compile($definition);
             }
         }
 

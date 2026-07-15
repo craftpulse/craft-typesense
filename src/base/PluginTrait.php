@@ -13,6 +13,7 @@ namespace craftpulse\typesense\base;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
+use craftpulse\typesense\services\Compiler;
 use craftpulse\typesense\services\ConfigGenerator;
 use craftpulse\typesense\services\Curation;
 use craftpulse\typesense\services\Dictionaries;
@@ -65,14 +66,28 @@ trait PluginTrait
     }
 
     /**
+     * Backwards-compatible alias of [[getCollections()]].
+     *
      * @return Collections
      * @throws InvalidConfigException
      * @author CraftPulse
      */
     public function getCollectionRegistry(): Collections
     {
+        return $this->getCollections();
+    }
+
+    /**
+     * The canonical collections registry accessor.
+     *
+     * @return Collections
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getCollections(): Collections
+    {
         /** @var Collections $collections */
-        $collections = $this->get('collectionRegistry');
+        $collections = $this->get('collections');
 
         return $collections;
     }
@@ -88,6 +103,19 @@ trait PluginTrait
         $compatibility = $this->get('compatibility');
 
         return $compatibility;
+    }
+
+    /**
+     * @return Compiler
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getCompiler(): Compiler
+    {
+        /** @var Compiler $compiler */
+        $compiler = $this->get('compiler');
+
+        return $compiler;
     }
 
     /**
@@ -311,7 +339,8 @@ trait PluginTrait
     {
         $this->setComponents([
             'typesense' => Typesense::class,
-            'collectionRegistry' => Collections::class,
+            'collections' => Collections::class,
+            'compiler' => Compiler::class,
             'schema' => Schema::class,
             'documents' => Documents::class,
             'sync' => Sync::class,

@@ -127,7 +127,13 @@ class Documents extends Component
                 continue;
             }
 
-            $document[$mapping->documentKey] = $this->_resolveMappingValue($mapping, $element);
+            $value = $this->_resolveMappingValue($mapping, $element);
+
+            // Omit null values: with optional schema fields, an absent value is
+            // valid, whereas sending null trips Typesense's type check.
+            if ($value !== null) {
+                $document[$mapping->documentKey] = $value;
+            }
         }
 
         $schema = Typesense::$plugin->getSchema();
