@@ -1,60 +1,84 @@
 {# =========================================================================
    Typesense Pro - search playground (query console)
    =========================================================================
-   A live query console for one collection: tune the params, run against the
-   real server, and inspect ranked hits with their text-match scores and timing.
-   Diff mode previews how a pending overlay (weights/preset) would reorder the
-   results before anything is saved.
+   A full-viewport, GraphiQL-style query console for one collection: tune the
+   params in the left pane, run against the real server (Run, or Cmd/Ctrl+Enter),
+   and inspect ranked hits with score badges, a stats bar, and collapsible JSON
+   in the right pane. Diff mode runs the current params against a pending overlay
+   (weights/preset) and shows the two rankings side by side before anything is
+   saved.
+
+   Follows core's GraphiQL screen: extends _layouts/basecp with the page header
+   hidden, so the console owns the viewport.
 
    @var handle          string
    @var initialFilterBy string
    @var initialQuery    string
    ========================================================================= #}
-{% extends '_layouts/cp' %}
+{% extends '_layouts/basecp' %}
 {% import '_includes/forms.twig' as forms %}
 {% set title = handle ~ ' ' ~ ('query console'|t('typesense')) %}
 {% set selectedSubnavItem = 'playground' %}
-{% set crumbs = [{ label: 'Search playground'|t('typesense'), url: url('typesense/playground') }] %}
+{% set showHeader = false %}
 
-{% block actionButton %}
-    <a class="btn" href="{{ url('typesense/playground/' ~ handle ~ '/browse') }}">{{ 'Document browser'|t('typesense') }}</a>
-{% endblock %}
-
-{% block content %}
-    <div class="ts-pg" data-collection="{{ handle }}">
-        <div class="ts-pg__form">
-            {{ forms.textField({ label: 'Query (q)'|t('typesense'), id: 'q', value: initialQuery, inputAttributes: { 'data-param': 'q' } }) }}
-            {{ forms.textField({ label: 'query_by'|t('typesense'), instructions: 'Comma-separated fields to search.'|t('typesense'), id: 'queryBy', inputAttributes: { 'data-param': 'queryBy' } }) }}
-            {{ forms.textField({ label: 'query_by_weights'|t('typesense'), id: 'queryByWeights', inputAttributes: { 'data-param': 'queryByWeights' } }) }}
-            {{ forms.textField({ label: 'filter_by'|t('typesense'), id: 'filterBy', value: initialFilterBy, inputAttributes: { 'data-param': 'filterBy' } }) }}
-            {{ forms.textField({ label: 'sort_by'|t('typesense'), id: 'sortBy', inputAttributes: { 'data-param': 'sortBy' } }) }}
-            {{ forms.textField({ label: 'facet_by'|t('typesense'), instructions: 'Set a field to see facet counts.'|t('typesense'), id: 'facetBy', inputAttributes: { 'data-param': 'facetBy' } }) }}
-            {{ forms.textField({ label: 'preset'|t('typesense'), id: 'preset', inputAttributes: { 'data-param': 'preset' } }) }}
-            {{ forms.textField({ label: 'num_typos'|t('typesense'), type: 'number', id: 'numTypos', inputAttributes: { 'data-param': 'numTypos', min: 0, max: 4 } }) }}
-            {{ forms.textField({ label: 'drop_tokens_threshold'|t('typesense'), type: 'number', id: 'dropTokensThreshold', inputAttributes: { 'data-param': 'dropTokensThreshold', min: 0 } }) }}
-            {{ forms.checkboxField({ label: 'prefix'|t('typesense'), id: 'prefix', checked: true, inputAttributes: { 'data-param': 'prefix' } }) }}
-            {{ forms.textField({ label: 'per_page'|t('typesense'), type: 'number', id: 'perPage', value: 20, inputAttributes: { 'data-param': 'perPage', min: 1, max: 250 } }) }}
-
-            <div class="buttons">
+{% block body %}
+    <div class="ts-pg-bar" data-collection="{{ handle }}">
+        <header class="ts-pg-bar__header">
+            <div class="ts-pg-bar__heading">
+                <a href="{{ url('typesense/playground') }}" class="btn small">{{ '‹ Playground'|t('typesense') }}</a>
+                <h1 class="ts-pg-bar__title"><code>{{ handle }}</code> {{ 'query console'|t('typesense') }}</h1>
+            </div>
+            <div class="ts-pg-bar__actions">
+                <a class="btn" href="{{ url('typesense/playground/' ~ handle ~ '/browse') }}">{{ 'Document browser'|t('typesense') }}</a>
                 <button type="button" class="btn submit ts-pg-run">{{ 'Run'|t('typesense') }}</button>
             </div>
+        </header>
 
-            <hr>
-            <h2>{{ 'Preview pending edits'|t('typesense') }}</h2>
-            <p class="light">{{ 'Enter proposed weights or a preset, then diff against the current results.'|t('typesense') }}</p>
-            {{ forms.textField({ label: 'Pending query_by_weights'|t('typesense'), id: 'overlayWeights', inputAttributes: { 'data-overlay': 'queryByWeights' } }) }}
-            {{ forms.textField({ label: 'Pending preset'|t('typesense'), id: 'overlayPreset', inputAttributes: { 'data-overlay': 'preset' } }) }}
-            <div class="buttons">
-                <button type="button" class="btn ts-pg-diff">{{ 'Diff'|t('typesense') }}</button>
+        <div class="ts-pg-bar__body">
+            <div class="ts-pg-bar__params">
+                <fieldset class="ts-pg-group">
+                    <legend>{{ 'Query'|t('typesense') }}</legend>
+                    {{ forms.textField({ label: 'Query (q)'|t('typesense'), id: 'q', value: initialQuery, inputAttributes: { 'data-param': 'q' } }) }}
+                    {{ forms.textField({ label: 'query_by'|t('typesense'), instructions: 'Comma-separated fields to search.'|t('typesense'), id: 'queryBy', inputAttributes: { 'data-param': 'queryBy' } }) }}
+                    {{ forms.checkboxField({ label: 'prefix'|t('typesense'), id: 'prefix', checked: true, inputAttributes: { 'data-param': 'prefix' } }) }}
+                    {{ forms.textField({ label: 'num_typos'|t('typesense'), type: 'number', id: 'numTypos', inputAttributes: { 'data-param': 'numTypos', min: 0, max: 4 } }) }}
+                    {{ forms.textField({ label: 'drop_tokens_threshold'|t('typesense'), type: 'number', id: 'dropTokensThreshold', inputAttributes: { 'data-param': 'dropTokensThreshold', min: 0 } }) }}
+                </fieldset>
+
+                <fieldset class="ts-pg-group">
+                    <legend>{{ 'Ranking'|t('typesense') }}</legend>
+                    {{ forms.textField({ label: 'query_by_weights'|t('typesense'), id: 'queryByWeights', inputAttributes: { 'data-param': 'queryByWeights' } }) }}
+                    {{ forms.textField({ label: 'sort_by'|t('typesense'), id: 'sortBy', inputAttributes: { 'data-param': 'sortBy' } }) }}
+                    {{ forms.textField({ label: 'preset'|t('typesense'), id: 'preset', inputAttributes: { 'data-param': 'preset' } }) }}
+                </fieldset>
+
+                <fieldset class="ts-pg-group">
+                    <legend>{{ 'Filtering'|t('typesense') }}</legend>
+                    {{ forms.textField({ label: 'filter_by'|t('typesense'), id: 'filterBy', value: initialFilterBy, inputAttributes: { 'data-param': 'filterBy' } }) }}
+                    {{ forms.textField({ label: 'facet_by'|t('typesense'), instructions: 'Set a field to see facet counts.'|t('typesense'), id: 'facetBy', inputAttributes: { 'data-param': 'facetBy' } }) }}
+                    {{ forms.textField({ label: 'per_page'|t('typesense'), type: 'number', id: 'perPage', value: 20, inputAttributes: { 'data-param': 'perPage', min: 1, max: 250 } }) }}
+                </fieldset>
+
+                <fieldset class="ts-pg-group">
+                    <legend>{{ 'Diff a pending edit'|t('typesense') }}</legend>
+                    <p class="light">{{ 'Enter proposed weights or a preset, then diff against the current results.'|t('typesense') }}</p>
+                    {{ forms.textField({ label: 'Pending query_by_weights'|t('typesense'), id: 'overlayWeights', inputAttributes: { 'data-overlay': 'queryByWeights' } }) }}
+                    {{ forms.textField({ label: 'Pending preset'|t('typesense'), id: 'overlayPreset', inputAttributes: { 'data-overlay': 'preset' } }) }}
+                    <div class="buttons">
+                        <button type="button" class="btn ts-pg-diff">{{ 'Diff'|t('typesense') }}</button>
+                    </div>
+                </fieldset>
             </div>
-        </div>
 
-        <div class="ts-pg__results ts-pg-results" role="region" aria-live="polite" aria-label="{{ 'Search results'|t('typesense') }}">
-            <p class="light">{{ 'Run a query to see ranked hits.'|t('typesense') }}</p>
+            <div class="ts-pg-bar__results ts-pg-results" role="region" aria-live="polite" aria-label="{{ 'Search results'|t('typesense') }}">
+                <div class="ts-pg-empty">
+                    <p class="light">{{ 'Run a query to see ranked hits. Tip: press Cmd/Ctrl+Enter to run.'|t('typesense') }}</p>
+                </div>
+            </div>
         </div>
     </div>
 
     {% js %}
-        new Craft.Typesense.Playground('.ts-pg');
+        new Craft.Typesense.Playground('.ts-pg-bar');
     {% endjs %}
 {% endblock %}

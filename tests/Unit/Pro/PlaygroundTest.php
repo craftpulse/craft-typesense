@@ -67,6 +67,24 @@ it('pages the real indexed documents in the browser', function() {
         ->assertSee('"numDocuments":488', false);
 });
 
+it('renders the full-viewport query console for a collection', function() {
+    $this->actingAs(aPlaygroundAdmin())
+        ->get(UrlHelper::cpUrl('typesense/playground/heroes'))
+        ->assertOk()
+        ->assertSee('ts-pg-bar', false)
+        ->assertSee('ts-pg-run', false)
+        ->assertSee('data-param="q"', false);
+});
+
+it('renders the full-viewport document browser for a collection', function() {
+    $this->actingAs(aPlaygroundAdmin())
+        ->get(UrlHelper::cpUrl('typesense/playground/heroes/browse'))
+        ->assertOk()
+        ->assertSee('ts-pg-bar', false)
+        ->assertSee('ts-db-apply', false)
+        ->assertSee('ts-db-rows', false);
+});
+
 it('forbids the playground run in Free even for an admin', function() {
     $plugin = \craftpulse\typesense\Typesense::$plugin;
     $original = $plugin->edition;

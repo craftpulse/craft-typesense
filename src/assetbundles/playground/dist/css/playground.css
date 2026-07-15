@@ -1,54 +1,173 @@
 /**
  * Typesense search playground + document browser styles.
+ *
+ * A full-viewport, GraphiQL-style split-pane: a fixed header, a scrollable
+ * params pane on the left, and a scrollable results pane on the right.
  */
 
-.ts-pg {
-    display: grid;
-    grid-template-columns: minmax(260px, 320px) 1fr;
-    gap: 24px;
+.ts-pg-bar {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
 }
 
-.ts-pg__form .field {
-    margin-bottom: 12px;
+.ts-pg-bar__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    flex: 0 0 auto;
 }
 
-.ts-pg__results {
+.ts-pg-bar__heading {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     min-width: 0;
 }
 
-.ts-pg-diff-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
+.ts-pg-bar__title {
+    margin: 0;
+    font-size: 16px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.ts-pg-diff-summary {
-    margin-top: 16px;
-}
-
-.ts-pg-diff-summary li {
-    margin-bottom: 4px;
-}
-
-.ts-db-toolbar {
+.ts-pg-bar__actions {
     display: flex;
+    align-items: center;
     gap: 8px;
-    align-items: flex-end;
-    margin-bottom: 16px;
-    flex-wrap: wrap;
+    flex: 0 0 auto;
 }
 
-.ts-db-json {
-    max-height: 60vh;
+.ts-pg-bar__body {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    flex: 1 1 auto;
+    min-height: 0;
+}
+
+.ts-pg-bar__params {
+    overflow: auto;
+    padding: 16px;
+    border-right: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.ts-pg-bar__results {
+    overflow: auto;
+    padding: 16px 24px;
+    min-width: 0;
+}
+
+.ts-pg-group {
+    border: none;
+    margin: 0 0 20px;
+    padding: 0;
+}
+
+.ts-pg-group > legend {
+    font-weight: 600;
+    margin-bottom: 8px;
+    padding: 0;
+}
+
+.ts-pg-group .field {
+    margin-bottom: 10px;
+}
+
+.ts-pg-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 120px;
+}
+
+.ts-pg-statsbar {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--medium-text-color, #606d7b);
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.ts-pg-hits {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ts-pg-hit {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.ts-pg-hit__rank {
+    min-width: 28px;
+    text-align: right;
+    color: var(--medium-text-color, #606d7b);
+    font-variant-numeric: tabular-nums;
+}
+
+.ts-pg-hit__id {
+    font-weight: 600;
+}
+
+.ts-pg-badge {
+    display: inline-block;
+    padding: 1px 8px;
+    border-radius: 9px;
+    background: var(--gray-100, #e4edf6);
+    color: var(--medium-text-color, #606d7b);
+    font-size: 11px;
+    font-variant-numeric: tabular-nums;
+}
+
+.ts-pg-json {
+    flex: 1 1 100%;
+}
+
+.ts-pg-json > summary {
+    cursor: pointer;
+    color: var(--link-color, #0b69a3);
+    font-size: 12px;
+}
+
+.ts-pg-json > pre {
+    max-height: 50vh;
     overflow: auto;
     background: var(--gray-050, #f3f7fc);
     padding: 12px;
     border-radius: var(--large-border-radius, 5px);
     font-size: 12px;
     white-space: pre;
+    margin: 8px 0 0;
 }
 
-.ts-db-pagination {
+.ts-pg-diff-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+}
+
+.ts-pg-diff-summary {
+    margin-top: 16px;
+    list-style: none;
+    padding: 0;
+}
+
+.ts-pg-diff-summary li {
+    margin-bottom: 4px;
+}
+
+.ts-db-paging {
     display: flex;
     gap: 8px;
     align-items: center;

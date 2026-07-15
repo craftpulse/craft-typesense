@@ -1,16 +1,17 @@
 /**
  * Typesense search playground + document browser.
  *
- * Craft.Typesense.Playground drives the live query console: it serialises the
- * tunable params, runs them against the server through the Pro controller (the
- * admin key never reaches the browser), and renders ranked hits with their
- * text-match scores and timing. Its diff mode runs current versus a pending
- * overlay and renders the ranking change. Craft.Typesense.DocumentBrowser pages
- * the actual indexed documents and opens a JSON detail HUD per row.
+ * Craft.Typesense.Playground drives the full-viewport query console: it
+ * serialises the tunable params, runs them against the server through the Pro
+ * controller (the admin key never reaches the browser), and renders ranked hits
+ * with a stats bar, per-hit score badges, and collapsible document JSON. Run is
+ * a button and Cmd/Ctrl+Enter. Diff mode runs current versus a pending overlay
+ * and shows the two rankings side by side. Craft.Typesense.DocumentBrowser pages
+ * the actual indexed documents and expands each row's JSON inline.
  *
- * Accessibility: controls are real buttons; the detail HUD manages focus and
- * closes on Escape through the UI layer manager; destroy() tears listeners and
- * any open HUD down.
+ * Accessibility: controls are real buttons; document JSON expands through native
+ * <details> disclosure (no focus-trapping HUD to leak); destroy() tears the
+ * listeners down.
  *
  * @author CraftPulse
  * @since 5.9.0
@@ -28,17 +29,32 @@ function tsEscape(value) {
     return $('<div>').text(value === null || value === undefined ? '' : String(value)).html();
 }
 
+function tsJsonDisclosure(doc, label) {
+    return '<details class="ts-pg-json"><summary>' + tsEscape(label) + '</summary>' +
+        '<pre>' + tsEscape(JSON.stringify(doc, null, 2)) + '</pre></details>';
+}
+
 Craft.Typesense.Playground = Garnish.Base.extend({
     $container: null,
+    $results: null,
     handle: null,
 
     init: function (container, settings) {
         this.$container = $(container);
         this.setSettings(settings, {});
         this.handle = this.$container.data('collection');
+        this.$results = this.$container.find('.ts-pg-results');
 
         this.addListener(this.$container.find('.ts-pg-run'), 'activate', 'run');
         this.addListener(this.$container.find('.ts-pg-diff'), 'activate', 'diff');
+
+        // Cmd/Ctrl+Enter runs the query from anywhere in the console.
+        this.addListener(this.$container, 'keydown', function (ev) {
+            if ((ev.metaKey || ev.ctrlKey) && ev.keyCode === Garnish.RETURN_KEY) {
+                ev.preventDefault();
+                this.run();
+            }
+        });
     },
 
     collectParams: function (selector) {
@@ -56,6 +72,7 @@ Craft.Typesense.Playground = Garnish.Base.extend({
 
     run: function () {
         var self = this;
+        this.renderLoading();
         Craft.sendActionRequest('POST', 'typesense/playground/run', {
             data: {collection: this.handle, params: this.collectParams('[data-param]')},
         })
@@ -69,6 +86,7 @@ Craft.Typesense.Playground = Garnish.Base.extend({
 
     diff: function () {
         var self = this;
+        this.renderLoading();
         Craft.sendActionRequest('POST', 'typesense/playground/diff', {
             data: {
                 collection: this.handle,
@@ -84,51 +102,69 @@ Craft.Typesense.Playground = Garnish.Base.extend({
             });
     },
 
+    renderLoading: function () {
+        this.$results.html('<div class="ts-pg-empty"><div class="spinner"></div></div>');
+    },
+
     renderResults: function (data) {
-        var html = '<p class="light">' +
-            Craft.t('typesense', 'Found {n} results in {ms} ms', {n: data.found, ms: data.searchTimeMs}) +
-            '</p>' + this.hitsTable(data.hits);
+        var html = this.statsBar(data) + this.hits(data.hits);
 
         if (data.facetCounts && data.facetCounts.length) {
             html += this.facetsHtml(data.facetCounts);
         }
 
-        this.$container.find('.ts-pg-results').html(html);
+        this.$results.html(html);
     },
 
     renderDiff: function (data) {
+        var none = Craft.t('typesense', 'None');
         var moved = (data.diff.moved || []).map(function (m) {
-            return tsEscape(m.id) + ' (' + m.from + '&rarr;' + m.to + ')';
+            return tsEscape(m.id) + ' (' + m.from + '→' + m.to + ')';
         }).join(', ');
 
         var html = '<div class="ts-pg-diff-grid">' +
-            '<div><h3>' + Craft.t('typesense', 'Current') + '</h3>' + this.hitsTable(data.current.hits) + '</div>' +
-            '<div><h3>' + Craft.t('typesense', 'Proposed') + '</h3>' + this.hitsTable(data.proposed.hits) + '</div>' +
+            '<section><h2>' + Craft.t('typesense', 'Current') + '</h2>' +
+            this.statsBar(data.current) + this.hits(data.current.hits) + '</section>' +
+            '<section><h2>' + Craft.t('typesense', 'Proposed') + '</h2>' +
+            this.statsBar(data.proposed) + this.hits(data.proposed.hits) + '</section>' +
             '</div>' +
             '<ul class="ts-pg-diff-summary">' +
-            '<li><strong>' + Craft.t('typesense', 'Entered') + ':</strong> ' + (data.diff.entered.map(tsEscape).join(', ') || '&mdash;') + '</li>' +
-            '<li><strong>' + Craft.t('typesense', 'Dropped') + ':</strong> ' + (data.diff.dropped.map(tsEscape).join(', ') || '&mdash;') + '</li>' +
-            '<li><strong>' + Craft.t('typesense', 'Moved') + ':</strong> ' + (moved || '&mdash;') + '</li>' +
+            '<li><strong>' + Craft.t('typesense', 'Entered') + ':</strong> ' + (data.diff.entered.map(tsEscape).join(', ') || none) + '</li>' +
+            '<li><strong>' + Craft.t('typesense', 'Dropped') + ':</strong> ' + (data.diff.dropped.map(tsEscape).join(', ') || none) + '</li>' +
+            '<li><strong>' + Craft.t('typesense', 'Moved') + ':</strong> ' + (moved || none) + '</li>' +
             '</ul>';
 
-        this.$container.find('.ts-pg-results').html(html);
+        this.$results.html(html);
     },
 
-    hitsTable: function (hits) {
+    statsBar: function (data) {
+        var parts = [Craft.t('typesense', '{n} results', {n: data.found || 0})];
+        if (data.searchTimeMs !== null && data.searchTimeMs !== undefined) {
+            parts.push(Craft.t('typesense', '{ms} ms', {ms: data.searchTimeMs}));
+        }
+        return '<div class="ts-pg-statsbar">' + parts.join(' · ') + '</div>';
+    },
+
+    hits: function (hits) {
         if (!hits || !hits.length) {
-            return '<p class="light">' + Craft.t('typesense', 'No results.') + '</p>';
+            return '<div class="ts-pg-empty"><p class="light">' + Craft.t('typesense', 'No results.') + '</p></div>';
         }
         var rows = hits.map(function (hit) {
-            return '<tr><td>' + hit.rank + '</td><td><code>' + tsEscape(hit.id) + '</code></td><td>' +
-                tsEscape(hit.textMatch) + '</td></tr>';
+            var badge = hit.textMatch !== null && hit.textMatch !== undefined
+                ? '<span class="ts-pg-badge" title="' + Craft.t('typesense', 'Text match score') + '">' + tsEscape(hit.textMatch) + '</span>'
+                : '';
+            return '<li class="ts-pg-hit">' +
+                '<span class="ts-pg-hit__rank">' + hit.rank + '</span>' +
+                '<code class="ts-pg-hit__id">' + tsEscape(hit.id) + '</code>' +
+                badge +
+                tsJsonDisclosure(hit.document, Craft.t('typesense', 'JSON')) +
+                '</li>';
         }).join('');
-        return '<table class="data fullwidth"><thead><tr><th>#</th><th>' +
-            Craft.t('typesense', 'ID') + '</th><th>' + Craft.t('typesense', 'Text match') +
-            '</th></tr></thead><tbody>' + rows + '</tbody></table>';
+        return '<ul class="ts-pg-hits">' + rows + '</ul>';
     },
 
     facetsHtml: function (facetCounts) {
-        var html = '<h3>' + Craft.t('typesense', 'Facets') + '</h3>';
+        var html = '<h2>' + Craft.t('typesense', 'Facets') + '</h2>';
         facetCounts.forEach(function (facet) {
             html += '<p><strong>' + tsEscape(facet.field_name) + '</strong></p><ul>';
             (facet.counts || []).forEach(function (c) {
@@ -140,21 +176,22 @@ Craft.Typesense.Playground = Garnish.Base.extend({
     },
 
     renderError: function () {
-        this.$container.find('.ts-pg-results').html(
-            '<p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p>'
+        this.$results.html(
+            '<div class="ts-pg-empty"><p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p></div>'
         );
     },
 });
 
 Craft.Typesense.DocumentBrowser = Garnish.Base.extend({
     $container: null,
+    $rows: null,
     handle: null,
-    hud: null,
     page: 1,
 
     init: function (container) {
         this.$container = $(container);
         this.handle = this.$container.data('collection');
+        this.$rows = this.$container.find('.ts-db-rows');
 
         this.addListener(this.$container.find('.ts-db-apply'), 'activate', function () {
             this.page = 1;
@@ -176,6 +213,7 @@ Craft.Typesense.DocumentBrowser = Garnish.Base.extend({
 
     load: function () {
         var self = this;
+        this.$rows.html('<div class="ts-pg-empty"><div class="spinner"></div></div>');
         Craft.sendActionRequest('POST', 'typesense/playground/documents', {
             data: {
                 collection: this.handle,
@@ -189,51 +227,31 @@ Craft.Typesense.DocumentBrowser = Garnish.Base.extend({
                 self.render(response.data);
             })
             .catch(function () {
-                self.$container.find('.ts-db-rows').html(
-                    '<p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p>'
+                self.$rows.html(
+                    '<div class="ts-pg-empty"><p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p></div>'
                 );
             });
     },
 
     render: function (data) {
-        var self = this;
         var stats = data.stats || {};
         this.$container.find('.ts-db-stats').text(
             Craft.t('typesense', '{n} documents', {n: stats.numDocuments || 0}) +
-            ' | ' + Craft.t('typesense', 'Page {p}', {p: this.page})
+            ' · ' + Craft.t('typesense', 'Page {p}', {p: this.page})
         );
 
         if (!data.documents.length) {
-            this.$container.find('.ts-db-rows').html('<p class="light">' + Craft.t('typesense', 'No documents.') + '</p>');
+            this.$rows.html('<div class="ts-pg-empty"><p class="light">' + Craft.t('typesense', 'No documents.') + '</p></div>');
             return;
         }
 
-        var rows = data.documents.map(function (doc, i) {
-            return '<tr><td><code>' + tsEscape(doc.id) + '</code></td>' +
-                '<td><button type="button" class="btn small ts-db-view" data-index="' + i + '">' +
-                Craft.t('typesense', 'View JSON') + '</button></td></tr>';
+        var rows = data.documents.map(function (doc) {
+            return '<li class="ts-pg-hit">' +
+                '<code class="ts-pg-hit__id">' + tsEscape(doc.id) + '</code>' +
+                tsJsonDisclosure(doc, Craft.t('typesense', 'JSON')) +
+                '</li>';
         }).join('');
 
-        this.$container.find('.ts-db-rows').html(
-            '<table class="data fullwidth"><thead><tr><th>' + Craft.t('typesense', 'ID') +
-            '</th><th></th></tr></thead><tbody>' + rows + '</tbody></table>'
-        );
-
-        this.removeListener(this.$container.find('.ts-db-view'), 'activate');
-        this.addListener(this.$container.find('.ts-db-view'), 'activate', function (ev) {
-            self.showDocument(data.documents[$(ev.currentTarget).data('index')], ev.currentTarget);
-        });
-    },
-
-    showDocument: function (doc, trigger) {
-        var html = '<pre class="ts-db-json">' + tsEscape(JSON.stringify(doc, null, 2)) + '</pre>';
-        this.hud = new Garnish.HUD(trigger, html, {hudClass: 'hud ts-db-hud'});
-    },
-
-    destroy: function () {
-        if (this.hud) {
-            this.hud.destroy();
-        }
-        this.base();
+        this.$rows.html('<ul class="ts-pg-hits">' + rows + '</ul>');
     },
 });

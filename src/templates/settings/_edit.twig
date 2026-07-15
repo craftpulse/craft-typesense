@@ -39,10 +39,12 @@
             {{ 'Settings are read-only because allowAdminChanges is disabled in this environment.'|t('typesense') }}
         {% endset %}
         {# Sits above every tab pane so the read-only notice shows on all tabs;
-           the bottom margin keeps it clear of the first tab's fields. #}
-        <div class="readable" style="margin-bottom: 24px;">
+           the hr separates it from the first tab's fields (estate convention,
+           not an ad-hoc margin). #}
+        <div class="readable">
             <blockquote class="note">{{ notice }}</blockquote>
         </div>
+        <hr>
     {% endif %}
 
     <div id="connection">

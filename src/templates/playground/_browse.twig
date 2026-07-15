@@ -1,37 +1,54 @@
 {# =========================================================================
    Typesense Pro - document browser
    =========================================================================
-   A read-only, paged, filterable view of a collection's actual indexed
-   documents, with a per-document JSON detail HUD.
+   A full-viewport, GraphiQL-style, read-only view of a collection's actual
+   indexed documents: filter and sort in the left pane, page through the rows
+   in the right pane, and expand any row to read its document JSON inline.
+
+   Follows core's GraphiQL screen: extends _layouts/basecp with the page header
+   hidden, so the browser owns the viewport.
 
    @var handle string
    ========================================================================= #}
-{% extends '_layouts/cp' %}
+{% extends '_layouts/basecp' %}
 {% import '_includes/forms.twig' as forms %}
 {% set title = handle ~ ' ' ~ ('documents'|t('typesense')) %}
 {% set selectedSubnavItem = 'playground' %}
-{% set crumbs = [{ label: 'Search playground'|t('typesense'), url: url('typesense/playground') }] %}
+{% set showHeader = false %}
 
-{% block actionButton %}
-    <a class="btn" href="{{ url('typesense/playground/' ~ handle) }}">{{ 'Query console'|t('typesense') }}</a>
-{% endblock %}
+{% block body %}
+    <div class="ts-pg-bar ts-db" data-collection="{{ handle }}">
+        <header class="ts-pg-bar__header">
+            <div class="ts-pg-bar__heading">
+                <a href="{{ url('typesense/playground') }}" class="btn small">{{ '‹ Playground'|t('typesense') }}</a>
+                <h1 class="ts-pg-bar__title"><code>{{ handle }}</code> {{ 'documents'|t('typesense') }}</h1>
+            </div>
+            <div class="ts-pg-bar__actions">
+                <a class="btn" href="{{ url('typesense/playground/' ~ handle) }}">{{ 'Query console'|t('typesense') }}</a>
+                <button type="button" class="btn submit ts-db-apply">{{ 'Apply'|t('typesense') }}</button>
+            </div>
+        </header>
 
-{% block content %}
-    <div class="ts-db" data-collection="{{ handle }}">
-        <div class="ts-db-toolbar">
-            {{ forms.text({ placeholder: 'filter_by'|t('typesense'), class: 'ts-db-filter' }) }}
-            {{ forms.text({ placeholder: 'sort_by'|t('typesense'), class: 'ts-db-sort' }) }}
-            <button type="button" class="btn ts-db-apply">{{ 'Apply'|t('typesense') }}</button>
-            <span class="ts-db-stats light" role="status"></span>
-        </div>
+        <div class="ts-pg-bar__body">
+            <div class="ts-pg-bar__params">
+                <fieldset class="ts-pg-group">
+                    <legend>{{ 'Filter'|t('typesense') }}</legend>
+                    {{ forms.textField({ label: 'filter_by'|t('typesense'), class: 'ts-db-filter' }) }}
+                    {{ forms.textField({ label: 'sort_by'|t('typesense'), class: 'ts-db-sort' }) }}
+                </fieldset>
 
-        <div class="ts-db-rows">
-            <p class="light">{{ 'Loading documents...'|t('typesense') }}</p>
-        </div>
+                <div class="ts-db-paging">
+                    <button type="button" class="btn ts-db-prev">{{ 'Previous'|t('typesense') }}</button>
+                    <button type="button" class="btn ts-db-next">{{ 'Next'|t('typesense') }}</button>
+                </div>
+            </div>
 
-        <div class="ts-db-pagination">
-            <button type="button" class="btn ts-db-prev">{{ 'Previous'|t('typesense') }}</button>
-            <button type="button" class="btn ts-db-next">{{ 'Next'|t('typesense') }}</button>
+            <div class="ts-pg-bar__results" role="region" aria-live="polite" aria-label="{{ 'Indexed documents'|t('typesense') }}">
+                <div class="ts-pg-statsbar"><span class="ts-db-stats light" role="status"></span></div>
+                <div class="ts-db-rows">
+                    <div class="ts-pg-empty"><p class="light">{{ 'Loading documents...'|t('typesense') }}</p></div>
+                </div>
+            </div>
         </div>
     </div>
 
