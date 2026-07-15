@@ -41,4 +41,10 @@ abstract class Table
      * @var string Element relation dependencies for re-index on related-element change.
      */
     public const SYNC_DEPENDENCIES = '{{%typesense_sync_dependencies}}';
+
+    /**
+     * @var string Element-to-curation-rule lookup, so the entry sidebar never
+     * scans every override to find an element's pins.
+     */
+    public const CURATION_INDEX = '{{%typesense_curation_index}}';
 }

@@ -55,6 +55,39 @@ class Install extends Migration
         }
 
         self::createSyncTables($this);
+        self::createCurationIndexTable($this);
+    }
+
+    /**
+     * Creates the curation lookup table (element-to-rule). Idempotent and shared
+     * with the update migration so fresh installs and upgrades stay in lockstep.
+     *
+     * @param Migration $migration
+     * @return void
+     * @author CraftPulse
+     */
+    public static function createCurationIndexTable(Migration $migration): void
+    {
+        $db = $migration->db;
+
+        if ($db->getTableSchema(Table::CURATION_INDEX) !== null) {
+            return;
+        }
+
+        $migration->createTable(Table::CURATION_INDEX, [
+            'id' => $migration->primaryKey(),
+            'collectionHandle' => $migration->string()->notNull(),
+            'ruleId' => $migration->string()->notNull(),
+            'documentId' => $migration->string()->notNull(),
+            'elementId' => $migration->integer()->notNull(),
+            'position' => $migration->integer(),
+            'dateCreated' => $migration->dateTime()->notNull(),
+            'dateUpdated' => $migration->dateTime()->notNull(),
+            'uid' => $migration->uid(),
+        ]);
+
+        $migration->createIndex(null, Table::CURATION_INDEX, ['elementId']);
+        $migration->createIndex(null, Table::CURATION_INDEX, ['collectionHandle', 'ruleId']);
     }
 
     /**
@@ -112,6 +145,7 @@ class Install extends Migration
      */
     public function dropTables(): void
     {
+        $this->dropTableIfExists(Table::CURATION_INDEX);
         $this->dropTableIfExists(Table::SYNC_DEPENDENCIES);
         $this->dropTableIfExists(Table::SYNC_STATE);
         $this->dropTableIfExists(Table::COLLECTIONS);

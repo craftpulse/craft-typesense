@@ -16,6 +16,7 @@ use craftpulse\typesense\services\Compatibility;
 use craftpulse\typesense\services\Compiler;
 use craftpulse\typesense\services\ConfigGenerator;
 use craftpulse\typesense\services\Curation;
+use craftpulse\typesense\services\CurationIndex;
 use craftpulse\typesense\services\Dictionaries;
 use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
@@ -143,6 +144,19 @@ trait PluginTrait
         $curation = $this->get('curation');
 
         return $curation;
+    }
+
+    /**
+     * @return CurationIndex
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getCurationIndex(): CurationIndex
+    {
+        /** @var CurationIndex $curationIndex */
+        $curationIndex = $this->get('curationIndex');
+
+        return $curationIndex;
     }
 
     /**
@@ -369,6 +383,7 @@ trait PluginTrait
             'notifications' => Notifications::class,
             'synonyms' => Synonyms::class,
             'curation' => Curation::class,
+            'curationIndex' => CurationIndex::class,
             'presets' => Presets::class,
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,
