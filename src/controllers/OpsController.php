@@ -69,7 +69,7 @@ class OpsController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not clear the cache.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Cache cleared.'), ['redirect' => 'utilities/typesense']);
+        return $this->asSuccess(Craft::t('typesense', 'Cache cleared.'), [], 'utilities/typesense');
     }
 
     /**
@@ -91,7 +91,7 @@ class OpsController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not compact the database.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Database compaction started.'), ['redirect' => 'utilities/typesense']);
+        return $this->asSuccess(Craft::t('typesense', 'Database compaction started.'), [], 'utilities/typesense');
     }
 
     /**
@@ -121,8 +121,6 @@ class OpsController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not start the snapshot.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Snapshot started to {path}.', ['path' => $path]), [
-            'redirect' => 'utilities/typesense',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Snapshot started to {path}.', ['path' => $path]), [], 'utilities/typesense');
     }
 }

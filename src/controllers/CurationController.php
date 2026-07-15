@@ -206,9 +206,7 @@ class CurationController extends ProController
 
         Typesense::$plugin->getCuration()->upsert($collection, $id, $this->_ruleBody());
 
-        return $this->asSuccess(Craft::t('typesense', 'Rule saved.'), [
-            'redirect' => 'typesense/curation/' . $handle,
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Rule saved.'), [], 'typesense/curation/' . $handle);
     }
 
     // Private Methods

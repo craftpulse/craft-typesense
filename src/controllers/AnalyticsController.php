@@ -110,9 +110,7 @@ class AnalyticsController extends ProController
             $this->_ensureRule($handle, Analytics::TYPE_NOHITS_QUERIES, "{$handle}_nohits");
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Recommended analytics rules created.'), [
-            'redirect' => 'typesense/analytics',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Recommended analytics rules created.'), [], 'typesense/analytics');
     }
 
     // Private Methods

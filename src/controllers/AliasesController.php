@@ -72,9 +72,7 @@ class AliasesController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not clone the collection.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Cloned {source} to {target}.', ['source' => $source, 'target' => $target]), [
-            'redirect' => 'typesense/aliases',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Cloned {source} to {target}.', ['source' => $source, 'target' => $target]), [], 'typesense/aliases');
     }
 
     /**
@@ -131,8 +129,6 @@ class AliasesController extends ProController
             ]));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Rebuild queued. The alias keeps serving the current collection until the swap.'), [
-            'redirect' => 'typesense/aliases',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Rebuild queued. The alias keeps serving the current collection until the swap.'), [], 'typesense/aliases');
     }
 }

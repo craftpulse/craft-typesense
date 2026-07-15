@@ -134,9 +134,7 @@ class RelevanceController extends ProController
         $definition->embedding = $embedding;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
-        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost or embedding changes.'), 'definition', [
-            'redirect' => 'typesense/relevance/{uid}',
-        ]);
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost or embedding changes.'), 'definition', [], 'typesense/relevance/' . $definition->uid);
     }
 
     /**
@@ -171,7 +169,7 @@ class RelevanceController extends ProController
 
         Typesense::$plugin->getAiModels()->deleteConversationModel((string)$this->request->getRequiredBodyParam('id'));
 
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), ['redirect' => $this->request->getReferrer() ?: 'typesense/relevance']);
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), [], $this->request->getReferrer() ?: 'typesense/relevance');
     }
 
     /**
@@ -208,7 +206,7 @@ class RelevanceController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not create the conversation model.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), ['redirect' => $this->request->getReferrer() ?: 'typesense/relevance']);
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), [], $this->request->getReferrer() ?: 'typesense/relevance');
     }
 
     // Private Methods

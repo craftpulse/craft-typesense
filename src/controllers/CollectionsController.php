@@ -201,9 +201,7 @@ class CollectionsController extends ProController
             return $this->asModelFailure($definition, Craft::t('typesense', 'Could not save the collection.'), 'definition');
         }
 
-        return $this->asModelSuccess($definition, Craft::t('typesense', 'Collection saved.'), 'definition', [
-            'redirect' => 'typesense/collections',
-        ]);
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Collection saved.'), 'definition', [], 'typesense/collections');
     }
 
     /**
@@ -245,9 +243,7 @@ class CollectionsController extends ProController
         $definition->mappings = $mappings;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
-        return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [
-            'redirect' => 'typesense/collections/{uid}/mapping',
-        ]);
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/mapping');
     }
 
     // Private Methods

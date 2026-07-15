@@ -91,9 +91,7 @@ class DictionariesController extends ProController
 
         Typesense::$plugin->getDictionaries()->importStemmingDictionary($id, $entries);
 
-        return $this->asSuccess(Craft::t('typesense', 'Dictionary imported.'), [
-            'redirect' => 'typesense/dictionaries/stemming',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Dictionary imported.'), [], 'typesense/dictionaries/stemming');
     }
 
     /**
@@ -129,9 +127,7 @@ class DictionariesController extends ProController
 
         Typesense::$plugin->getDictionaries()->saveStopwords($collection, $this->_words(), $locale === '' ? null : $locale);
 
-        return $this->asSuccess(Craft::t('typesense', 'Stopwords saved.'), [
-            'redirect' => 'typesense/dictionaries/' . $handle,
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Stopwords saved.'), [], 'typesense/dictionaries/' . $handle);
     }
 
     /**

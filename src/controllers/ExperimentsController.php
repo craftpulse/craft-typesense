@@ -68,9 +68,7 @@ class ExperimentsController extends ProController
 
         Typesense::$plugin->getExperiments()->delete((string)$this->request->getRequiredBodyParam('handle'));
 
-        return $this->asSuccess(Craft::t('typesense', 'Experiment deleted.'), [
-            'redirect' => 'typesense/experiments',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Experiment deleted.'), [], 'typesense/experiments');
     }
 
     /**
@@ -126,8 +124,15 @@ class ExperimentsController extends ProController
         $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
 
         $request = $this->request;
+
+        // On an edit the handle is locked (Craft convention), so it arrives as a
+        // hidden originalHandle rather than the disabled field; use it to update
+        // the existing record in place instead of newing up a duplicate.
+        $original = trim((string)$request->getBodyParam('originalHandle', ''));
+        $handle = trim((string)$request->getBodyParam('handle', ''));
+
         $experiment = new Experiment();
-        $experiment->handle = (string)$request->getBodyParam('handle', '');
+        $experiment->handle = $original !== '' ? $original : $handle;
         $experiment->name = (string)$request->getBodyParam('name', '');
         $experiment->collection = (string)$request->getBodyParam('collection', '');
         $experiment->enabled = (bool)$request->getBodyParam('enabled', true);
@@ -137,9 +142,7 @@ class ExperimentsController extends ProController
             return $this->asModelFailure($experiment, Craft::t('typesense', 'Could not save the experiment.'), 'experiment');
         }
 
-        return $this->asModelSuccess($experiment, Craft::t('typesense', 'Experiment saved.'), 'experiment', [
-            'redirect' => 'typesense/experiments',
-        ]);
+        return $this->asModelSuccess($experiment, Craft::t('typesense', 'Experiment saved.'), 'experiment', [], 'typesense/experiments');
     }
 
     // Private Methods

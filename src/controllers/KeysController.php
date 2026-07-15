@@ -109,9 +109,7 @@ class KeysController extends ProController
 
         Typesense::$plugin->getKeys()->delete((int)$this->request->getRequiredBodyParam('id'));
 
-        return $this->asSuccess(Craft::t('typesense', 'Key deleted.'), [
-            'redirect' => 'typesense/keys',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Key deleted.'), [], 'typesense/keys');
     }
 
     /**
@@ -129,9 +127,7 @@ class KeysController extends ProController
 
         Typesense::$plugin->getKeys()->deleteProfile((string)$this->request->getRequiredBodyParam('handle'));
 
-        return $this->asSuccess(Craft::t('typesense', 'Profile deleted.'), [
-            'redirect' => 'typesense/keys',
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Profile deleted.'), [], 'typesense/keys');
     }
 
     /**
@@ -234,9 +230,7 @@ class KeysController extends ProController
             return $this->asModelFailure($profile, Craft::t('typesense', 'Could not save the profile.'), 'profile');
         }
 
-        return $this->asModelSuccess($profile, Craft::t('typesense', 'Profile saved.'), 'profile', [
-            'redirect' => 'typesense/keys',
-        ]);
+        return $this->asModelSuccess($profile, Craft::t('typesense', 'Profile saved.'), 'profile', [], 'typesense/keys');
     }
 
     // Private Methods

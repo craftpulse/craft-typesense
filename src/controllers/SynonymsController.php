@@ -140,9 +140,7 @@ class SynonymsController extends ProController
 
         Typesense::$plugin->getSynonyms()->upsert($collection, $id, $this->_synonymBody($synonyms));
 
-        return $this->asSuccess(Craft::t('typesense', 'Synonym saved.'), [
-            'redirect' => 'typesense/synonyms/' . $handle,
-        ]);
+        return $this->asSuccess(Craft::t('typesense', 'Synonym saved.'), [], 'typesense/synonyms/' . $handle);
     }
 
     /**

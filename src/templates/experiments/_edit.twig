@@ -17,6 +17,7 @@
 
 {% block content %}
     {{ actionInput('typesense/experiments/save') }}
+    {% if not isNew %}{{ hiddenInput('originalHandle', experiment.handle) }}{% endif %}
 
     {{ forms.textField({
         first: true,
