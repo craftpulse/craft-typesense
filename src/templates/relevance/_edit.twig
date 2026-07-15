@@ -20,7 +20,7 @@
 {% set preset = relevance.searchPreset ?? {} %}
 {% set boostRows = [] %}
 {% for rule in relevance.boostRules ?? [] %}
-    {% set condition = (rule.conditions ?? [])|first ?? {} %}
+    {% set condition = ((rule.conditions ?? [])|first) ?: {} %}
     {% set boostRows = boostRows|merge([{
         label: rule.label ?? '',
         field: condition.field ?? '',

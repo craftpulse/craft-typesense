@@ -50,8 +50,15 @@ function withDrift(Collection $declared, array $liveFields, callable $test): voi
 
     try {
         $client->collections->create(['name' => DRIFT_TEST_COLLECTION, 'fields' => $liveFields]);
-        $finding = Typesense::$plugin->getDrift()->diff()[0];
-        $test($finding);
+
+        // Select this collection's finding by name rather than assuming it is
+        // first: other registry collections (config, control-panel-managed, or
+        // event-registered) may also be present.
+        $findings = array_values(array_filter(
+            Typesense::$plugin->getDrift()->diff(),
+            static fn(array $finding): bool => $finding['collection'] === DRIFT_TEST_COLLECTION,
+        ));
+        $test($findings[0] ?? []);
     } finally {
         dropDriftCollection();
         $settings->collections = $original;
@@ -115,11 +122,13 @@ it('detects synonyms drift for a config-managed collection, then clears once see
         ['name' => 'elementId', 'type' => 'int64'],
         ['name' => 'siteId', 'type' => 'int32'],
     ], function() use ($declared) {
-        $synonymsFinding = fn(): array => \craft\helpers\ArrayHelper::firstWhere(
+        // Scope to this collection's synonyms finding: other registry
+        // collections may contribute synonyms findings of their own.
+        $synonymsFinding = fn(): array => array_values(array_filter(
             Typesense::$plugin->getDrift()->diff(),
-            'aspect',
-            'synonyms',
-        );
+            static fn(array $finding): bool => ($finding['collection'] ?? null) === DRIFT_TEST_COLLECTION
+                && ($finding['aspect'] ?? null) === 'synonyms',
+        ))[0] ?? [];
 
         expect($synonymsFinding()['status'])->toBe(Drift::STATUS_DRIFTED)
             ->and($synonymsFinding()['details']['missing'])->toContain('outerwear');
