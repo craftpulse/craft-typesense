@@ -265,6 +265,10 @@ class Typesense extends Plugin
                     'label' => Craft::t('typesense', 'Playground'),
                     'url' => 'typesense/playground',
                 ];
+                $subNavs['relevance'] = [
+                    'label' => Craft::t('typesense', 'Relevance'),
+                    'url' => 'typesense/relevance',
+                ];
                 $subNavs['synonyms'] = [
                     'label' => Craft::t('typesense', 'Synonyms'),
                     'url' => 'typesense/synonyms',
@@ -444,6 +448,8 @@ class Typesense extends Plugin
             $routes['typesense/curation/<collection:[\w\-]+>/new'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
+            $routes['typesense/relevance'] = 'typesense/relevance/index';
+            $routes['typesense/relevance/<uid:[\w\-]+>'] = 'typesense/relevance/edit';
             $routes['typesense/synonyms'] = 'typesense/synonyms/index';
             $routes['typesense/synonyms/<collection:[\w\-]+>/new'] = 'typesense/synonyms/edit-synonym';
             $routes['typesense/synonyms/<collection:[\w\-]+>/synonym/<synonymId:[\w\-]+>'] = 'typesense/synonyms/edit-synonym';

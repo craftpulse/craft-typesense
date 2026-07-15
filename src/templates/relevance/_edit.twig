@@ -1,0 +1,128 @@
+{# =========================================================================
+   Typesense Pro - relevance editor
+   =========================================================================
+   @var definition      craftpulse\typesense\models\CollectionDefinition
+   @var relevance       array
+   @var supportsBuckets bool
+   @var supportsMmr     bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = definition.name ~ ' ' ~ ('relevance'|t('typesense')) %}
+{% set selectedSubnavItem = 'relevance' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'Relevance'|t('typesense'), url: url('typesense/relevance') }] %}
+
+{% set preset = relevance.searchPreset ?? {} %}
+{% set boostRows = [] %}
+{% for rule in relevance.boostRules ?? [] %}
+    {% set condition = (rule.conditions ?? [])|first ?? {} %}
+    {% set boostRows = boostRows|merge([{
+        label: rule.label ?? '',
+        field: condition.field ?? '',
+        operator: condition.operator ?? 'eq',
+        value: condition.value ?? '',
+        weight: rule.weight ?? 0,
+    }]) %}
+{% endfor %}
+
+{% block content %}
+    {{ actionInput('typesense/relevance/save') }}
+    {{ hiddenInput('uid', definition.uid) }}
+
+    <h2>{{ 'Boost rules'|t('typesense') }}</h2>
+    <blockquote class="note">
+        {{ 'Boost rules bake into an indexed score at index time (the deterministic alternative to _eval). Changing them requires re-syncing the collection to take effect.'|t('typesense') }}
+    </blockquote>
+
+    {{ forms.editableTableField({
+        label: 'Additive boosts'|t('typesense'),
+        instructions: 'Each rule adds its weight to a document’s score when its condition matches. Scores are summed, then used as the tie-breaker after text-match relevance.'|t('typesense'),
+        id: 'boostRules',
+        name: 'boostRules',
+        cols: {
+            label: { heading: 'Label'|t('typesense'), type: 'singleline' },
+            field: { heading: 'Field / attribute'|t('typesense'), type: 'singleline' },
+            operator: { heading: 'Operator'|t('typesense'), type: 'select', options: [
+                { label: 'equals'|t('typesense'), value: 'eq' },
+                { label: 'not equals'|t('typesense'), value: 'ne' },
+                { label: 'contains'|t('typesense'), value: 'contains' },
+                { label: 'greater than'|t('typesense'), value: 'gt' },
+                { label: 'less than'|t('typesense'), value: 'lt' },
+                { label: 'is not empty'|t('typesense'), value: 'notEmpty' },
+                { label: 'is empty'|t('typesense'), value: 'empty' },
+            ] },
+            value: { heading: 'Value'|t('typesense'), type: 'singleline' },
+            weight: { heading: 'Weight'|t('typesense'), type: 'number' },
+        },
+        rows: boostRows,
+        addRowLabel: 'Add a boost'|t('typesense'),
+    }) }}
+
+    <hr>
+
+    <h2>{{ 'Search preset'|t('typesense') }}</h2>
+    <p class="light">{{ 'Raw Typesense preset parameters, passed with every search against this collection. Leave blank to use the server default.'|t('typesense') }}</p>
+
+    {{ forms.textField({ label: 'num_typos', id: 'num_typos', name: 'num_typos', value: preset.num_typos ?? '', size: 6 }) }}
+    {{ forms.textField({ label: 'prefix', instructions: 'true, false, or a comma-separated per-field list.'|t('typesense'), id: 'prefix', name: 'prefix', value: preset.prefix ?? '' }) }}
+    {{ forms.textField({ label: 'drop_tokens_threshold', id: 'drop_tokens_threshold', name: 'drop_tokens_threshold', value: preset.drop_tokens_threshold ?? '', size: 6 }) }}
+    {{ forms.textField({ label: 'typo_tokens_threshold', id: 'typo_tokens_threshold', name: 'typo_tokens_threshold', value: preset.typo_tokens_threshold ?? '', size: 6 }) }}
+    {{ forms.textField({ label: 'min_len_1typo', id: 'min_len_1typo', name: 'min_len_1typo', value: preset.min_len_1typo ?? '', size: 6 }) }}
+    {{ forms.textField({ label: 'min_len_2typo', id: 'min_len_2typo', name: 'min_len_2typo', value: preset.min_len_2typo ?? '', size: 6 }) }}
+
+    <hr>
+
+    <h2>{{ 'Result grouping'|t('typesense') }}</h2>
+
+    {{ forms.textField({
+        label: 'Group by field'|t('typesense'),
+        instructions: 'Collapse results sharing this field value (for example variant collapse). Leave blank to disable.'|t('typesense'),
+        id: 'groupBy',
+        name: 'groupBy',
+        value: relevance.grouping.field ?? '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Group limit'|t('typesense'),
+        type: 'number',
+        id: 'groupLimit',
+        name: 'groupLimit',
+        value: relevance.grouping.limit ?? 1,
+        size: 6,
+    }) }}
+
+    {% if supportsBuckets %}
+        <hr>
+        <h2>{{ 'Text-match buckets'|t('typesense') }}</h2>
+        {{ forms.textField({
+            label: 'Buckets'|t('typesense'),
+            instructions: 'Bucket text-match scores into N tiers so secondary sorts (boosts) can reorder within a tier. 0 disables bucketing.'|t('typesense'),
+            type: 'number',
+            id: 'textMatchBuckets',
+            name: 'textMatchBuckets',
+            value: relevance.textMatchBuckets ?? 0,
+            size: 6,
+        }) }}
+    {% endif %}
+
+    {% if supportsMmr %}
+        <hr>
+        <h2>{{ 'Diversification (MMR)'|t('typesense') }}</h2>
+        {{ forms.lightswitchField({
+            label: 'Enable MMR'|t('typesense'),
+            instructions: 'Maximal Marginal Relevance diversifies results (requires vector search).'|t('typesense'),
+            id: 'mmrEnabled',
+            name: 'mmrEnabled',
+            on: relevance.mmr.enabled ?? false,
+        }) }}
+        {{ forms.textField({
+            label: 'Lambda'|t('typesense'),
+            instructions: '0 to 1: higher favours relevance, lower favours diversity.'|t('typesense'),
+            id: 'mmrLambda',
+            name: 'mmrLambda',
+            value: relevance.mmr.lambda ?? 0.5,
+            size: 6,
+        }) }}
+    {% endif %}
+{% endblock %}
