@@ -13,6 +13,7 @@ namespace craftpulse\typesense\services;
 use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
+use craft\elements\Asset;
 use craft\elements\db\ElementQueryInterface;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\enums\MultisiteStrategy;
@@ -20,6 +21,7 @@ use craftpulse\typesense\events\IndexDocumentEvent;
 use craftpulse\typesense\models\DocumentBuildResult;
 use craftpulse\typesense\models\FieldMapping;
 use craftpulse\typesense\Typesense;
+use Throwable;
 
 /**
  * Document transformer.
@@ -191,7 +193,66 @@ class Documents extends Component
             $document[$collection->getBoostField()] = Typesense::$plugin->getRelevance()->boostScore($element, $boostRules);
         }
 
+        // CLIP image embedding: fill the image source key with the asset's
+        // base64-encoded file, read as a stream in bounded memory.
+        $imageKey = $collection->getImageEmbedField();
+
+        if ($imageKey !== null && $element instanceof Asset) {
+            $base64 = $this->_assetBase64($element);
+
+            if ($base64 !== null) {
+                $document[$imageKey] = $base64;
+            }
+        }
+
         return $document;
+    }
+
+    /**
+     * Base64-encodes an asset's file, streamed in chunks (a multiple of 3 bytes,
+     * so the encoded chunks concatenate correctly) to keep memory bounded on
+     * large images. Fail-soft: an unreadable asset yields null.
+     *
+     * @param Asset $asset
+     * @return string|null
+     * @author CraftPulse
+     */
+    private function _assetBase64(Asset $asset): ?string
+    {
+        if (!in_array($asset->kind, [Asset::KIND_IMAGE], true)) {
+            return null;
+        }
+
+        try {
+            $stream = $asset->getStream();
+        } catch (Throwable $e) {
+            Craft::warning("Could not open asset {$asset->id} for embedding: {$e->getMessage()}", 'typesense');
+
+            return null;
+        }
+
+        $encoded = '';
+        $buffer = '';
+
+        // 3 KB chunks (a multiple of 3) so each base64_encode call ends on a full
+        // 3-byte group and the pieces concatenate without padding artefacts.
+        while (!feof($stream)) {
+            $buffer .= (string)fread($stream, 3072);
+            $whole = intdiv(strlen($buffer), 3) * 3;
+
+            if ($whole > 0) {
+                $encoded .= base64_encode(substr($buffer, 0, $whole));
+                $buffer = substr($buffer, $whole);
+            }
+        }
+
+        fclose($stream);
+
+        if ($buffer !== '') {
+            $encoded .= base64_encode($buffer);
+        }
+
+        return $encoded;
     }
 
     /**

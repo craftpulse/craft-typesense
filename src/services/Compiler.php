@@ -114,9 +114,20 @@ class Compiler extends Component
         // Auto-embedding: one vector field embedding the chosen source fields
         // (or the asset image field for CLIP), generated server-side at index.
         if (!empty($definition->embedding['enabled'])) {
-            $embedField = Typesense::$plugin->getEmbeddings()->embedField('embedding', $definition->embedding);
+            $embeddings = Typesense::$plugin->getEmbeddings();
+            $embedField = $embeddings->embedField('embedding', $definition->embedding);
 
             if ($embedField !== null) {
+                $model = (string)($definition->embedding['model'] ?? '');
+
+                // A CLIP model embeds an image field: add the image-type source
+                // field and mark it so the document path fills it with base64.
+                if ($embeddings->isImageModel($model)) {
+                    $imageKey = (string)(($definition->embedding['from'][0]) ?? 'image');
+                    $fields[] = Field::image($imageKey)->optional()->store(false);
+                    $collection->imageEmbed($imageKey);
+                }
+
                 $fields[] = $embedField;
             }
         }

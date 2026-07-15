@@ -69,9 +69,19 @@ class RelevanceController extends ProController
         $definition = $this->_requireDefinition($uid);
         $capabilities = Typesense::$plugin->getClient()->getServerCapabilities();
 
+        $embeddings = Typesense::$plugin->getEmbeddings();
+        $modelOptions = [['label' => Craft::t('typesense', 'Choose a model'), 'value' => '']];
+
+        foreach ($embeddings::BUILTIN_MODELS as $id => $model) {
+            $modelOptions[] = ['label' => $model['label'] . ' (' . $id . ')', 'value' => $id];
+        }
+
         return $this->renderTemplate('typesense/relevance/_edit', [
             'definition' => $definition,
             'relevance' => $definition->relevance,
+            'embedding' => $definition->embedding,
+            'modelOptions' => $modelOptions,
+            'providers' => $embeddings::PROVIDERS,
             'supportsBuckets' => $capabilities?->textMatchBuckets() ?? false,
             'supportsMmr' => $capabilities?->mmr() ?? false,
         ]);
@@ -108,16 +118,67 @@ class RelevanceController extends ProController
 
         $definition = $this->_requireDefinition((string)$this->request->getRequiredBodyParam('uid'));
         $definition->relevance = $this->_relevanceBody();
+        $embedding = $this->_embeddingBody();
 
+        // Validate a remote embedding config's shape before persisting (never a
+        // live call); a bad config would break the collection's next rebuild.
+        if (!empty($embedding['enabled'])) {
+            $errors = Typesense::$plugin->getEmbeddings()->validateModelConfig($embedding);
+
+            if ($errors !== []) {
+                return $this->asFailure(Craft::t('typesense', 'Embedding config: {error}', ['error' => reset($errors)]));
+            }
+        }
+
+        $definition->embedding = $embedding;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
-        return $this->asModelSuccess($definition, Craft::t('typesense', 'Relevance saved. Re-sync the collection to apply boost changes.'), 'definition', [
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost or embedding changes.'), 'definition', [
             'redirect' => 'typesense/relevance/{uid}',
         ]);
     }
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Builds the auto-embedding config from the posted fields: the model, the
+     * source field handles, and (for a remote provider) the credential env-var
+     * references.
+     *
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    private function _embeddingBody(): array
+    {
+        $request = $this->request;
+        $from = array_values(array_filter(array_map(
+            'trim',
+            preg_split('/[\r\n,]+/', (string)$request->getBodyParam('embedFrom', '')) ?: [],
+        ), static fn(string $handle): bool => $handle !== ''));
+
+        $config = [];
+
+        foreach (['api_key', 'url', 'openai_url', 'access_token', 'refresh_token', 'client_id', 'client_secret', 'project_id'] as $key) {
+            $value = trim((string)$request->getBodyParam('embed_' . $key, ''));
+
+            if ($value !== '') {
+                $config[$key] = $value;
+            }
+        }
+
+        // A typed remote model id (for example openai/text-embedding-3-small)
+        // wins over the built-in select when provided.
+        $remote = trim((string)$request->getBodyParam('embedModelRemote', ''));
+        $model = $remote !== '' ? $remote : trim((string)$request->getBodyParam('embedModel', ''));
+
+        return [
+            'enabled' => (bool)$request->getBodyParam('embedEnabled', false),
+            'model' => $model,
+            'from' => $from,
+            'config' => $config,
+        ];
+    }
 
     /**
      * Normalises the posted boost rules (an editable-table body param) into the

@@ -112,6 +112,12 @@ class Collection
     private string $_boostField = 'boost_score';
 
     /**
+     * @var string|null The document key that carries an asset's base64 image data
+     * for CLIP auto-embedding, or null when there is no image embedding.
+     */
+    private ?string $_imageEmbedField = null;
+
+    /**
      * @var array<int, string> The attached computed-field names.
      */
     private array $_computedFields = [];
@@ -432,6 +438,21 @@ class Collection
     }
 
     /**
+     * Marks a document key as the CLIP image-embedding source: the generated
+     * document path fills it with an asset's base64-encoded file at index time.
+     *
+     * @param string $field
+     * @return self
+     * @author CraftPulse
+     */
+    public function imageEmbed(string $field): self
+    {
+        $this->_imageEmbedField = $field;
+
+        return $this;
+    }
+
+    /**
      * Config-seeded synonym definitions. Each entry: id, synonyms[], optional
      * root (one-way), locale.
      *
@@ -631,6 +652,15 @@ class Collection
     public function getBoostField(): string
     {
         return $this->_boostField;
+    }
+
+    /**
+     * @return string|null
+     * @author CraftPulse
+     */
+    public function getImageEmbedField(): ?string
+    {
+        return $this->_imageEmbedField;
     }
 
     /**
