@@ -19,37 +19,34 @@
     </blockquote>
 
     <h2>{{ 'Models'|t('typesense') }}</h2>
-    {% if models is empty %}
-        <p class="light">{{ 'No conversation models yet.'|t('typesense') }}</p>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'ID'|t('typesense') }}</th>
-                    <th>{{ 'Model'|t('typesense') }}</th>
-                    <th>{{ 'History collection'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for model in models %}
-                    <tr>
-                        <td><code>{{ model.id }}</code></td>
-                        <td>{{ model.model_name ?? '' }}</td>
-                        <td><code>{{ model.history_collection ?? '' }}</code></td>
-                        <td class="thin">
-                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this conversation model?'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/relevance/delete-conversation-model') }}
-                                {{ hiddenInput('id', model.id) }}
-                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+
+    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
+    <div id="ts-conversation-models-table"></div>
+
+    {% set tableData = [] %}
+    {% for model in models %}
+        {% set tableData = tableData|merge([{
+            id: model.id,
+            handle: model.id,
+            modelName: model.model_name ?? '',
+            historyCollection: model.history_collection ?? '',
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        new Craft.VueAdminTable({
+            columns: [
+                { name: '__slot:handle', title: Craft.t('typesense', 'ID') },
+                { name: 'modelName', title: Craft.t('typesense', 'Model') },
+                { name: 'historyCollection', title: Craft.t('typesense', 'History collection') },
+            ],
+            container: '#ts-conversation-models-table',
+            emptyMessage: Craft.t('typesense', 'No conversation models yet.'),
+            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            deleteAction: 'typesense/relevance/delete-conversation-model',
+            deleteConfirmationMessage: Craft.t('typesense', 'Delete this conversation model?'),
+        });
+    {% endjs %}
 
     <hr>
     <h2>{{ 'Add a model'|t('typesense') }}</h2>

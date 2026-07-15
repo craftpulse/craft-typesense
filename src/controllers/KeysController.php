@@ -125,7 +125,8 @@ class KeysController extends ProController
         $this->requirePostRequest();
         $this->requirePermission(self::PERMISSION_MANAGE_KEYS);
 
-        Typesense::$plugin->getKeys()->deleteProfile((string)$this->request->getRequiredBodyParam('handle'));
+        // VueAdminTable posts the row id; here the row id is the profile handle.
+        Typesense::$plugin->getKeys()->deleteProfile((string)$this->request->getRequiredBodyParam('id'));
 
         return $this->asSuccess(Craft::t('typesense', 'Profile deleted.'), [], 'typesense/keys');
     }

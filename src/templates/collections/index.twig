@@ -2,18 +2,24 @@
    Typesense Pro - Collections cockpit (browse)
    =========================================================================
    Lists the control-panel-managed collections (create/edit/delete) and, read
-   only below, the collections owned by config/typesense.php. A config-owned
+   only below, the collections owned by config/typesense.php. Both render as
+   VueAdminTables (matching vendor/craftcms/cms/src/templates/settings/assets/
+   transforms/_index.twig): row name links to the collection edit screen, and
+   the managed table deletes through the core delete affordance. A config-owned
    collection that displaces a code-registered one carries the "overridden by
    the config file" notice.
 
    @var managed              array
    @var configCollections    array
    @var overriddenNames      array
-   @var canManageCollections bool  whether the viewer may create/edit/delete
+   @var canManageCollections bool    whether the viewer may create/edit/delete
+   @var rowSectionSuffix     string  the section suffix the viewer first reaches
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = 'Collections'|t('typesense') %}
 {% set selectedSubnavItem = 'collections' %}
+
+{% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
 
 {% block actionButton %}
     {% if canManageCollections %}
@@ -23,85 +29,63 @@
 
 {% block content %}
     <h2>{{ 'Managed in the control panel'|t('typesense') }}</h2>
-    {% if managed is empty %}
-        <div class="zilch">
-            <p>{{ 'No control-panel collections yet. Create one to map an element source to a Typesense collection.'|t('typesense') }}</p>
-        </div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Name'|t('typesense') }}</th>
-                    <th>{{ 'Element type'|t('typesense') }}</th>
-                    <th>{{ 'Source'|t('typesense') }}</th>
-                    <th>{{ 'Enabled'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for uid, def in managed %}
-                    {% set rowUrl = canManageCollections
-                        ? url('typesense/collections/' ~ uid)
-                        : url('typesense/collections/' ~ uid ~ '/relevance') %}
-                    <tr>
-                        <td><a href="{{ rowUrl }}"><code>{{ def.name }}</code></a></td>
-                        <td>{{ def.elementType|split('\\')|last }}</td>
-                        <td>{{ def.source ?? 'All'|t('typesense') }}</td>
-                        <td>
-                            {% if def.enabled %}
-                                <span class="status green"></span> {{ 'Yes'|t('typesense') }}
-                            {% else %}
-                                <span class="status"></span> {{ 'No'|t('typesense') }}
-                            {% endif %}
-                        </td>
-                        <td class="thin">
-                            {% if canManageCollections %}
-                                <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this collection? Its Typesense collection and mapping are removed.'|t('typesense') }}">
-                                    {{ csrfInput() }}
-                                    {{ actionInput('typesense/collections/delete') }}
-                                    {{ hiddenInput('uid', uid) }}
-                                    <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                                </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    <div id="ts-managed-collections-table"></div>
 
     <hr>
 
     <h2>{{ 'Managed in config'|t('typesense') }}</h2>
-    {% if configCollections is empty %}
-        <div class="zilch">
-            <p>{{ 'No config-file collections are declared.'|t('typesense') }}</p>
-        </div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Name'|t('typesense') }}</th>
-                    <th>{{ 'Element type'|t('typesense') }}</th>
-                    <th>{{ 'Status'|t('typesense') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for name, collection in configCollections %}
-                    <tr>
-                        <td><code>{{ name }}</code></td>
-                        <td>{{ collection.getElementType()|split('\\')|last }}</td>
-                        <td>
-                            {% if name in overriddenNames %}
-                                <span class="status orange"></span>
-                                {{ 'Overridden by the config file'|t('typesense') }}
-                            {% else %}
-                                <span class="light">{{ 'Read only (config-owned)'|t('typesense') }}</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    <div id="ts-config-collections-table"></div>
+
+    {% set managedData = [] %}
+    {% for uid, def in managed %}
+        {% set managedData = managedData|merge([{
+            id: uid,
+            title: def.name,
+            url: url('typesense/collections/' ~ uid ~ rowSectionSuffix),
+            elementType: def.elementType|split('\\')|last,
+            source: def.source ?? 'All'|t('typesense'),
+            enabled: def.enabled ? 'Yes'|t('typesense') : 'No'|t('typesense'),
+        }]) %}
+    {% endfor %}
+
+    {% set configData = [] %}
+    {% for name, collection in configCollections %}
+        {% set configData = configData|merge([{
+            title: name,
+            elementType: collection.getElementType()|split('\\')|last,
+            status: name in overriddenNames ? 'Overridden by the config file'|t('typesense') : 'Read only (config-owned)'|t('typesense'),
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        var managedConfig = {
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Name') },
+                { name: 'elementType', title: Craft.t('typesense', 'Element type') },
+                { name: 'source', title: Craft.t('typesense', 'Source') },
+                { name: 'enabled', title: Craft.t('typesense', 'Enabled') },
+            ],
+            container: '#ts-managed-collections-table',
+            emptyMessage: Craft.t('typesense', 'No control-panel collections yet. Create one to map an element source to a Typesense collection.'),
+            tableData: {{ managedData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+        };
+
+        {% if canManageCollections %}
+            managedConfig.deleteAction = 'typesense/collections/delete';
+            managedConfig.deleteConfirmationMessage = Craft.t('typesense', 'Delete this collection? Its Typesense collection and mapping are removed.');
+        {% endif %}
+
+        new Craft.VueAdminTable(managedConfig);
+
+        new Craft.VueAdminTable({
+            columns: [
+                { name: 'title', title: Craft.t('typesense', 'Name') },
+                { name: 'elementType', title: Craft.t('typesense', 'Element type') },
+                { name: 'status', title: Craft.t('typesense', 'Status') },
+            ],
+            container: '#ts-config-collections-table',
+            emptyMessage: Craft.t('typesense', 'No config-file collections are declared.'),
+            tableData: {{ configData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+        });
+    {% endjs %}
 {% endblock %}

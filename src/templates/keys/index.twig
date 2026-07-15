@@ -61,36 +61,34 @@
     </header>
     <p class="light">{{ 'Reusable filter templates for front-end scoped keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense') }}</p>
 
-    {% if profiles is empty %}
-        <div class="zilch"><p>{{ 'No profiles yet.'|t('typesense') }}</p></div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Profile'|t('typesense') }}</th>
-                    <th>{{ 'Filter'|t('typesense') }}</th>
-                    <th>{{ 'Expires in'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for handle, profile in profiles %}
-                    <tr>
-                        <td><a href="{{ url('typesense/keys/profile/' ~ handle) }}">{{ profile.name }}</a> <code>{{ handle }}</code></td>
-                        <td>{% if profile.filterBy %}<code>{{ profile.filterBy }}</code>{% else %}{{ 'None'|t('typesense') }}{% endif %}</td>
-                        <td>{{ profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense') }}</td>
-                        <td class="thin">
-                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this profile?'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/keys/delete-profile') }}
-                                {{ hiddenInput('handle', handle) }}
-                                {{ redirectInput('typesense/keys') }}
-                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
+    <div id="ts-key-profiles-table"></div>
+
+    {% set profileData = [] %}
+    {% for handle, profile in profiles %}
+        {% set profileData = profileData|merge([{
+            id: handle,
+            title: profile.name,
+            url: url('typesense/keys/profile/' ~ handle),
+            handle: handle,
+            filter: profile.filterBy ?: 'None'|t('typesense'),
+            expiresIn: profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense'),
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        new Craft.VueAdminTable({
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Profile') },
+                { name: '__slot:handle', title: Craft.t('typesense', 'Handle') },
+                { name: 'filter', title: Craft.t('typesense', 'Filter') },
+                { name: 'expiresIn', title: Craft.t('typesense', 'Expires in') },
+            ],
+            container: '#ts-key-profiles-table',
+            emptyMessage: Craft.t('typesense', 'No profiles yet.'),
+            tableData: {{ profileData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            deleteAction: 'typesense/keys/delete-profile',
+            deleteConfirmationMessage: Craft.t('typesense', 'Delete this profile?'),
+        });
+    {% endjs %}
 {% endblock %}

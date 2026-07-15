@@ -1,23 +1,23 @@
 {# =========================================================================
    Typesense Pro - synonyms manager (synonym editor)
    =========================================================================
-   @var handle  string
-   @var synonym array|null
-   @var isNew   bool
+   @var definition craftpulse\typesense\models\CollectionDefinition
+   @var synonym    array|null
+   @var isNew      bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms.twig' as forms %}
 {% set title = isNew ? 'New synonym'|t('typesense') : (synonym.id ?? '') %}
-{% set selectedSubnavItem = 'synonyms' %}
+{% set selectedSubnavItem = 'collections' %}
 {% set fullPageForm = true %}
 {% set crumbs = [
-    { label: 'Synonyms'|t('typesense'), url: url('typesense/synonyms') },
-    { label: handle, url: url('typesense/synonyms/' ~ handle) },
+    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+    { label: definition.name, url: url('typesense/collections/' ~ definition.uid ~ '/synonyms') },
 ] %}
 
 {% block content %}
     {{ actionInput('typesense/synonyms/save-synonym') }}
-    {{ hiddenInput('collection', handle) }}
+    {{ hiddenInput('uid', definition.uid) }}
 
     {{ forms.textField({
         first: true,

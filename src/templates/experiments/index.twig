@@ -14,38 +14,36 @@
 {% block content %}
     <p class="light">{{ 'Split search traffic between variant compositions (preset, scoped-key profile, analytics tag). The click-through comparison lives in the analytics dashboard.'|t('typesense') }}</p>
 
-    {% if experiments is empty %}
-        <div class="zilch"><p>{{ 'No experiments yet.'|t('typesense') }}</p></div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Experiment'|t('typesense') }}</th>
-                    <th>{{ 'Collection'|t('typesense') }}</th>
-                    <th>{{ 'Variants'|t('typesense') }}</th>
-                    <th>{{ 'Status'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for handle, experiment in experiments %}
-                    <tr>
-                        <td><a href="{{ url('typesense/experiments/' ~ handle) }}">{{ experiment.name }}</a> <code>{{ handle }}</code></td>
-                        <td><code>{{ experiment.collection }}</code></td>
-                        <td>{{ experiment.variants|length }}</td>
-                        <td>{{ experiment.enabled ? 'Active'|t('typesense') : 'Paused'|t('typesense') }}</td>
-                        <td class="thin">
-                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this experiment?'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/experiments/delete') }}
-                                {{ hiddenInput('handle', handle) }}
-                                {{ redirectInput('typesense/experiments') }}
-                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                            </form>
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
+    <div id="ts-experiments-table"></div>
+
+    {% set tableData = [] %}
+    {% for handle, experiment in experiments %}
+        {% set tableData = tableData|merge([{
+            id: handle,
+            title: experiment.name,
+            url: url('typesense/experiments/' ~ handle),
+            handle: handle,
+            collection: experiment.collection,
+            variants: experiment.variants|length,
+            status: experiment.enabled ? 'Active'|t('typesense') : 'Paused'|t('typesense'),
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        new Craft.VueAdminTable({
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Experiment') },
+                { name: '__slot:handle', title: Craft.t('typesense', 'Handle') },
+                { name: 'collection', title: Craft.t('typesense', 'Collection') },
+                { name: 'variants', title: Craft.t('typesense', 'Variants') },
+                { name: 'status', title: Craft.t('typesense', 'Status') },
+            ],
+            container: '#ts-experiments-table',
+            emptyMessage: Craft.t('typesense', 'No experiments yet.'),
+            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            deleteAction: 'typesense/experiments/delete',
+            deleteConfirmationMessage: Craft.t('typesense', 'Delete this experiment?'),
+        });
+    {% endjs %}
 {% endblock %}

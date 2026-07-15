@@ -99,6 +99,20 @@ class CollectionsController extends ProController
             ];
         }
 
+        if ($user->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS)) {
+            $items['synonyms'] = [
+                'label' => Craft::t('typesense', 'Synonyms'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/synonyms"),
+            ];
+        }
+
+        if ($user->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
+            $items['curation'] = [
+                'label' => Craft::t('typesense', 'Curation'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/curation"),
+            ];
+        }
+
         return $items;
     }
 
@@ -123,12 +137,7 @@ class CollectionsController extends ProController
         // screen's tabs, so it admits either collection-screen permission; every
         // other action keeps its own manageCollections gate.
         if ($action->id === 'index') {
-            $user = Craft::$app->getUser();
-
-            if (
-                !$user->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS)
-                && !$user->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)
-            ) {
+            if ($this->_firstSectionSuffix() === null) {
                 throw new ForbiddenHttpException(Craft::t('typesense', 'User is not permitted to perform this action.'));
             }
 
@@ -152,7 +161,8 @@ class CollectionsController extends ProController
     {
         $this->requirePostRequest();
 
-        $uid = (string)$this->request->getRequiredBodyParam('uid');
+        // VueAdminTable posts the row id; here the row id is the definition uid.
+        $uid = (string)$this->request->getRequiredBodyParam('id');
         $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
 
         if ($definition !== null) {
@@ -213,6 +223,7 @@ class CollectionsController extends ProController
             'configCollections' => $registry->getAll(),
             'overriddenNames' => $registry->getOverriddenNames(),
             'canManageCollections' => Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS),
+            'rowSectionSuffix' => $this->_firstSectionSuffix() ?? '',
         ]);
     }
 
@@ -350,6 +361,27 @@ class CollectionsController extends ProController
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * The URL suffix of the current user's first accessible collection section,
+     * used both to gate the index picker and to resolve its row links. Returns
+     * null when the user may not reach any section.
+     *
+     * @return string|null
+     * @author CraftPulse
+     */
+    private function _firstSectionSuffix(): ?string
+    {
+        $user = Craft::$app->getUser();
+
+        return match (true) {
+            $user->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS) => '',
+            $user->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE) => '/relevance',
+            $user->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS) => '/synonyms',
+            $user->checkPermission(CurationController::PERMISSION_MANAGE_CURATION) => '/curation',
+            default => null,
+        };
+    }
 
     /**
      * Splits a source select value ("<elementType>:<source>") into its parts.

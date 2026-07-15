@@ -274,6 +274,8 @@ class Typesense extends Plugin
             if (
                 $currentUser->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)
                 || $currentUser->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)
+                || $currentUser->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS)
+                || $currentUser->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)
             ) {
                 $subNavs['collections'] = [
                     'label' => Craft::t('typesense', 'Collections'),
@@ -302,24 +304,10 @@ class Typesense extends Plugin
                 ];
             }
 
-            if ($currentUser->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS)) {
-                $subNavs['synonyms'] = [
-                    'label' => Craft::t('typesense', 'Synonyms'),
-                    'url' => 'typesense/synonyms',
-                ];
-            }
-
             if ($currentUser->checkPermission(DictionariesController::PERMISSION_MANAGE_DICTIONARIES)) {
                 $subNavs['dictionaries'] = [
                     'label' => Craft::t('typesense', 'Dictionaries'),
                     'url' => 'typesense/dictionaries',
-                ];
-            }
-
-            if ($currentUser->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
-                $subNavs['curation'] = [
-                    'label' => Craft::t('typesense', 'Curation'),
-                    'url' => 'typesense/curation',
                 ];
             }
 
@@ -496,22 +484,20 @@ class Typesense extends Plugin
             $routes['typesense/collections/<uid:[\w\-]+>/relevance'] = 'typesense/relevance/edit';
             $routes['typesense/collections/<uid:[\w\-]+>/vector'] = 'typesense/relevance/vector';
             $routes['typesense/collections/<uid:[\w\-]+>/conversation-models'] = 'typesense/relevance/conversation-models';
+            $routes['typesense/collections/<uid:[\w\-]+>/synonyms/new'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/collections/<uid:[\w\-]+>/synonyms/synonym/<synonymId:[\w\-]+>'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/collections/<uid:[\w\-]+>/synonyms'] = 'typesense/synonyms/list';
+            $routes['typesense/collections/<uid:[\w\-]+>/curation/new'] = 'typesense/curation/edit-rule';
+            $routes['typesense/collections/<uid:[\w\-]+>/curation/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
+            $routes['typesense/collections/<uid:[\w\-]+>/curation'] = 'typesense/curation/list';
             $routes['typesense/collections/<uid:[\w\-]+>'] = 'typesense/collections/edit';
             $routes['typesense/playground'] = 'typesense/playground/index';
             $routes['typesense/playground/<collection:[\w\-]+>/browse'] = 'typesense/playground/browse';
             $routes['typesense/playground/<collection:[\w\-]+>'] = 'typesense/playground/query';
-            $routes['typesense/curation'] = 'typesense/curation/index';
-            $routes['typesense/curation/<collection:[\w\-]+>/new'] = 'typesense/curation/edit-rule';
-            $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
-            $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
             $routes['typesense/aliases'] = 'typesense/aliases/index';
             $routes['typesense/experiments'] = 'typesense/experiments/index';
             $routes['typesense/experiments/new'] = 'typesense/experiments/edit';
             $routes['typesense/experiments/<handle:[\w\-]+>'] = 'typesense/experiments/edit';
-            $routes['typesense/synonyms'] = 'typesense/synonyms/index';
-            $routes['typesense/synonyms/<collection:[\w\-]+>/new'] = 'typesense/synonyms/edit-synonym';
-            $routes['typesense/synonyms/<collection:[\w\-]+>/synonym/<synonymId:[\w\-]+>'] = 'typesense/synonyms/edit-synonym';
-            $routes['typesense/synonyms/<collection:[\w\-]+>'] = 'typesense/synonyms/synonyms';
             $routes['typesense/dictionaries'] = 'typesense/dictionaries/index';
             $routes['typesense/dictionaries/stemming'] = 'typesense/dictionaries/stemming';
             $routes['typesense/dictionaries/<collection:[\w\-]+>'] = 'typesense/dictionaries/stopwords';

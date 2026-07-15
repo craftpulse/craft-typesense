@@ -14,24 +14,25 @@
 
     <h2>{{ 'Stopwords'|t('typesense') }}</h2>
 
-    {% if collections is empty %}
-        <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Collection'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for handle in collections %}
-                    <tr>
-                        <td><code>{{ handle }}</code></td>
-                        <td class="thin"><a class="btn small" href="{{ url('typesense/dictionaries/' ~ handle) }}">{{ 'Manage stopwords'|t('typesense') }}</a></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
+    <div id="ts-stopwords-table"></div>
+
+    {% set tableData = [] %}
+    {% for handle in collections %}
+        {% set tableData = tableData|merge([{
+            title: handle,
+            url: url('typesense/dictionaries/' ~ handle),
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        new Craft.VueAdminTable({
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Collection') },
+            ],
+            container: '#ts-stopwords-table',
+            emptyMessage: Craft.t('typesense', 'No collections are declared yet.'),
+            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+        });
+    {% endjs %}
 {% endblock %}

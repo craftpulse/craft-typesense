@@ -28,14 +28,14 @@ dataset('proActions', [
     'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageAliases'],
     'analytics' => ['typesense/analytics/index', 'get', 'typesense:viewAnalytics'],
     'collections' => ['typesense/collections/edit', 'get', 'typesense:manageCollections'],
-    'curation' => ['typesense/curation/index', 'get', 'typesense:manageCuration'],
+    'curation' => ['typesense/curation/list', 'get', 'typesense:manageCuration'],
     'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manageDictionaries'],
     'experiments' => ['typesense/experiments/index', 'get', 'typesense:manageExperiments'],
     'keys' => ['typesense/keys/index', 'get', 'typesense:manageKeys'],
     'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manageOps'],
     'playground' => ['typesense/playground/index', 'get', 'typesense:viewDiagnostics'],
     'relevance' => ['typesense/relevance/edit', 'get', 'typesense:manageRelevance'],
-    'synonyms' => ['typesense/synonyms/index', 'get', 'typesense:manageSynonyms'],
+    'synonyms' => ['typesense/synonyms/list', 'get', 'typesense:manageSynonyms'],
 ]);
 
 function aGatingAdmin(): User

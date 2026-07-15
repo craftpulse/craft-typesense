@@ -56,12 +56,17 @@ it('renders the Pro nav items in Pro for a permitted admin', function() {
     $admin = aNavAdmin();
     $keys = navSubnavKeys(Typesense::EDITION_PRO, $admin);
 
-    // Relevance and Vector / AI are now tabs on the collection edit screen, not
-    // a top-level subnav item (Fix 8), so they are absent from the subnav keys.
-    foreach (['collections', 'synonyms', 'dictionaries', 'curation', 'keys', 'aliases', 'experiments', 'analytics', 'settings'] as $expected) {
+    // Relevance, Vector / AI (Fix 8), Synonyms, and Curation (Fix 9) are now
+    // sections of the collection edit screen, not top-level subnav items, so they
+    // are absent from the subnav keys. Dictionaries stays top-level (stopwords
+    // and stemming are server-global resources).
+    foreach (['collections', 'dictionaries', 'keys', 'aliases', 'experiments', 'analytics', 'settings'] as $expected) {
         expect($keys)->toContain($expected);
     }
-    expect($keys)->not->toContain('relevance');
+
+    foreach (['relevance', 'synonyms', 'curation'] as $moved) {
+        expect($keys)->not->toContain($moved);
+    }
 });
 
 it('pins the v28 server-capability gates (hide-not-badge at the source)', function() {

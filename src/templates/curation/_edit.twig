@@ -1,23 +1,23 @@
 {# =========================================================================
    Typesense Pro - curation manager (rule editor)
    =========================================================================
-   @var handle string
-   @var rule   array|null
-   @var isNew  bool
+   @var definition craftpulse\typesense\models\CollectionDefinition
+   @var rule       array|null
+   @var isNew      bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms.twig' as forms %}
 {% set title = isNew ? 'New rule'|t('typesense') : (rule.id ?? '') %}
-{% set selectedSubnavItem = 'curation' %}
+{% set selectedSubnavItem = 'collections' %}
 {% set fullPageForm = true %}
 {% set crumbs = [
-    { label: 'Curation'|t('typesense'), url: url('typesense/curation') },
-    { label: handle, url: url('typesense/curation/' ~ handle) },
+    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+    { label: definition.name, url: url('typesense/collections/' ~ definition.uid ~ '/curation') },
 ] %}
 
 {% block content %}
     {{ actionInput('typesense/curation/save-rule') }}
-    {{ hiddenInput('collection', handle) }}
+    {{ hiddenInput('uid', definition.uid) }}
 
     {{ forms.textField({
         first: true,

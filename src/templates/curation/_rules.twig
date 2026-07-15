@@ -1,18 +1,23 @@
 {# =========================================================================
-   Typesense Pro - curation manager (rules for a collection)
+   Typesense Pro - collection edit screen: Curation section
    =========================================================================
-   @var handle     string
+   Lists a control-panel-managed collection's curation rules as a VueAdminTable
+   (matching vendor/craftcms/cms/src/templates/settings/assets/transforms/
+   _index.twig): the row name links to the editor, and rows delete through the
+   core delete affordance. A collection that declares its curation in config is
+   read-only with the config notice.
+
+   @var definition craftpulse\typesense\models\CollectionDefinition
    @var rules      array
-   @var editable   bool   whether this collection's curation is CP-managed
+   @var editable   bool   whether this collection's curation is control-panel-owned
+   @var navItems   array  the collection edit screen's permission-filtered nav
    ========================================================================= #}
-{% extends '_layouts/cp' %}
-{% set title = handle ~ ' ' ~ ('curation'|t('typesense')) %}
-{% set selectedSubnavItem = 'curation' %}
-{% set crumbs = [{ label: 'Curation'|t('typesense'), url: url('typesense/curation') }] %}
+{% extends 'typesense/collections/_layout' %}
+{% set selectedNavItem = 'curation' %}
 
 {% block actionButton %}
     {% if editable %}
-        <a class="btn submit add icon" href="{{ url('typesense/curation/' ~ handle ~ '/new') }}">{{ 'New rule'|t('typesense') }}</a>
+        <a class="btn submit add icon" href="{{ url('typesense/collections/' ~ definition.uid ~ '/curation/new') }}">{{ 'New rule'|t('typesense') }}</a>
     {% endif %}
 {% endblock %}
 
@@ -23,47 +28,41 @@
         </blockquote>
     {% endif %}
 
-    {% if rules is empty %}
-        <p class="light">{{ 'No curation rules yet.'|t('typesense') }}</p>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Rule'|t('typesense') }}</th>
-                    <th>{{ 'Query'|t('typesense') }}</th>
-                    <th>{{ 'Match'|t('typesense') }}</th>
-                    <th>{{ 'Pins'|t('typesense') }}</th>
-                    <th></th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for rule in rules %}
-                    <tr>
-                        <td>
-                            {% if editable %}
-                                <a href="{{ url('typesense/curation/' ~ handle ~ '/rule/' ~ rule.id) }}"><code>{{ rule.id }}</code></a>
-                            {% else %}
-                                <code>{{ rule.id }}</code>
-                            {% endif %}
-                        </td>
-                        <td>{{ rule.rule.query ?? '' }}</td>
-                        <td>{{ rule.rule.match ?? 'exact' }}</td>
-                        <td>{{ (rule.includes ?? [])|length }}</td>
-                        <td class="thin">
-                            {% if editable %}
-                                <form method="post" accept-charset="UTF-8">
-                                    {{ csrfInput() }}
-                                    {{ actionInput('typesense/curation/delete-rule') }}
-                                    {{ hiddenInput('collection', handle) }}
-                                    {{ hiddenInput('id', rule.id) }}
-                                    {{ redirectInput('typesense/curation/' ~ handle) }}
-                                    <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                                </form>
-                            {% endif %}
-                        </td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
+    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
+    <div id="ts-curation-table"></div>
+
+    {% set tableData = [] %}
+    {% for rule in rules %}
+        {% set tableData = tableData|merge([{
+            id: definition.uid ~ '|' ~ rule.id,
+            title: rule.id,
+            url: editable ? url('typesense/collections/' ~ definition.uid ~ '/curation/rule/' ~ rule.id) : null,
+            query: rule.rule.query ?? '',
+            match: rule.rule.match ?? 'exact',
+            pins: (rule.includes ?? [])|length,
+        }]) %}
+    {% endfor %}
+
+    {% js %}
+        var columns = [
+            { name: '__slot:title', title: Craft.t('typesense', 'Rule') },
+            { name: 'query', title: Craft.t('typesense', 'Query') },
+            { name: 'match', title: Craft.t('typesense', 'Match') },
+            { name: 'pins', title: Craft.t('typesense', 'Pins') },
+        ];
+
+        var config = {
+            columns: columns,
+            container: '#ts-curation-table',
+            emptyMessage: Craft.t('typesense', 'No curation rules yet.'),
+            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+        };
+
+        {% if editable %}
+            config.deleteAction = 'typesense/curation/delete-rule';
+            config.deleteConfirmationMessage = Craft.t('typesense', 'Delete this rule?');
+        {% endif %}
+
+        new Craft.VueAdminTable(config);
+    {% endjs %}
 {% endblock %}

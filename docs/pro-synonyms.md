@@ -19,7 +19,8 @@ none of the Pro control panel. Every Pro action is edition-checked server-side.
 
 ## Synonyms
 
-Pick a collection from `Typesense -> Synonyms`, then add or edit a synonym. A
+Open a control-panel-managed collection (Typesense, then Collections, then a
+collection) and choose its Synonyms section, then add or edit a synonym. A
 synonym carries:
 
 | Field | Meaning |

@@ -59,14 +59,16 @@ it('hides the Pro nav in Free and shows it in Pro (hide, not badge)', function()
     withEdition(Typesense::EDITION_FREE, function() {
         $subnav = Typesense::$plugin->getCpNavItem()['subnav'] ?? [];
         expect($subnav)->not->toHaveKey('collections')
-            ->and($subnav)->not->toHaveKey('curation')
+            ->and($subnav)->not->toHaveKey('dictionaries')
             ->and($subnav)->not->toHaveKey('analytics');
     });
 
     withEdition(Typesense::EDITION_PRO, function() {
+        // Curation is now a section of the collection edit screen (Fix 9), so the
+        // top-level subnav carries Collections, Dictionaries, and Analytics.
         $subnav = Typesense::$plugin->getCpNavItem()['subnav'] ?? [];
         expect($subnav)->toHaveKey('collections')
-            ->and($subnav)->toHaveKey('curation')
+            ->and($subnav)->toHaveKey('dictionaries')
             ->and($subnav)->toHaveKey('analytics');
     });
 });
@@ -92,7 +94,7 @@ it('allows the Pro action in Pro for a permitted admin', function() {
         // writes project config.
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/collections/delete'), ['uid' => 'does-not-exist'])
+            ->post(UrlHelper::actionUrl('typesense/collections/delete'), ['id' => 'does-not-exist'])
             ->assertRedirect();
     });
 });

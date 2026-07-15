@@ -76,8 +76,14 @@ screen gains its remaining tabs (each with its own URL and permission gate):
   (`typesense:manageRelevance`). See [Relevance tuning](pro-relevance.md).
 - **Vector / AI**: auto-embedding and the experimental AI features
   (`typesense:manageRelevance`). See [Vector and AI](pro-vector-ai.md).
+- **Synonyms**: one-way and multi-way synonyms (`typesense:manageSynonyms`). See
+  [Synonyms manager](pro-synonyms.md).
+- **Curation**: pin, hide, and boost rules (`typesense:manageCuration`). See
+  [Curation manager](pro-curation.md).
 
-A tab the viewer's permissions do not cover is not shown. A CP-managed collection
+Stopwords and stemming dictionaries are server-global resources, so they stay on
+the top-level Dictionaries screen, not on a collection. A tab the viewer's
+permissions do not cover is not shown. A CP-managed collection
 is an ordinary runtime collection: it flows through the same sync engine, drift
 detection, control-panel utility, and search layer as a config collection, with
 no special-casing.

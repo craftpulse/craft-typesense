@@ -29,7 +29,8 @@ workflow.
 
 ## The rule editor
 
-Pick a collection from `Typesense -> Curation`, then add or edit a rule. A rule
+Open a control-panel-managed collection (Typesense, then Collections, then a
+collection) and choose its Curation section, then add or edit a rule. A rule
 carries:
 
 | Field | Meaning |
