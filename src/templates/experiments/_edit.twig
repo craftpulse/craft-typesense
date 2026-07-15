@@ -16,12 +16,19 @@
 {% set profileOptions = [{ label: '(none)'|t('typesense'), value: '' }]|merge(profiles|map(p => { label: p, value: p })) %}
 
 {% block content %}
+    <div class="readable">
+        <blockquote class="note">
+            {{ 'An experiment defines weighted variants for one collection. Once active, your front end calls craft.typesense.experiment("handle") to get a variant for the visitor, applies that variant’s composition to the search, and the variant’s analytics tag lets the analytics dashboard compare them. Saving does not change any search on its own: nothing runs until your templates call the helper.'|t('typesense') }}
+        </blockquote>
+    </div>
+
     {{ actionInput('typesense/experiments/save') }}
     {% if not isNew %}{{ hiddenInput('originalHandle', experiment.handle) }}{% endif %}
 
     {{ forms.textField({
         first: true,
         label: 'Name'|t('typesense'),
+        instructions: 'A label for this experiment (for example, Homepage relevance test).'|t('typesense'),
         id: 'name',
         name: 'name',
         value: experiment.name,
@@ -30,7 +37,7 @@
 
     {{ forms.textField({
         label: 'Handle'|t('typesense'),
-        instructions: 'Referenced from Twig: craft.typesense.experiment("handle").'|t('typesense'),
+        instructions: 'The identifier your templates pass to craft.typesense.experiment("handle").'|t('typesense'),
         id: 'handle',
         name: 'handle',
         class: 'code',
@@ -45,6 +52,7 @@
 
     {{ forms.selectField({
         label: 'Collection'|t('typesense'),
+        instructions: 'The collection whose searches this experiment splits.'|t('typesense'),
         id: 'collection',
         name: 'collection',
         options: collections|map(c => { label: c, value: c }),
@@ -53,6 +61,7 @@
 
     {{ forms.lightswitchField({
         label: 'Active'|t('typesense'),
+        instructions: 'When off, craft.typesense.experiment("handle") returns nothing and your templates fall back to a normal search.'|t('typesense'),
         id: 'enabled',
         name: 'enabled',
         on: experiment.enabled,

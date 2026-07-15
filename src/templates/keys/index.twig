@@ -21,31 +21,41 @@
         <table class="data fullwidth">
             <thead>
                 <tr>
-                    <th>{{ 'Description'|t('typesense') }}</th>
-                    <th>{{ 'Prefix'|t('typesense') }}</th>
-                    <th>{{ 'Actions'|t('typesense') }}</th>
-                    <th>{{ 'Collections'|t('typesense') }}</th>
-                    <th>{{ 'Expires'|t('typesense') }}</th>
-                    <th></th>
+                    <th scope="col">{{ 'Description'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Prefix'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Permissions'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Collections'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Expires'|t('typesense') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
                 </tr>
             </thead>
             <tbody>
                 {% for key in keys %}
                     <tr>
                         <td>{{ key.description ?? '' }}</td>
-                        <td><code>{{ key.value_prefix ?? '' }}…</code></td>
+                        <td><code>{{ key.value_prefix ?? '' }}...</code></td>
                         <td>{% for action in key.actions ?? [] %}<code>{{ action }}</code>{{ not loop.last ? ' ' }}{% endfor %}</td>
                         <td>{% for c in key.collections ?? [] %}<code>{{ c }}</code>{{ not loop.last ? ' ' }}{% endfor %}</td>
                         <td>{{ key.expires_at is defined and key.expires_at < 64000000000 ? key.expires_at|date('short') : 'Never'|t('typesense') }}</td>
-                        <td class="thin nowrap">
-                            <a class="btn small" href="{{ url('typesense/keys/new', { from: key.id }) }}" title="{{ 'Rotate (create a replacement, then delete this one)'|t('typesense') }}">{{ 'Rotate'|t('typesense') }}</a>
-                            <form method="post" accept-charset="UTF-8" style="display:inline" data-confirm="{{ 'Delete this key? Any client using it will stop working immediately.'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/keys/delete-key') }}
-                                {{ hiddenInput('id', key.id) }}
-                                {{ redirectInput('typesense/keys') }}
-                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                            </form>
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {{ disclosureMenu([
+                                {
+                                    label: 'Rotate'|t('typesense'),
+                                    url: url('typesense/keys/new', { from: key.id }),
+                                },
+                                {
+                                    label: 'Delete'|t('typesense'),
+                                    action: 'typesense/keys/delete-key',
+                                    params: { id: key.id },
+                                    destructive: true,
+                                    confirm: 'Delete this key? Any client using it will stop working immediately.'|t('typesense'),
+                                },
+                            ], {
+                                buttonAttributes: {
+                                    class: ['action-btn', 'hairline'],
+                                    hiddenLabel: 'Actions'|t('typesense'),
+                                },
+                            }) }}
                         </td>
                     </tr>
                 {% endfor %}
@@ -55,11 +65,8 @@
 
     <hr>
 
-    <header class="ts-keys-profiles-header">
-        <h2>{{ 'Scoped-key profiles'|t('typesense') }}</h2>
-        <a class="btn small add icon" href="{{ url('typesense/keys/profile') }}">{{ 'New profile'|t('typesense') }}</a>
-    </header>
-    <p class="light">{{ 'Reusable filter templates for front-end scoped keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }).'|t('typesense') }}</p>
+    <h2>{{ 'Scoped-key profiles'|t('typesense') }}</h2>
+    <p class="light">{{ 'A scoped-key profile is a reusable filter template for front-end scoped search keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }) to issue a narrow, expiring key that only ever sees the filtered results.'|t('typesense') }}</p>
 
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-key-profiles-table"></div>
@@ -91,4 +98,8 @@
             deleteConfirmationMessage: Craft.t('typesense', 'Delete this profile?'),
         });
     {% endjs %}
+
+    <div class="buttons">
+        <a class="btn submit add icon" href="{{ url('typesense/keys/profile') }}">{{ 'New profile'|t('typesense') }}</a>
+    </div>
 {% endblock %}

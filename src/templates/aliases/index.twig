@@ -1,8 +1,13 @@
 {# =========================================================================
-   Typesense Pro - aliases manager
+   Typesense Pro - aliases manager (one coherent flow)
    =========================================================================
-   @var aliases         array   logical name => physical target
-   @var collections     string[]
+   One table of collections: each collection's current physical target and when
+   it was last built, with a per-row zero-downtime rebuild (the core per-row
+   action-menu idiom from vendor/craftcms/cms/src/templates/settings/plugins/
+   index.twig, via the disclosureMenu Twig function). A capability-gated clone
+   folds in below.
+
+   @var rows            array   {name, physical, aliased, lastBuilt}
    @var supportsCloning bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
@@ -11,55 +16,51 @@
 {% set selectedSubnavItem = 'aliases' %}
 
 {% block content %}
-    <p class="light">{{ 'Aliases point a stable logical name at a physical collection, so a zero-downtime rebuild can swap the target atomically. Front-end code always references the logical name.'|t('typesense') }}</p>
+    <div class="readable">
+        <p class="light">{{ 'An alias gives your front end a stable collection name while a rebuild swaps the physical collection behind it atomically. Search keeps serving the current collection until the new one is built and ready, so there is no downtime and no empty window. Rebuild a collection whenever its schema or mapping changed and you want a clean reindex.'|t('typesense') }}</p>
+    </div>
 
-    <h2>{{ 'Aliases'|t('typesense') }}</h2>
-    {% if aliases is empty %}
-        <div class="zilch"><p>{{ 'No aliases yet. Rebuild a collection to move it behind an alias.'|t('typesense') }}</p></div>
-    {% else %}
-        <table class="data fullwidth">
-            <thead>
-                <tr>
-                    <th>{{ 'Logical name'|t('typesense') }}</th>
-                    <th>{{ 'Physical target'|t('typesense') }}</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for name, target in aliases %}
-                    <tr>
-                        <td><code>{{ name }}</code></td>
-                        <td><code>{{ target }}</code></td>
-                    </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    {% endif %}
-
-    <hr>
-
-    <h2>{{ 'Zero-downtime rebuild'|t('typesense') }}</h2>
-    {% if collections is empty %}
+    {% if rows is empty %}
         <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
     {% else %}
         <table class="data fullwidth">
             <thead>
                 <tr>
-                    <th>{{ 'Collection'|t('typesense') }}</th>
-                    <th></th>
+                    <th scope="col">{{ 'Collection'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Serving collection'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Last built'|t('typesense') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
                 </tr>
             </thead>
             <tbody>
-                {% for handle in collections %}
+                {% for row in rows %}
                     <tr>
-                        <td><code>{{ handle }}</code></td>
-                        <td class="thin">
-                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Queue a zero-downtime rebuild of this collection?'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/aliases/rebuild') }}
-                                {{ hiddenInput('collection', handle) }}
-                                {{ redirectInput('typesense/aliases') }}
-                                <button type="submit" class="btn small">{{ 'Rebuild'|t('typesense') }}</button>
-                            </form>
+                        <td><code>{{ row.name }}</code></td>
+                        <td>
+                            <code>{{ row.physical }}</code>
+                            {% if not row.aliased %}<span class="light"> {{ '(direct, not aliased yet)'|t('typesense') }}</span>{% endif %}
+                        </td>
+                        <td>
+                            {% if row.lastBuilt %}
+                                {{ row.lastBuilt|date('short') }} {{ row.lastBuilt|time('short') }}
+                            {% else %}
+                                <span class="light">{{ 'Unknown'|t('typesense') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {{ disclosureMenu([
+                                {
+                                    label: 'Rebuild (zero-downtime)'|t('typesense'),
+                                    action: 'typesense/aliases/rebuild',
+                                    params: { collection: row.name },
+                                    confirm: 'Queue a zero-downtime rebuild of {name}? The alias keeps serving the current collection until the swap.'|t('typesense', { name: row.name }),
+                                },
+                            ], {
+                                buttonAttributes: {
+                                    class: ['action-btn', 'hairline'],
+                                    hiddenLabel: 'Actions'|t('typesense'),
+                                },
+                            }) }}
                         </td>
                     </tr>
                 {% endfor %}
@@ -70,13 +71,13 @@
     {% if supportsCloning %}
         <hr>
         <h2>{{ 'Clone a collection'|t('typesense') }}</h2>
-        <p class="light">{{ 'Copies a collection’s schema (not its documents) into a new collection.'|t('typesense') }}</p>
+        <p class="light">{{ 'Copies a collection’s schema (not its documents) into a new, separately named collection. Useful for trialling a schema change off to the side.'|t('typesense') }}</p>
         <form method="post" accept-charset="UTF-8">
             {{ csrfInput() }}
             {{ actionInput('typesense/aliases/clone') }}
             {{ redirectInput('typesense/aliases') }}
-            {{ forms.textField({ label: 'Source'|t('typesense'), name: 'source', required: true }) }}
-            {{ forms.textField({ label: 'New name'|t('typesense'), name: 'target', required: true }) }}
+            {{ forms.textField({ label: 'Source collection'|t('typesense'), name: 'source', required: true }) }}
+            {{ forms.textField({ label: 'New collection name'|t('typesense'), name: 'target', required: true }) }}
             <div class="buttons"><button type="submit" class="btn submit">{{ 'Clone'|t('typesense') }}</button></div>
         </form>
     {% endif %}

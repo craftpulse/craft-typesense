@@ -96,6 +96,15 @@ class ExperimentsController extends ProController
             ? (Typesense::$plugin->getExperiments()->get($handle) ?? throw new NotFoundHttpException('Experiment not found.'))
             : new Experiment();
 
+        // Seed a new experiment with a control and a challenger at an even split,
+        // so the variants table opens with a worked example instead of a bare grid.
+        if ($handle === null && $experiment->variants === []) {
+            $experiment->variants = [
+                ['handle' => 'control', 'name' => Craft::t('typesense', 'Control'), 'weight' => 50, 'preset' => '', 'profile' => '', 'analyticsTag' => 'control'],
+                ['handle' => 'variant-b', 'name' => Craft::t('typesense', 'Variant B'), 'weight' => 50, 'preset' => '', 'profile' => '', 'analyticsTag' => 'variant-b'],
+            ];
+        }
+
         return $this->renderTemplate('typesense/experiments/_edit', [
             'experiment' => $experiment,
             'isNew' => $handle === null,

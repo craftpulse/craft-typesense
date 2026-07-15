@@ -12,8 +12,15 @@
 {% endblock %}
 
 {% block content %}
-    <p class="light">{{ 'Split search traffic between variant compositions (preset, scoped-key profile, analytics tag). The click-through comparison lives in the analytics dashboard.'|t('typesense') }}</p>
+    <p class="light">{{ 'An A/B experiment splits a collection’s search traffic between variants. Each variant applies its own search composition (a preset, an optional scoped-key filter profile, and an analytics tag), and the front end asks craft.typesense.experiment("handle") which variant to use per visitor. Compare the tagged results in the analytics dashboard.'|t('typesense') }}</p>
 
+    {% if experiments is empty %}
+        <div class="zilch">
+            <p>{{ 'No experiments yet.'|t('typesense') }}</p>
+            <p class="light">{{ 'An experiment serves weighted search variants for one collection and attributes analytics per variant, so you can measure which composition performs better. You need a collection first; scoped-key profiles are optional. Create one to define its variants.'|t('typesense') }}</p>
+            <a class="btn submit add icon" href="{{ url('typesense/experiments/new') }}">{{ 'New experiment'|t('typesense') }}</a>
+        </div>
+    {% else %}
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-experiments-table"></div>
 
@@ -46,4 +53,5 @@
             deleteConfirmationMessage: Craft.t('typesense', 'Delete this experiment?'),
         });
     {% endjs %}
+    {% endif %}
 {% endblock %}
