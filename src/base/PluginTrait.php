@@ -310,11 +310,6 @@ trait PluginTrait
     }
 
     /**
-     * @return Aliases
-     * @throws InvalidConfigException
-     * @author CraftPulse
-     */
-    /**
      * @return AiModels
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -444,19 +439,6 @@ trait PluginTrait
         return $synonyms;
     }
 
-    /**
-     * @return Typesense
-     * @throws InvalidConfigException
-     * @author CraftPulse
-     */
-    public function getTypesense(): Typesense
-    {
-        /** @var Typesense $typesense */
-        $typesense = $this->get('typesense');
-
-        return $typesense;
-    }
-
     // Private Methods
     // =========================================================================
 
@@ -469,7 +451,6 @@ trait PluginTrait
     private function _registerComponents(): void
     {
         $this->setComponents([
-            'typesense' => Typesense::class,
             'collections' => Collections::class,
             'compiler' => Compiler::class,
             'schema' => Schema::class,

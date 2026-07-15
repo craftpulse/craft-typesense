@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\services;
 
+use Carbon\Carbon;
 use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
@@ -480,7 +481,7 @@ class Sync extends Component
     {
         $this->_updateState($collection, $siteId, [
             'cursor' => null,
-            'lastSyncedAt' => Db::prepareDateForDb(new \DateTime()),
+            'lastSyncedAt' => Db::prepareDateForDb(Carbon::now()),
         ]);
 
         Craft::$app->getQueue()->priority($this->getQueuePriority())->push(new ReconcileCollection([
@@ -651,7 +652,7 @@ class Sync extends Component
             return;
         }
 
-        $now = Db::prepareDateForDb(new \DateTime());
+        $now = Db::prepareDateForDb(Carbon::now());
         $rows = array_map(static fn(int $depId): array => [
             $handle, $siteId, $sourceId, $depId, $now, $now, StringHelper::UUID(),
         ], $dependencyIds);
@@ -932,7 +933,7 @@ class Sync extends Component
      */
     private function _updateState(Collection $collection, int $siteId, array $values): void
     {
-        $now = Db::prepareDateForDb(new \DateTime());
+        $now = Db::prepareDateForDb(Carbon::now());
         $condition = ['collectionHandle' => $collection->getName(), 'siteId' => $siteId];
         $exists = (new Query())->from(Table::SYNC_STATE)->where($condition)->exists();
 

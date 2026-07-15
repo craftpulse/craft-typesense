@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\services;
 
+use Carbon\Carbon;
 use Craft;
 use craft\base\Component;
 use craft\db\Query;
@@ -78,7 +79,7 @@ class CurationIndex extends Component
      */
     public function rebuildForCollection(string $collectionHandle, array $rules): void
     {
-        $now = Db::prepareDateForDb(new \DateTime('now', new \DateTimeZone('UTC')));
+        $now = Db::prepareDateForDb(Carbon::now('UTC'));
         $rows = [];
 
         foreach ($rules as $rule) {

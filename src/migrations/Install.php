@@ -1,6 +1,12 @@
 <?php
-
-/** @noinspection RepetitiveMethodCallsInspection */
+/**
+ * Typesense plugin for Craft CMS 5.x
+ *
+ * Craft Plugin that synchronises with Typesense
+ *
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
+ */
 
 namespace craftpulse\typesense\migrations;
 
@@ -10,24 +16,34 @@ use craft\db\Table as CraftTable;
 use craftpulse\typesense\db\Table;
 
 /**
- * Installation Migration
+ * The install migration: creates the plugin's tables (synonyms, sync state, sync
+ * dependencies, curation lookup index, and the runtime sync-suspend table). The
+ * per-table creators are static and shared with the update migrations so fresh
+ * installs and upgrades stay in lockstep.
  *
- * @author Percipio Global Ltd. <support@percipio.london>
- * @since 1.0.0
+ * @author    CraftPulse
+ * @package   Typesense
+ * @since     5.9.0
  */
 class Install extends Migration
 {
+    // Public Methods
+    // =========================================================================
+
     /**
      * @inheritdoc
      */
-    public function safeUp()
+    public function safeUp(): bool
     {
         $this->createTables();
 
         return true;
     }
 
-    public function safeDown()
+    /**
+     * @inheritdoc
+     */
+    public function safeDown(): bool
     {
         $this->dropTables();
 
@@ -35,7 +51,10 @@ class Install extends Migration
     }
 
     /**
-     * Creates the tables.
+     * Creates the plugin's tables.
+     *
+     * @return void
+     * @author CraftPulse
      */
     public function createTables(): void
     {
@@ -90,6 +109,16 @@ class Install extends Migration
     /**
      * Creates the curation lookup table (element-to-rule). Idempotent and shared
      * with the update migration so fresh installs and upgrades stay in lockstep.
+     *
+     * The elementId column deliberately carries no foreign key to the elements
+     * table (unlike the sync-dependency tables, whose element ids are captured
+     * from real synced elements). Here elementId is a best-effort hint parsed from
+     * the leading segment of a pinned document id, which a curation rule may set
+     * to any value, including a document whose element has been deleted or which
+     * maps to no Craft element at all. A hard key would make rebuildForCollection
+     * throw on such legitimate rules. The table is fully rebuilt per collection on
+     * every curation write (clear then reinsert), so stale rows are harmless and
+     * self-heal on the next rebuild of that collection.
      *
      * @param Migration $migration
      * @return void
@@ -170,7 +199,10 @@ class Install extends Migration
     }
 
     /**
-     * Drop the tables
+     * Drops the plugin's tables.
+     *
+     * @return void
+     * @author CraftPulse
      */
     public function dropTables(): void
     {
@@ -182,6 +214,9 @@ class Install extends Migration
 
     /**
      * Deletes the project config entry.
+     *
+     * @return void
+     * @author CraftPulse
      */
     public function dropProjectConfig(): void
     {

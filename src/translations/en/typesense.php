@@ -4,21 +4,19 @@
  *
  * Craft Plugin that synchronises with Typesense
  *
- * @link      https://percipio.london
- * @copyright Copyright (c) 2021 craftpulse
+ * @link      https://craft-pulse.com
+ * @copyright Copyright (c) 2026 CraftPulse
  */
 
 /**
- * Typesense en Translation
+ * Typesense English translation messages.
  *
- * Returns an array with the string to be translated (as passed to `Craft::t('typesense', '...')`) as
- * the key, and the translation as the value.
+ * Maps each source string (as passed to `Craft::t('typesense', '...')`) to its
+ * translation. See https://www.yiiframework.com/doc/guide/2.0/en/tutorial-i18n.
  *
- * http://www.yiiframework.com/doc-2.0/guide-tutorial-i18n.html
- *
- * @author    craftpulse
+ * @author    CraftPulse
  * @package   Typesense
- * @since     1.0.0
+ * @since     5.9.0
  */
 return [
     'Typesense plugin loaded' => 'Typesense plugin loaded',

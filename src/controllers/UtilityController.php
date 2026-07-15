@@ -34,9 +34,13 @@ class UtilityController extends Controller
      */
     public function beforeAction($action): bool
     {
+        if (!parent::beforeAction($action)) {
+            return false;
+        }
+
         $this->requirePermission(OpsController::PERMISSION_MANAGE_OPS);
 
-        return parent::beforeAction($action);
+        return true;
     }
 
     /**

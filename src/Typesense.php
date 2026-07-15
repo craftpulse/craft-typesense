@@ -72,18 +72,13 @@ use yii\base\Event;
 use yii\queue\ExecEvent;
 
 /**
- * Craft plugins are very much like little applications in and of themselves. We’ve made
- * it as simple as we can, but the training wheels are off. Little prior knowledge is
- * going to be required to write a plugin.
- *
- * For the purposes of the plugin docs, we’re going to assume that you know PHP and SQL,
- * as well as some semi-advanced concepts like object-oriented programming and PHP namespaces.
- *
- * https://docs.craftcms.com/v3/extend/
+ * The Typesense plugin: synchronises Craft elements into a Typesense search
+ * server. Wires the service components, control-panel routes, nav, permissions,
+ * element actions, and event listeners, and exposes the settings and edition.
  *
  * @author    CraftPulse
  * @package   Typesense
- * @since     1.0.0
+ * @since     5.9.0
  *
  * @property  Client $client
  *
