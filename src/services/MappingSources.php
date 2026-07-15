@@ -87,6 +87,68 @@ class MappingSources extends Component
         return $descriptors;
     }
 
+    /**
+     * The file-derived pseudo fields every asset carries, with their fixed
+     * derived types.
+     *
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    public function assetPseudoFields(): array
+    {
+        return $this->_assetPseudoFields();
+    }
+
+    /**
+     * Builds the allowed control set for a derived Typesense type. This is the
+     * server's contract: the field-layout slideout renders only these controls.
+     *
+     * @param string $derivedType
+     * @param bool $isAsset
+     * @return array<int, array<string, mixed>>
+     * @author CraftPulse
+     */
+    public function controlsFor(string $derivedType, bool $isAsset): array
+    {
+        return $this->_controlsFor($derivedType, $isAsset);
+    }
+
+    /**
+     * The custom fields of a definition's element source, de-duplicated by UID.
+     *
+     * @param CollectionDefinition $definition
+     * @return array<int, FieldInterface>
+     * @author CraftPulse
+     */
+    public function customFieldsFor(CollectionDefinition $definition): array
+    {
+        return $this->_layoutFields($definition);
+    }
+
+    /**
+     * The Commerce variant fields for a product-type source, when installed.
+     *
+     * @param CollectionDefinition $definition
+     * @return array<int, FieldInterface>
+     * @author CraftPulse
+     */
+    public function variantFieldsFor(CollectionDefinition $definition): array
+    {
+        return $this->_variantFields($definition);
+    }
+
+    /**
+     * The bounded type-override options for a derived type.
+     *
+     * @param string $derivedType
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public function typeOverrideOptions(string $derivedType): array
+    {
+        return $this->_typeOverrideOptions($derivedType);
+    }
+
     // Private Methods
     // =========================================================================
 

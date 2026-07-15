@@ -19,6 +19,8 @@ use craft\console\Application as ConsoleApplication;
 use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
+use craft\events\DefineFieldLayoutCustomFieldsEvent;
+use craft\events\DefineFieldLayoutFieldsEvent;
 use craft\events\DefineHtmlEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
@@ -29,6 +31,7 @@ use craft\events\RegisterUrlRulesEvent;
 use craft\events\RegisterUserPermissionsEvent;
 use craft\helpers\Cp;
 use craft\helpers\UrlHelper;
+use craft\models\FieldLayout;
 use craft\queue\BaseJob;
 use craft\queue\Queue;
 use craft\services\Dashboard;
@@ -47,8 +50,11 @@ use craftpulse\typesense\controllers\KeysController;
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\elementactions\Reindex;
 use craftpulse\typesense\elementactions\ViewInSearch;
+use craftpulse\typesense\fieldlayoutelements\MappingField;
+use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
 use craftpulse\typesense\gql\queries\SearchQuery;
 use craftpulse\typesense\helpers\FileLog;
+use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\utilities\TypesenseUtility;
@@ -199,6 +205,7 @@ class Typesense extends Plugin
         $this->_registerSiteTemplateRoots();
         $this->_registerCurationSidebar();
         $this->_registerInspectorSidebar();
+        $this->_registerMappingPalette();
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -595,6 +602,76 @@ class Typesense extends Plugin
      * @return void
      * @author CraftPulse
      */
+    /**
+     * Scopes the field-layout designer palette to a collection's mapping layout:
+     * the source's custom fields (and Commerce variant fields) become the custom
+     * palette, and the asset pseudo fields plus registered computed fields become
+     * native fields. Both events fire for every layout in the CMS, so each bails
+     * unless the layout's provider is a collection definition.
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    private function _registerMappingPalette(): void
+    {
+        Event::on(
+            FieldLayout::class,
+            FieldLayout::EVENT_DEFINE_CUSTOM_FIELDS,
+            function(DefineFieldLayoutCustomFieldsEvent $event) {
+                $provider = $event->sender->provider ?? null;
+
+                if (!$provider instanceof CollectionDefinition) {
+                    return;
+                }
+
+                $sources = $this->getMappingSources();
+                $fields = [];
+
+                foreach ($sources->customFieldsFor($provider) as $field) {
+                    $fields[] = MappingField::forField($field, 'field');
+                }
+
+                foreach ($sources->variantFieldsFor($provider) as $field) {
+                    $fields[] = MappingField::forField($field, 'variant');
+                }
+
+                $event->fields = [Craft::t('typesense', 'Fields') => $fields];
+            }
+        );
+
+        Event::on(
+            FieldLayout::class,
+            FieldLayout::EVENT_DEFINE_NATIVE_FIELDS,
+            function(DefineFieldLayoutFieldsEvent $event) {
+                $provider = $event->sender->provider ?? null;
+
+                if (!$provider instanceof CollectionDefinition) {
+                    return;
+                }
+
+                if (is_a($provider->elementType, Asset::class, true)) {
+                    foreach ($this->getMappingSources()->assetPseudoFields() as $pseudo) {
+                        $event->fields[] = new NativeMappingField([
+                            'handle' => (string)$pseudo['handle'],
+                            'label' => (string)$pseudo['label'],
+                            'derivedType' => (string)$pseudo['derivedType'],
+                            'kind' => 'pseudo',
+                        ]);
+                    }
+                }
+
+                foreach ($this->getSchema()->getComputedFields() as $computed) {
+                    $event->fields[] = new NativeMappingField([
+                        'handle' => $computed->name,
+                        'label' => $computed->name,
+                        'derivedType' => $computed->type,
+                        'kind' => 'computed',
+                    ]);
+                }
+            }
+        );
+    }
+
     private function _registerCurationSidebar(): void
     {
         Event::on(

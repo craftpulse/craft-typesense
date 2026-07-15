@@ -10,8 +10,11 @@
 
 namespace craftpulse\typesense\models;
 
+use craft\base\FieldLayoutProviderInterface;
 use craft\base\Model;
 use craft\elements\Entry;
+use craft\helpers\StringHelper;
+use craft\models\FieldLayout;
 use craftpulse\typesense\enums\MultisiteStrategy;
 
 /**
@@ -26,8 +29,17 @@ use craftpulse\typesense\enums\MultisiteStrategy;
  * @package   Typesense
  * @since     5.9.0
  */
-class CollectionDefinition extends Model
+class CollectionDefinition extends Model implements FieldLayoutProviderInterface
 {
+    // Private Properties
+    // =========================================================================
+
+    /**
+     * @var FieldLayout|null The mapping field layout (the fields to index, each
+     * carrying its Typesense mapping settings), lazily created.
+     */
+    private ?FieldLayout $_fieldLayout = null;
+
     // Public Properties
     // =========================================================================
 
@@ -35,6 +47,11 @@ class CollectionDefinition extends Model
      * @var string|null The project-config UID.
      */
     public ?string $uid = null;
+
+    /**
+     * @var string|null The mapping field layout's UID.
+     */
+    public ?string $fieldLayoutUid = null;
 
     /**
      * @var string The logical collection name (the registry key).
@@ -112,6 +129,7 @@ class CollectionDefinition extends Model
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
         $rules[] = [['enabled', 'searchable'], 'boolean'];
         $rules[] = [['mappings', 'metadata', 'relevance', 'embedding'], 'safe'];
+        $rules[] = [['fieldLayoutUid'], 'safe'];
 
         return $rules;
     }
@@ -124,7 +142,7 @@ class CollectionDefinition extends Model
      */
     public function getConfig(): array
     {
-        return [
+        $config = [
             'name' => $this->name,
             'elementType' => $this->elementType,
             'source' => $this->source,
@@ -136,5 +154,52 @@ class CollectionDefinition extends Model
             'relevance' => $this->relevance,
             'embedding' => $this->embedding,
         ];
+
+        $layout = $this->getFieldLayout();
+
+        if ($layoutConfig = $layout->getConfig()) {
+            $config['fieldLayout'] = $layoutConfig;
+            $config['fieldLayoutUid'] = $layout->uid;
+        }
+
+        return $config;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getFieldLayout(): FieldLayout
+    {
+        if ($this->_fieldLayout === null) {
+            $this->fieldLayoutUid ??= StringHelper::UUID();
+            $this->_fieldLayout = new FieldLayout();
+            $this->_fieldLayout->uid = $this->fieldLayoutUid;
+            $this->_fieldLayout->provider = $this;
+        }
+
+        return $this->_fieldLayout;
+    }
+
+    /**
+     * @inheritdoc
+     */
+    public function getHandle(): ?string
+    {
+        return $this->name !== '' ? $this->name : null;
+    }
+
+    /**
+     * Sets the mapping field layout and binds it to this definition as its
+     * provider so the palette events can scope to it.
+     *
+     * @param FieldLayout $fieldLayout
+     * @return void
+     * @author CraftPulse
+     */
+    public function setFieldLayout(FieldLayout $fieldLayout): void
+    {
+        $fieldLayout->provider = $this;
+        $this->fieldLayoutUid = $fieldLayout->uid ?? null;
+        $this->_fieldLayout = $fieldLayout;
     }
 }

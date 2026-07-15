@@ -13,6 +13,7 @@ namespace craftpulse\typesense\services;
 use Craft;
 use craft\base\Component;
 use craft\helpers\StringHelper;
+use craft\models\FieldLayout;
 use craftpulse\typesense\models\CollectionDefinition;
 
 /**
@@ -156,6 +157,13 @@ class ManagedCollections extends Component
         $definition->metadata = is_array($config['metadata'] ?? null) ? $config['metadata'] : [];
         $definition->relevance = is_array($config['relevance'] ?? null) ? $config['relevance'] : [];
         $definition->embedding = is_array($config['embedding'] ?? null) ? $config['embedding'] : [];
+        $definition->fieldLayoutUid = isset($config['fieldLayoutUid']) ? (string)$config['fieldLayoutUid'] : null;
+
+        if (is_array($config['fieldLayout'] ?? null)) {
+            $layout = FieldLayout::createFromConfig($config['fieldLayout']);
+            $layout->uid = $definition->fieldLayoutUid ?? StringHelper::UUID();
+            $definition->setFieldLayout($layout);
+        }
 
         return $definition;
     }
