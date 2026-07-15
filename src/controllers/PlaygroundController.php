@@ -16,22 +16,23 @@ use craftpulse\typesense\assetbundles\playground\PlaygroundAsset;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\Typesense;
 use Throwable;
-use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
- * The Pro search playground and document browser.
+ * The Pro search playground: one GraphiQL-style screen per collection.
  *
- * The playground is a live query console per collection: tunable query params
- * run against the real server through the P6 search layer (the admin key never
- * leaves the server, every param is bounded), and the ranked hits come back
- * with their text-match scores and timing. A diff mode runs the query twice,
- * current versus a pending overlay of edits, and reports how the ranking would
- * change before anything is saved. The document browser is a read-only, paged,
- * filterable view of the actual indexed documents.
+ * The screen mirrors Craft's own GraphiQL explorer
+ * (vendor/craftcms/cms/src/templates/graphql/graphiql.twig): a collection picker
+ * and Run in the header toolbar, a search-params JSON editor on the left, the
+ * ranked response on the right, and a docs-explorer side pane carrying the live
+ * schema and a pageable, filterable document browser. A diff drawer runs the
+ * query twice (current versus a pending overlay) and reports how the ranking
+ * would change before anything is saved. Every query runs through the P6 search
+ * layer, so the admin key never reaches the browser and the result payload is
+ * bounded.
  *
- * Gated by the edition (via [[ProController]]) and, because both surfaces tune
- * and inspect a collection, the `typesense:manageCollections` permission.
+ * Gated by the edition (via [[ProController]]) and the
+ * `typesense:viewDiagnostics` permission.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -43,13 +44,13 @@ class PlaygroundController extends ProController
     // =========================================================================
 
     /**
-     * @var int The largest page size any playground or browser query will honour.
+     * @var int The largest page size any playground query will honour.
      */
     public const MAX_PER_PAGE = 250;
 
     /**
-     * @var string The permission that gates the search playground and document
-     * browser (diagnostics surfaces).
+     * @var string The permission that gates the search playground (a diagnostics
+     * surface).
      */
     public const PERMISSION_VIEW_DIAGNOSTICS = 'typesense:viewDiagnostics';
 
@@ -76,24 +77,16 @@ class PlaygroundController extends ProController
     }
 
     /**
-     * The document browser screen for a collection.
+     * Redirects the retired document-browser URL to the unified playground; the
+     * browser now lives in the playground's docs-explorer side pane.
      *
      * @param string $collection
      * @return Response
-     * @throws NotFoundHttpException
-     * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
     public function actionBrowse(string $collection): Response
     {
-        $this->_requireCollection($collection);
-        $this->getView()->registerAssetBundle(CpAsset::class);
-        $this->getView()->registerAssetBundle(PlaygroundAsset::class);
-
-        return $this->renderTemplate('typesense/playground/_browse', [
-            'handle' => $collection,
-        ]);
+        return $this->redirect('typesense/playground/' . $collection);
     }
 
     /**
@@ -109,9 +102,9 @@ class PlaygroundController extends ProController
         $this->requirePostRequest();
 
         $handle = (string)$this->request->getBodyParam('collection', '');
-        $base = $this->_searchParams($this->request->getBodyParam('params', []));
-        $overlay = $this->request->getBodyParam('overlay', []);
-        $pending = is_array($overlay) ? array_merge($base, $this->_searchParams($overlay)) : $base;
+        $base = $this->_boundBody($this->request->getBodyParam('body', ''));
+        $overlay = $this->_boundBody($this->request->getBodyParam('overlay', ''));
+        $pending = array_merge($base, $overlay);
 
         $search = Typesense::$plugin->getSearch();
         $current = $search->search($handle, $base);
@@ -125,7 +118,8 @@ class PlaygroundController extends ProController
     }
 
     /**
-     * Returns a page of the collection's indexed documents.
+     * Returns a page of the collection's indexed documents for the docs-explorer
+     * side pane.
      *
      * @return Response
      * @throws \yii\web\BadRequestHttpException
@@ -185,46 +179,37 @@ class PlaygroundController extends ProController
     }
 
     /**
-     * The collection picker for the playground and browser.
+     * The unified playground screen. With no collection, it opens on the first
+     * enabled collection; with one, it preselects it (the relevance editor deep
+     * links here in diff mode).
      *
+     * @param string|null $collection
      * @return Response
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionIndex(): Response
+    public function actionIndex(?string $collection = null): Response
     {
-        return $this->renderTemplate('typesense/playground/index', [
-            'collections' => array_keys(Typesense::$plugin->getCollectionRegistry()->getAll()),
-        ]);
-    }
+        $handles = array_keys(Typesense::$plugin->getCollectionRegistry()->getAll());
+        $selected = ($collection !== null && in_array($collection, $handles, true))
+            ? $collection
+            : ($handles[0] ?? null);
 
-    /**
-     * The search playground screen for a collection.
-     *
-     * @param string $collection
-     * @return Response
-     * @throws NotFoundHttpException
-     * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    public function actionQuery(string $collection): Response
-    {
-        $this->_requireCollection($collection);
         $this->getView()->registerAssetBundle(CpAsset::class);
         $this->getView()->registerAssetBundle(PlaygroundAsset::class);
 
-        return $this->renderTemplate('typesense/playground/_query', [
-            'handle' => $collection,
+        return $this->renderTemplate('typesense/playground/_index', [
+            'collections' => $handles,
+            'selected' => $selected,
+            'defaultBody' => $selected !== null ? $this->_defaultBody($selected) : '{}',
             'initialFilterBy' => (string)$this->request->getQueryParam('filterBy', ''),
-            'initialQuery' => (string)$this->request->getQueryParam('q', ''),
         ]);
     }
 
     /**
-     * Runs a tuned query against a collection and returns the ranked hits with
-     * their text-match scores, timing, and facet counts.
+     * Runs the search-params body against a collection and returns the ranked
+     * hits with their text-match scores, timing, and facet counts.
      *
      * @return Response
      * @throws \yii\web\BadRequestHttpException
@@ -235,7 +220,7 @@ class PlaygroundController extends ProController
         $this->requirePostRequest();
 
         $handle = (string)$this->request->getBodyParam('collection', '');
-        $params = $this->_searchParams($this->request->getBodyParam('params', []));
+        $params = $this->_boundBody($this->request->getBodyParam('body', ''));
         $result = Typesense::$plugin->getSearch()->search($handle, $params);
 
         return $this->asJson($this->_summarise($result) + [
@@ -243,8 +228,105 @@ class PlaygroundController extends ProController
         ]);
     }
 
+    /**
+     * Returns the live schema (field names and types) of a collection for the
+     * docs-explorer side pane.
+     *
+     * @return Response
+     * @throws \yii\web\BadRequestHttpException
+     * @author CraftPulse
+     */
+    public function actionSchema(): Response
+    {
+        $this->requirePostRequest();
+
+        $handle = (string)$this->request->getBodyParam('collection', '');
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
+        $client = Typesense::$plugin->getClient()->client();
+
+        if ($collection === null || $client === null) {
+            return $this->asJson(['fields' => []]);
+        }
+
+        $registry = Typesense::$plugin->getCollectionRegistry();
+        $target = $registry->resolveName($collection, Craft::$app->getSites()->getCurrentSite()->id);
+
+        try {
+            $fields = $client->collections[$target]->retrieve()['fields'] ?? [];
+        } catch (Throwable) {
+            return $this->asJson(['fields' => []]);
+        }
+
+        return $this->asJson([
+            'fields' => array_map(static fn(array $field): array => [
+                'name' => (string)($field['name'] ?? ''),
+                'type' => (string)($field['type'] ?? ''),
+            ], $fields),
+        ]);
+    }
+
     // Private Methods
     // =========================================================================
+
+    /**
+     * Json-decodes and bounds the editor's search-params body into a safe param
+     * set: q defaults to a wildcard, per_page and page are clamped, and every
+     * other Typesense search parameter passes through (the query runs read-only
+     * through the fail-soft search layer).
+     *
+     * @param mixed $raw
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    private function _boundBody(mixed $raw): array
+    {
+        $decoded = is_string($raw) ? json_decode($raw, true) : $raw;
+
+        if (!is_array($decoded)) {
+            return ['q' => '*'];
+        }
+
+        $params = $decoded;
+        $params['q'] = mb_substr(trim((string)($decoded['q'] ?? '')) ?: '*', 0, 512);
+
+        if (isset($decoded['per_page'])) {
+            $params['per_page'] = max(1, min(self::MAX_PER_PAGE, (int)$decoded['per_page']));
+        }
+
+        if (isset($decoded['page'])) {
+            $params['page'] = max(1, (int)$decoded['page']);
+        }
+
+        return $params;
+    }
+
+    /**
+     * The default search-params body for a collection: a wildcard query against
+     * the collection's first string field, pretty-printed for the editor.
+     *
+     * @param string $handle
+     * @return string
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    private function _defaultBody(string $handle): string
+    {
+        $queryBy = 'id';
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
+        $client = Typesense::$plugin->getClient()->client();
+
+        if ($collection !== null && $client !== null) {
+            $registry = Typesense::$plugin->getCollectionRegistry();
+            $target = $registry->resolveName($collection, Craft::$app->getSites()->getCurrentSite()->id);
+            $queryBy = $this->_wildcardQueryBy($target, $client);
+        }
+
+        return (string)json_encode([
+            'q' => '*',
+            'query_by' => $queryBy,
+            'per_page' => 20,
+        ], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+    }
 
     /**
      * Computes the ranked diff between two search results: which document ids
@@ -260,7 +342,6 @@ class PlaygroundController extends ProController
         $currentIds = $this->_rankedIds($current);
         $proposedIds = $this->_rankedIds($proposed);
         $currentRank = array_flip($currentIds);
-        $proposedRank = array_flip($proposedIds);
 
         $entered = array_values(array_diff($proposedIds, $currentIds));
         $dropped = array_values(array_diff($currentIds, $proposedIds));
@@ -293,74 +374,6 @@ class PlaygroundController extends ProController
         }
 
         return $ids;
-    }
-
-    /**
-     * Requires a known collection or throws.
-     *
-     * @param string $handle
-     * @return void
-     * @throws NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    private function _requireCollection(string $handle): void
-    {
-        if (Typesense::$plugin->getCollectionRegistry()->get($handle) === null) {
-            throw new NotFoundHttpException('Collection not found.');
-        }
-    }
-
-    /**
-     * Bounds and normalises the tunable search params from the request into a
-     * safe Typesense param set.
-     *
-     * @param mixed $raw
-     * @return array<string, mixed>
-     * @author CraftPulse
-     */
-    private function _searchParams(mixed $raw): array
-    {
-        if (!is_array($raw)) {
-            return [];
-        }
-
-        $params = [
-            'q' => mb_substr(trim((string)($raw['q'] ?? '')) ?: '*', 0, 512),
-            'page' => max(1, (int)($raw['page'] ?? 1)),
-            'per_page' => max(1, min(self::MAX_PER_PAGE, (int)($raw['perPage'] ?? 20))),
-        ];
-
-        $strings = [
-            'queryBy' => 'query_by',
-            'queryByWeights' => 'query_by_weights',
-            'filterBy' => 'filter_by',
-            'sortBy' => 'sort_by',
-            'facetBy' => 'facet_by',
-            'preset' => 'preset',
-        ];
-
-        foreach ($strings as $from => $to) {
-            $value = trim((string)($raw[$from] ?? ''));
-
-            if ($value !== '') {
-                $params[$to] = mb_substr($value, 0, 512);
-            }
-        }
-
-        if (isset($raw['numTypos'])) {
-            $params['num_typos'] = max(0, min(4, (int)$raw['numTypos']));
-        }
-
-        if (isset($raw['dropTokensThreshold'])) {
-            $params['drop_tokens_threshold'] = max(0, min(100, (int)$raw['dropTokensThreshold']));
-        }
-
-        if (isset($raw['prefix'])) {
-            $params['prefix'] = (bool)$raw['prefix'] ? 'true' : 'false';
-        }
-
-        return $params;
     }
 
     /**

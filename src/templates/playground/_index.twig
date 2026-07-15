@@ -1,0 +1,90 @@
+{# =========================================================================
+   Typesense Pro - the search playground (one screen)
+   =========================================================================
+   One GraphiQL-style screen (the analogue of Craft's GraphQL explorer at
+   vendor/craftcms/cms/src/templates/graphql/graphiql.twig), but keeping Craft's
+   chrome header: a collection picker and Run in the header toolbar, a
+   search-params JSON editor on the left, the ranked response on the right, and a
+   docs-explorer side pane with the live schema and a pageable document browser.
+   A diff drawer previews a pending overlay against the current ranking.
+
+   @var collections     array   the collection handles for the picker
+   @var selected        string|null the active collection handle
+   @var defaultBody     string  the prefilled search-params JSON
+   @var initialFilterBy string  an optional prefilled document-browser filter
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Playground'|t('typesense') %}
+{% set selectedSubnavItem = 'playground' %}
+
+{% block actionButton %}
+    {% if selected is not null %}
+        <div class="ts-pg-toolbar">
+            {{ forms.select({
+                id: 'ts-pg-collection',
+                class: 'ts-pg-collection',
+                options: collections|map(handle => { label: handle, value: handle }),
+                value: selected,
+            }) }}
+            <button type="button" class="btn ts-pg-diff-toggle">{{ 'Diff'|t('typesense') }}</button>
+            <button type="button" class="btn submit ts-pg-run">{{ 'Run'|t('typesense') }}</button>
+        </div>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if selected is null %}
+        <div class="zilch"><p>{{ 'No collections are declared yet.'|t('typesense') }}</p></div>
+    {% else %}
+        <div class="ts-pg" data-collection="{{ selected }}" data-initial-filter="{{ initialFilterBy }}">
+            <div class="ts-pg__panes">
+                <section class="ts-pg__editor">
+                    <div class="ts-pg-editor">
+                        <div class="ts-pg-editor__gutter" aria-hidden="true"></div>
+                        <textarea class="ts-pg-editor__input code" spellcheck="false" aria-label="{{ 'Search request'|t('typesense') }}">{{ defaultBody }}</textarea>
+                    </div>
+                    <p class="ts-pg-editor__hint light">{{ 'The Typesense search parameters. Press Cmd/Ctrl+Enter to run. See the search API reference for every parameter.'|t('typesense') }}</p>
+
+                    <div class="ts-pg-drawer ts-pg-diff-drawer hidden">
+                        <h2>{{ 'Diff a pending edit'|t('typesense') }}</h2>
+                        <p class="light">{{ 'Overlay parameters merged over the request above, run as the proposed ranking.'|t('typesense') }}</p>
+                        <div class="ts-pg-editor ts-pg-editor--small">
+                            <div class="ts-pg-editor__gutter" aria-hidden="true"></div>
+                            <textarea class="ts-pg-editor__input ts-pg-overlay code" spellcheck="false" aria-label="{{ 'Overlay parameters'|t('typesense') }}">{}</textarea>
+                        </div>
+                        <div class="buttons"><button type="button" class="btn ts-pg-diff-run">{{ 'Run diff'|t('typesense') }}</button></div>
+                    </div>
+                </section>
+
+                <section class="ts-pg__results">
+                    <div class="ts-pg-results">
+                        <div class="ts-pg-empty"><p class="light">{{ 'Run a query to see ranked results.'|t('typesense') }}</p></div>
+                    </div>
+                </section>
+
+                <aside class="ts-pg__docs">
+                    <div class="ts-pg-docs__section">
+                        <h2>{{ 'Schema'|t('typesense') }}</h2>
+                        <ul class="ts-pg-schema"><li class="light">{{ 'Loading...'|t('typesense') }}</li></ul>
+                    </div>
+                    <div class="ts-pg-docs__section">
+                        <h2>{{ 'Documents'|t('typesense') }}</h2>
+                        {{ forms.text({ class: 'ts-db-filter', placeholder: 'filter_by'|t('typesense') }) }}
+                        <div class="buttons"><button type="button" class="btn small ts-db-apply">{{ 'Apply'|t('typesense') }}</button></div>
+                        <div class="ts-db-stats light"></div>
+                        <div class="ts-db-rows"></div>
+                        <div class="ts-db-paging">
+                            <button type="button" class="btn small ts-db-prev">{{ 'Previous'|t('typesense') }}</button>
+                            <button type="button" class="btn small ts-db-next">{{ 'Next'|t('typesense') }}</button>
+                        </div>
+                    </div>
+                </aside>
+            </div>
+        </div>
+
+        {% js %}
+            new Craft.Typesense.Playground('.ts-pg');
+        {% endjs %}
+    {% endif %}
+{% endblock %}

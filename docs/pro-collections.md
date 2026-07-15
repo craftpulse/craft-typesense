@@ -32,7 +32,7 @@ that family, nothing else.
 | `typesense:manageExperiments` | The A/B experiments composition screen. |
 | `typesense:manageKeys` | The API keys manager and scoped-key profiles. |
 | `typesense:viewAnalytics` | The analytics dashboard. |
-| `typesense:viewDiagnostics` | The search playground, the document browser, and the element-edit inspector sidebar. |
+| `typesense:viewDiagnostics` | The search playground (including its docs-explorer document browser) and the element-edit inspector sidebar. |
 | `typesense:manageOps` | The Typesense utility's operational actions (sync, flush, suspend globally or per collection) and the Pro index-lifecycle ops (clear cache, compact, snapshot). |
 
 `typesense:manageSettings` is registered in every edition; the rest are Pro-only

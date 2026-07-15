@@ -283,13 +283,6 @@ class Typesense extends Plugin
                 ];
             }
 
-            if ($currentUser->checkPermission(PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS)) {
-                $subNavs['playground'] = [
-                    'label' => Craft::t('typesense', 'Playground'),
-                    'url' => 'typesense/playground',
-                ];
-            }
-
             if ($currentUser->checkPermission(AliasesController::PERMISSION_MANAGE_ALIASES)) {
                 $subNavs['aliases'] = [
                     'label' => Craft::t('typesense', 'Aliases'),
@@ -322,6 +315,15 @@ class Typesense extends Plugin
                 $subNavs['analytics'] = [
                     'label' => Craft::t('typesense', 'Analytics'),
                     'url' => 'typesense/analytics',
+                ];
+            }
+
+            // The playground sits at the bottom of the Pro subnav, directly above
+            // Settings (Michael's Fix 11 ruling).
+            if ($currentUser->checkPermission(PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS)) {
+                $subNavs['playground'] = [
+                    'label' => Craft::t('typesense', 'Playground'),
+                    'url' => 'typesense/playground',
                 ];
             }
         }
@@ -500,7 +502,7 @@ class Typesense extends Plugin
             $routes['typesense/collections/<uid:[\w\-]+>'] = 'typesense/collections/edit';
             $routes['typesense/playground'] = 'typesense/playground/index';
             $routes['typesense/playground/<collection:[\w\-]+>/browse'] = 'typesense/playground/browse';
-            $routes['typesense/playground/<collection:[\w\-]+>'] = 'typesense/playground/query';
+            $routes['typesense/playground/<collection:[\w\-]+>'] = 'typesense/playground/index';
             $routes['typesense/aliases'] = 'typesense/aliases/index';
             $routes['typesense/experiments'] = 'typesense/experiments/index';
             $routes['typesense/experiments/new'] = 'typesense/experiments/edit';

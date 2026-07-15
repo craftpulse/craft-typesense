@@ -1,81 +1,108 @@
 /**
- * Typesense search playground + document browser styles.
+ * Typesense search playground styles.
  *
- * A full-viewport, GraphiQL-style split-pane: a fixed header, a scrollable
- * params pane on the left, and a scrollable results pane on the right.
+ * One GraphiQL-style screen inside Craft's chrome: a three-pane split (a
+ * search-params JSON editor with a line-number gutter, the ranked response, and
+ * a docs-explorer side pane) plus a collapsible diff drawer.
  */
 
-.ts-pg-bar {
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-}
-
-.ts-pg-bar__header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 10px 16px;
-    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
-    flex: 0 0 auto;
-}
-
-.ts-pg-bar__heading {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    min-width: 0;
-}
-
-.ts-pg-bar__title {
-    margin: 0;
-    font-size: 16px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-}
-
-.ts-pg-bar__actions {
+.ts-pg-toolbar {
     display: flex;
     align-items: center;
     gap: 8px;
-    flex: 0 0 auto;
 }
 
-.ts-pg-bar__body {
+.ts-pg__panes {
     display: grid;
-    grid-template-columns: minmax(300px, 380px) 1fr;
-    flex: 1 1 auto;
-    min-height: 0;
+    grid-template-columns: minmax(320px, 1fr) minmax(320px, 1.2fr) minmax(260px, 340px);
+    gap: 0;
+    height: calc(100vh - 220px);
+    min-height: 460px;
+    border: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    border-radius: var(--large-border-radius, 5px);
+    overflow: hidden;
 }
 
-.ts-pg-bar__params {
+.ts-pg__editor,
+.ts-pg__results,
+.ts-pg__docs {
     overflow: auto;
     padding: 16px;
-    border-right: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
-}
-
-.ts-pg-bar__results {
-    overflow: auto;
-    padding: 16px 24px;
     min-width: 0;
 }
 
-.ts-pg-group {
+.ts-pg__editor,
+.ts-pg__results {
+    border-right: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.ts-pg-editor {
+    display: flex;
+    border: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+    border-radius: var(--large-border-radius, 5px);
+    background: var(--gray-050, #f3f7fc);
+    height: 320px;
+    overflow: hidden;
+}
+
+.ts-pg-editor--small {
+    height: 140px;
+}
+
+.ts-pg-editor__gutter {
+    flex: 0 0 auto;
+    overflow: hidden;
+    padding: 12px 8px;
+    text-align: right;
+    color: var(--medium-text-color, #606d7b);
+    background: var(--gray-100, #e4edf6);
+    white-space: pre;
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+.ts-pg-editor__input {
+    flex: 1 1 auto;
     border: none;
-    margin: 0 0 20px;
-    padding: 0;
+    resize: none;
+    background: transparent;
+    padding: 12px;
+    white-space: pre;
+    overflow: auto;
+    font-family: 'SFMono-Regular', Consolas, Menlo, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    box-shadow: none;
 }
 
-.ts-pg-group > legend {
-    font-weight: 600;
-    margin-bottom: 8px;
-    padding: 0;
+.ts-pg-editor__hint {
+    margin-top: 8px;
+    font-size: 12px;
 }
 
-.ts-pg-group .field {
-    margin-bottom: 10px;
+.ts-pg-drawer {
+    margin-top: 20px;
+    padding-top: 16px;
+    border-top: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
+}
+
+.ts-pg-docs__section {
+    margin-bottom: 24px;
+}
+
+.ts-pg-schema {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-size: 12px;
+}
+
+.ts-pg-schema li {
+    padding: 3px 0;
+    border-bottom: 1px solid var(--hairline-color, rgba(51, 64, 77, 0.1));
 }
 
 .ts-pg-empty {

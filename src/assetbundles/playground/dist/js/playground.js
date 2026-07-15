@@ -1,17 +1,17 @@
 /**
- * Typesense search playground + document browser.
+ * Typesense search playground (one GraphiQL-style screen).
  *
- * Craft.Typesense.Playground drives the full-viewport query console: it
- * serialises the tunable params, runs them against the server through the Pro
- * controller (the admin key never reaches the browser), and renders ranked hits
- * with a stats bar, per-hit score badges, and collapsible document JSON. Run is
- * a button and Cmd/Ctrl+Enter. Diff mode runs current versus a pending overlay
- * and shows the two rankings side by side. Craft.Typesense.DocumentBrowser pages
- * the actual indexed documents and expands each row's JSON inline.
+ * Craft.Typesense.Playground drives the unified playground: a search-params JSON
+ * editor (with a line-number gutter) on the left, ranked results on the right,
+ * and a docs-explorer side pane carrying the live schema and a pageable,
+ * filterable document browser. Run is a header button and Cmd/Ctrl+Enter. A diff
+ * drawer runs current versus a pending overlay and shows the two rankings side by
+ * side. Every query goes through the Pro controller, so the admin key never
+ * reaches the browser.
  *
- * Accessibility: controls are real buttons; document JSON expands through native
- * <details> disclosure (no focus-trapping HUD to leak); destroy() tears the
- * listeners down.
+ * The editor is a plain textarea plus a synced gutter (no CodeMirror or other
+ * external editor lib, per the plugin's CSP/asset rules); results render with a
+ * stats bar, per-hit score badges, and native <details> JSON disclosures.
  *
  * @author CraftPulse
  * @since 5.9.0
@@ -36,45 +36,94 @@ function tsJsonDisclosure(doc, label) {
 
 Craft.Typesense.Playground = Garnish.Base.extend({
     $container: null,
+    $editor: null,
+    $overlay: null,
     $results: null,
+    $rows: null,
     handle: null,
+    page: 1,
 
-    init: function (container, settings) {
+    init: function (container) {
         this.$container = $(container);
-        this.setSettings(settings, {});
         this.handle = this.$container.data('collection');
+        this.$editor = this.$container.find('.ts-pg__editor .ts-pg-editor__input').first();
+        this.$overlay = this.$container.find('.ts-pg-overlay');
         this.$results = this.$container.find('.ts-pg-results');
+        this.$rows = this.$container.find('.ts-db-rows');
 
-        this.addListener(this.$container.find('.ts-pg-run'), 'activate', 'run');
-        this.addListener(this.$container.find('.ts-pg-diff'), 'activate', 'diff');
+        var self = this;
+        this.$container.find('.ts-pg-editor').each(function () {
+            self.syncGutter($(this));
+        });
 
-        // Cmd/Ctrl+Enter runs the query from anywhere in the console.
+        this.addListener($('.ts-pg-run'), 'activate', 'run');
+        this.addListener($('.ts-pg-diff-toggle'), 'activate', function () {
+            this.$container.find('.ts-pg-diff-drawer').toggleClass('hidden');
+        });
+        this.addListener(this.$container.find('.ts-pg-diff-run'), 'activate', 'diff');
+        this.addListener(this.$container.find('.ts-db-apply'), 'activate', function () {
+            this.page = 1;
+            this.loadDocuments();
+        });
+        this.addListener(this.$container.find('.ts-db-prev'), 'activate', function () {
+            if (this.page > 1) {
+                this.page--;
+                this.loadDocuments();
+            }
+        });
+        this.addListener(this.$container.find('.ts-db-next'), 'activate', function () {
+            this.page++;
+            this.loadDocuments();
+        });
+
+        // The collection picker in the header navigates to that collection.
+        this.addListener($('.ts-pg-collection'), 'change', function (ev) {
+            window.location.href = Craft.getCpUrl('typesense/playground/' + $(ev.currentTarget).val());
+        });
+
+        // Cmd/Ctrl+Enter runs the query from anywhere in the screen.
         this.addListener(this.$container, 'keydown', function (ev) {
             if ((ev.metaKey || ev.ctrlKey) && ev.keyCode === Garnish.RETURN_KEY) {
                 ev.preventDefault();
                 this.run();
             }
         });
+
+        var initialFilter = this.$container.data('initial-filter');
+        if (initialFilter) {
+            this.$container.find('.ts-db-filter').val(initialFilter);
+        }
+
+        this.loadSchema();
+        this.loadDocuments();
     },
 
-    collectParams: function (selector) {
-        var params = {};
-        this.$container.find(selector).each(function () {
-            var $field = $(this);
-            var key = $field.data('param') || $field.data('overlay');
-            if (!key) {
-                return;
+    syncGutter: function ($editor) {
+        var $input = $editor.find('.ts-pg-editor__input');
+        var $gutter = $editor.find('.ts-pg-editor__gutter');
+
+        var update = function () {
+            var lines = (String($input.val()).match(/\n/g) || []).length + 1;
+            var numbers = [];
+            for (var i = 1; i <= lines; i++) {
+                numbers.push(i);
             }
-            params[key] = $field.attr('type') === 'checkbox' ? $field.prop('checked') : $field.val();
+            $gutter.text(numbers.join('\n'));
+        };
+
+        this.addListener($input, 'input', update);
+        this.addListener($input, 'scroll', function () {
+            $gutter.scrollTop($input.scrollTop());
         });
-        return params;
+
+        update();
     },
 
     run: function () {
         var self = this;
         this.renderLoading();
         Craft.sendActionRequest('POST', 'typesense/playground/run', {
-            data: {collection: this.handle, params: this.collectParams('[data-param]')},
+            data: {collection: this.handle, body: this.$editor.val()},
         })
             .then(function (response) {
                 self.renderResults(response.data);
@@ -90,8 +139,8 @@ Craft.Typesense.Playground = Garnish.Base.extend({
         Craft.sendActionRequest('POST', 'typesense/playground/diff', {
             data: {
                 collection: this.handle,
-                params: this.collectParams('[data-param]'),
-                overlay: this.collectParams('[data-overlay]'),
+                body: this.$editor.val(),
+                overlay: this.$overlay.val(),
             },
         })
             .then(function (response) {
@@ -99,6 +148,44 @@ Craft.Typesense.Playground = Garnish.Base.extend({
             })
             .catch(function () {
                 self.renderError();
+            });
+    },
+
+    loadSchema: function () {
+        var self = this;
+        Craft.sendActionRequest('POST', 'typesense/playground/schema', {
+            data: {collection: this.handle},
+        })
+            .then(function (response) {
+                var fields = response.data.fields || [];
+                var html = fields.length
+                    ? fields.map(function (f) {
+                        return '<li><code>' + tsEscape(f.name) + '</code> <span class="light">' + tsEscape(f.type) + '</span></li>';
+                    }).join('')
+                    : '<li class="light">' + Craft.t('typesense', 'No schema available.') + '</li>';
+                self.$container.find('.ts-pg-schema').html(html);
+            })
+            .catch(function () {
+                self.$container.find('.ts-pg-schema').html('<li class="error">' + Craft.t('typesense', 'The query could not be run.') + '</li>');
+            });
+    },
+
+    loadDocuments: function () {
+        var self = this;
+        this.$rows.html('<div class="ts-pg-empty"><div class="spinner"></div></div>');
+        Craft.sendActionRequest('POST', 'typesense/playground/documents', {
+            data: {
+                collection: this.handle,
+                page: this.page,
+                perPage: 25,
+                filterBy: this.$container.find('.ts-db-filter').val(),
+            },
+        })
+            .then(function (response) {
+                self.renderDocuments(response.data);
+            })
+            .catch(function () {
+                self.$rows.html('<div class="ts-pg-empty"><p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p></div>');
             });
     },
 
@@ -119,7 +206,7 @@ Craft.Typesense.Playground = Garnish.Base.extend({
     renderDiff: function (data) {
         var none = Craft.t('typesense', 'None');
         var moved = (data.diff.moved || []).map(function (m) {
-            return tsEscape(m.id) + ' (' + m.from + '→' + m.to + ')';
+            return tsEscape(m.id) + ' (' + m.from + '->' + m.to + ')';
         }).join(', ');
 
         var html = '<div class="ts-pg-diff-grid">' +
@@ -137,12 +224,34 @@ Craft.Typesense.Playground = Garnish.Base.extend({
         this.$results.html(html);
     },
 
+    renderDocuments: function (data) {
+        var stats = data.stats || {};
+        this.$container.find('.ts-db-stats').text(
+            Craft.t('typesense', '{n} documents', {n: stats.numDocuments || 0}) +
+            ' - ' + Craft.t('typesense', 'Page {p}', {p: this.page})
+        );
+
+        if (!data.documents || !data.documents.length) {
+            this.$rows.html('<div class="ts-pg-empty"><p class="light">' + Craft.t('typesense', 'No documents.') + '</p></div>');
+            return;
+        }
+
+        var rows = data.documents.map(function (doc) {
+            return '<li class="ts-pg-hit">' +
+                '<code class="ts-pg-hit__id">' + tsEscape(doc.id) + '</code>' +
+                tsJsonDisclosure(doc, Craft.t('typesense', 'JSON')) +
+                '</li>';
+        }).join('');
+
+        this.$rows.html('<ul class="ts-pg-hits">' + rows + '</ul>');
+    },
+
     statsBar: function (data) {
         var parts = [Craft.t('typesense', '{n} results', {n: data.found || 0})];
         if (data.searchTimeMs !== null && data.searchTimeMs !== undefined) {
             parts.push(Craft.t('typesense', '{ms} ms', {ms: data.searchTimeMs}));
         }
-        return '<div class="ts-pg-statsbar">' + parts.join(' · ') + '</div>';
+        return '<div class="ts-pg-statsbar">' + parts.join(' - ') + '</div>';
     },
 
     hits: function (hits) {
@@ -179,79 +288,5 @@ Craft.Typesense.Playground = Garnish.Base.extend({
         this.$results.html(
             '<div class="ts-pg-empty"><p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p></div>'
         );
-    },
-});
-
-Craft.Typesense.DocumentBrowser = Garnish.Base.extend({
-    $container: null,
-    $rows: null,
-    handle: null,
-    page: 1,
-
-    init: function (container) {
-        this.$container = $(container);
-        this.handle = this.$container.data('collection');
-        this.$rows = this.$container.find('.ts-db-rows');
-
-        this.addListener(this.$container.find('.ts-db-apply'), 'activate', function () {
-            this.page = 1;
-            this.load();
-        });
-        this.addListener(this.$container.find('.ts-db-prev'), 'activate', function () {
-            if (this.page > 1) {
-                this.page--;
-                this.load();
-            }
-        });
-        this.addListener(this.$container.find('.ts-db-next'), 'activate', function () {
-            this.page++;
-            this.load();
-        });
-
-        this.load();
-    },
-
-    load: function () {
-        var self = this;
-        this.$rows.html('<div class="ts-pg-empty"><div class="spinner"></div></div>');
-        Craft.sendActionRequest('POST', 'typesense/playground/documents', {
-            data: {
-                collection: this.handle,
-                page: this.page,
-                perPage: 25,
-                filterBy: this.$container.find('.ts-db-filter').val(),
-                sortBy: this.$container.find('.ts-db-sort').val(),
-            },
-        })
-            .then(function (response) {
-                self.render(response.data);
-            })
-            .catch(function () {
-                self.$rows.html(
-                    '<div class="ts-pg-empty"><p class="error">' + Craft.t('typesense', 'The query could not be run.') + '</p></div>'
-                );
-            });
-    },
-
-    render: function (data) {
-        var stats = data.stats || {};
-        this.$container.find('.ts-db-stats').text(
-            Craft.t('typesense', '{n} documents', {n: stats.numDocuments || 0}) +
-            ' · ' + Craft.t('typesense', 'Page {p}', {p: this.page})
-        );
-
-        if (!data.documents.length) {
-            this.$rows.html('<div class="ts-pg-empty"><p class="light">' + Craft.t('typesense', 'No documents.') + '</p></div>');
-            return;
-        }
-
-        var rows = data.documents.map(function (doc) {
-            return '<li class="ts-pg-hit">' +
-                '<code class="ts-pg-hit__id">' + tsEscape(doc.id) + '</code>' +
-                tsJsonDisclosure(doc, Craft.t('typesense', 'JSON')) +
-                '</li>';
-        }).join('');
-
-        this.$rows.html('<ul class="ts-pg-hits">' + rows + '</ul>');
     },
 });

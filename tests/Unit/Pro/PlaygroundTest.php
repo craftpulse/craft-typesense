@@ -2,10 +2,11 @@
 /**
  * Typesense plugin for Craft CMS 5.x
  *
- * The Pro search playground and document browser controller paths, against the
- * real heroes collection: a tuned query run returns ranked hits with text-match
+ * The Pro search playground controller paths, against the real heroes
+ * collection: a search-params body runs and returns ranked hits with text-match
  * scores and timing, diff mode returns a coherent before/after for a pending
- * weight change, and the document browser pages the real indexed documents.
+ * overlay, the schema and document actions feed the docs-explorer side pane, and
+ * the one unified screen renders (the retired browser URL redirects into it).
  *
  * @link      https://craft-pulse.com
  * @copyright Copyright (c) 2026 CraftPulse
@@ -26,11 +27,11 @@ function aPlaygroundAdmin(): User
     return $user;
 }
 
-it('runs a tuned query and returns ranked hits with scores and timing', function() {
+it('runs a search-params body and returns ranked hits with scores and timing', function() {
     $this->actingAs(aPlaygroundAdmin())
         ->post(UrlHelper::actionUrl('typesense/playground/run'), [
             'collection' => 'heroes',
-            'params' => ['q' => '*', 'queryBy' => 'title', 'perPage' => 5],
+            'body' => '{"q": "*", "query_by": "title", "per_page": 5}',
         ])
         ->assertOk()
         ->assertSee('"found":488', false)
@@ -39,12 +40,12 @@ it('runs a tuned query and returns ranked hits with scores and timing', function
         ->assertSee('"textMatch"', false);
 });
 
-it('returns a coherent before/after diff for a pending weight change', function() {
+it('returns a coherent before/after diff for a pending overlay', function() {
     $this->actingAs(aPlaygroundAdmin())
         ->post(UrlHelper::actionUrl('typesense/playground/diff'), [
             'collection' => 'heroes',
-            'params' => ['q' => '*', 'queryBy' => 'title', 'perPage' => 5],
-            'overlay' => ['queryByWeights' => '3'],
+            'body' => '{"q": "*", "query_by": "title", "per_page": 5}',
+            'overlay' => '{"query_by_weights": "3"}',
         ])
         ->assertOk()
         ->assertSee('"current"', false)
@@ -54,7 +55,7 @@ it('returns a coherent before/after diff for a pending weight change', function(
         ->assertSee('"moved"', false);
 });
 
-it('pages the real indexed documents in the browser', function() {
+it('pages the real indexed documents for the docs-explorer', function() {
     $this->actingAs(aPlaygroundAdmin())
         ->post(UrlHelper::actionUrl('typesense/playground/documents'), [
             'collection' => 'heroes',
@@ -67,22 +68,28 @@ it('pages the real indexed documents in the browser', function() {
         ->assertSee('"numDocuments":488', false);
 });
 
-it('renders the full-viewport query console for a collection', function() {
+it('returns the live schema for the docs-explorer', function() {
+    $this->actingAs(aPlaygroundAdmin())
+        ->post(UrlHelper::actionUrl('typesense/playground/schema'), [
+            'collection' => 'heroes',
+        ])
+        ->assertOk()
+        ->assertSee('"fields"', false);
+});
+
+it('renders the one unified playground screen for a collection', function() {
     $this->actingAs(aPlaygroundAdmin())
         ->get(UrlHelper::cpUrl('typesense/playground/heroes'))
         ->assertOk()
-        ->assertSee('ts-pg-bar', false)
         ->assertSee('ts-pg-run', false)
-        ->assertSee('data-param="q"', false);
+        ->assertSee('ts-pg-editor__input', false)
+        ->assertSee('ts-pg-schema', false);
 });
 
-it('renders the full-viewport document browser for a collection', function() {
+it('redirects the retired document-browser URL into the playground', function() {
     $this->actingAs(aPlaygroundAdmin())
         ->get(UrlHelper::cpUrl('typesense/playground/heroes/browse'))
-        ->assertOk()
-        ->assertSee('ts-pg-bar', false)
-        ->assertSee('ts-db-apply', false)
-        ->assertSee('ts-db-rows', false);
+        ->assertRedirect();
 });
 
 it('forbids the playground run in Free even for an admin', function() {
