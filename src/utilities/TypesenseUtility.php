@@ -12,6 +12,7 @@ namespace craftpulse\typesense\utilities;
 
 use Craft;
 use craft\base\Utility;
+use craftpulse\typesense\controllers\CollectionsController;
 use craftpulse\typesense\controllers\SettingsController;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
@@ -64,16 +65,45 @@ class TypesenseUtility extends Utility
         /** @var \craftpulse\typesense\models\Settings $settings */
         $settings = $plugin->getSettings();
 
+        $user = Craft::$app->getUser();
+
         return Craft::$app->getView()->renderTemplate('typesense/_components/utilities/typesense', [
             'status' => $plugin->getClient()->getStatus(),
             'collections' => self::_collectionRows(),
             'suspended' => $settings->syncSuspended,
-            'canManage' => Craft::$app->getUser()->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS),
+            'canManage' => $user->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS),
+            'ops' => self::_ops(),
+            // Ops actions are Pro and gated by the index-management permission;
+            // reading metrics stays Free (visible to any utility viewer).
+            'canRunOps' => $plugin->getIsPro() && $user->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS),
         ]);
     }
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Builds the ops readout from the server metrics (memory, disk), fail-soft.
+     *
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    private static function _ops(): array
+    {
+        $metrics = Typesense::$plugin->getClient()->metrics();
+
+        if ($metrics === []) {
+            return [];
+        }
+
+        return [
+            'memoryUsedBytes' => (int)($metrics['system_memory_used_bytes'] ?? 0),
+            'memoryTotalBytes' => (int)($metrics['system_memory_total_bytes'] ?? 0),
+            'diskUsedBytes' => (int)($metrics['system_disk_used_bytes'] ?? 0),
+            'diskTotalBytes' => (int)($metrics['system_disk_total_bytes'] ?? 0),
+            'cpuActivePercentage' => (string)($metrics['system_cpu_active_percentage'] ?? ''),
+        ];
+    }
 
     /**
      * Builds the collections overview rows: name, document count, and drift status.

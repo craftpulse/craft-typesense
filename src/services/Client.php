@@ -176,6 +176,30 @@ class Client extends Component
     }
 
     /**
+     * Returns the server metrics (memory, disk, CPU, request counts) from
+     * `/metrics.json`, fail-soft.
+     *
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function metrics(): array
+    {
+        return $this->request('GET', '/metrics.json');
+    }
+
+    /**
+     * Returns the server per-endpoint latency stats from `/stats.json`,
+     * fail-soft.
+     *
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function stats(): array
+    {
+        return $this->request('GET', '/stats.json');
+    }
+
+    /**
      * Returns whether the server is reachable and healthy.
      *
      * @return bool

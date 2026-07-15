@@ -1,0 +1,40 @@
+{# =========================================================================
+   Typesense Pro - health dashboard widget body
+   =========================================================================
+   @var rows        array
+   @var analyticsOn bool
+   ========================================================================= #}
+{% if rows is empty %}
+    <p class="light">{{ 'No collections are declared.'|t('typesense') }}</p>
+{% else %}
+    <table class="data fullwidth">
+        <thead>
+            <tr>
+                <th>{{ 'Collection'|t('typesense') }}</th>
+                <th>{{ 'Docs'|t('typesense') }}</th>
+                <th>{{ 'Last sync'|t('typesense') }}</th>
+                <th>{{ 'Drift'|t('typesense') }}</th>
+                {% if analyticsOn %}<th>{{ 'Zero-result'|t('typesense') }}</th>{% endif %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in rows %}
+                <tr>
+                    <td><code>{{ row.name }}</code></td>
+                    <td>{{ row.documents is null ? '?' : row.documents }}</td>
+                    <td>{{ row.lastSyncedAt ? row.lastSyncedAt|datetime('short') : ('Never'|t('typesense')) }}</td>
+                    <td>
+                        {% if row.drift == 'inSync' %}
+                            <span class="status green"></span> {{ 'In sync'|t('typesense') }}
+                        {% elseif row.drift == 'drifted' %}
+                            <span class="status orange"></span> {{ 'Drifted'|t('typesense') }}
+                        {% else %}
+                            <span class="status red"></span> {{ 'Missing'|t('typesense') }}
+                        {% endif %}
+                    </td>
+                    {% if analyticsOn %}<td>{{ row.zeroResults is null ? ('n/a'|t('typesense')) : row.zeroResults }}</td>{% endif %}
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

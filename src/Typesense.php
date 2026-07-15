@@ -31,6 +31,7 @@ use craft\helpers\Cp;
 use craft\helpers\UrlHelper;
 use craft\queue\BaseJob;
 use craft\queue\Queue;
+use craft\services\Dashboard;
 use craft\services\Gql;
 use craft\services\UserPermissions;
 use craft\services\Utilities;
@@ -52,6 +53,7 @@ use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\utilities\TypesenseUtility;
 use craftpulse\typesense\variables\TypesenseVariable;
+use craftpulse\typesense\widgets\HealthWidget;
 use yii\base\Event;
 
 
@@ -400,6 +402,15 @@ class Typesense extends Plugin
             Utilities::EVENT_REGISTER_UTILITIES,
             function(RegisterComponentTypesEvent $event) {
                 $event->types[] = TypesenseUtility::class;
+            }
+        );
+
+        // Handler: Dashboard::EVENT_REGISTER_WIDGET_TYPES
+        Event::on(
+            Dashboard::class,
+            Dashboard::EVENT_REGISTER_WIDGET_TYPES,
+            function(RegisterComponentTypesEvent $event) {
+                $event->types[] = HealthWidget::class;
             }
         );
 

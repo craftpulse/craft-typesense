@@ -2,6 +2,8 @@
 {# @var collections array #}
 {# @var suspended bool #}
 {# @var canManage bool #}
+{# @var ops array #}
+{# @var canRunOps bool #}
 {% import '_includes/forms.twig' as forms %}
 
 <h2>{{ 'Server status'|t('typesense') }}</h2>
@@ -63,6 +65,58 @@
         </tbody>
     </table>
     <p class="light">{{ 'Run `craft typesense/config/diff` for the full drift report.'|t('typesense') }}</p>
+{% endif %}
+
+{% if ops is not empty %}
+    <hr>
+    <h2>{{ 'Server operations'|t('typesense') }}</h2>
+    <table class="data fullwidth">
+        <tbody>
+            <tr>
+                <th>{{ 'Memory used'|t('typesense') }}</th>
+                <td>{{ (ops.memoryUsedBytes / 1024 / 1024)|number_format(1) }} MB {% if ops.memoryTotalBytes %}/ {{ (ops.memoryTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
+            </tr>
+            <tr>
+                <th>{{ 'Disk used'|t('typesense') }}</th>
+                <td>{{ (ops.diskUsedBytes / 1024 / 1024)|number_format(1) }} MB {% if ops.diskTotalBytes %}/ {{ (ops.diskTotalBytes / 1024 / 1024)|number_format(1) }} MB{% endif %}</td>
+            </tr>
+            {% if ops.cpuActivePercentage %}
+                <tr>
+                    <th>{{ 'CPU active'|t('typesense') }}</th>
+                    <td>{{ ops.cpuActivePercentage }}%</td>
+                </tr>
+            {% endif %}
+        </tbody>
+    </table>
+
+    {% if canRunOps %}
+        <div class="buttons">
+            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Compact the database now?'|t('typesense') }}">
+                {{ csrfInput() }}
+                {{ actionInput('typesense/ops/compact') }}
+                {{ redirectInput('utilities/typesense') }}
+                <button type="submit" class="btn">{{ 'Compact database'|t('typesense') }}</button>
+            </form>
+            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Clear the query cache?'|t('typesense') }}">
+                {{ csrfInput() }}
+                {{ actionInput('typesense/ops/clear-cache') }}
+                {{ redirectInput('utilities/typesense') }}
+                <button type="submit" class="btn">{{ 'Clear cache'|t('typesense') }}</button>
+            </form>
+        </div>
+        <form method="post" accept-charset="UTF-8" class="ts-ops-snapshot">
+            {{ csrfInput() }}
+            {{ actionInput('typesense/ops/snapshot') }}
+            {{ redirectInput('utilities/typesense') }}
+            {{ forms.textField({
+                label: 'Snapshot to server path'|t('typesense'),
+                instructions: 'An absolute path on the Typesense server the snapshot is written to.'|t('typesense'),
+                name: 'snapshotPath',
+                placeholder: '/data/snapshots/manual',
+            }) }}
+            <button type="submit" class="btn">{{ 'Take snapshot'|t('typesense') }}</button>
+        </form>
+    {% endif %}
 {% endif %}
 
 {% if canManage %}
