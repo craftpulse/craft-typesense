@@ -31,6 +31,14 @@ use yii\web\Response;
  */
 class DictionariesController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the dictionaries screens.
+     */
+    public const PERMISSION_MANAGE_DICTIONARIES = 'typesense:manageDictionaries';
+
     // Public Methods
     // =========================================================================
 
@@ -48,7 +56,7 @@ class DictionariesController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_DICTIONARIES);
 
         return true;
     }

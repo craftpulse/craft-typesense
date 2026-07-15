@@ -16,17 +16,28 @@ Pro control panel: no nav items, no routes, no permissions. Lower editions do
 not badge Pro features, they hide them, and every Pro action is edition-checked
 server-side, so a crafted request cannot reach a Pro action on Free.
 
-Pro registers a granular permission set under the Typesense heading:
+Pro registers a granular permission set under the single Typesense heading, one
+handle per screen family (no umbrellas): a user granted one handle reaches only
+that family, nothing else.
 
 | Permission | Gates |
 | --- | --- |
 | `typesense:manageSettings` | The settings screen (Free and Pro). |
-| `typesense:manageCollections` | The collections cockpit and mapping UI. |
+| `typesense:manageCollections` | The collections cockpit and the mapping UI (including the per-collection suspend toggle on the collection edit screen). |
+| `typesense:manageRelevance` | The relevance and vector/AI editor, and conversation (RAG) models. |
+| `typesense:manageSynonyms` | The synonyms manager. |
 | `typesense:manageCuration` | The curation manager. |
+| `typesense:manageDictionaries` | The stopwords and stemming-dictionary manager. |
+| `typesense:manageAliases` | The aliases manager, zero-downtime rebuilds, and cloning. |
+| `typesense:manageExperiments` | The A/B experiments composition screen. |
 | `typesense:manageKeys` | The API keys manager and scoped-key profiles. |
 | `typesense:viewAnalytics` | The analytics dashboard. |
+| `typesense:viewDiagnostics` | The search playground, the document browser, and the element-edit inspector sidebar. |
+| `typesense:manageOps` | The Typesense utility's operational actions (sync, flush, suspend globally or per collection) and the Pro index-lifecycle ops (clear cache, compact, snapshot). |
 
-Nav items and screens key off both the edition and the matching permission.
+`typesense:manageSettings` is registered in every edition; the rest are Pro-only
+(hidden in Free, never badged). Nav items, routes, and server-side action checks
+all key off both the edition and the matching permission.
 
 ## Two kinds of collections
 

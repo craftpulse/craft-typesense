@@ -12,8 +12,7 @@ namespace craftpulse\typesense\utilities;
 
 use Craft;
 use craft\base\Utility;
-use craftpulse\typesense\controllers\CollectionsController;
-use craftpulse\typesense\controllers\SettingsController;
+use craftpulse\typesense\controllers\OpsController;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
 use Throwable;
@@ -68,11 +67,11 @@ class TypesenseUtility extends Utility
             'status' => $plugin->getClient()->getStatus(),
             'collections' => self::_collectionRows(),
             'suspended' => $plugin->getSyncSuspend()->isGloballySuspended(),
-            'canManage' => $user->checkPermission(SettingsController::PERMISSION_MANAGE_SETTINGS),
+            'canManage' => $user->checkPermission(OpsController::PERMISSION_MANAGE_OPS),
             'ops' => self::_ops(),
-            // Ops actions are Pro and gated by the index-management permission;
-            // reading metrics stays Free (visible to any utility viewer).
-            'canRunOps' => $plugin->getIsPro() && $user->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS),
+            // Ops actions (sync, flush, suspend, and the Pro index-lifecycle ops)
+            // are all gated by the dedicated ops permission.
+            'canRunOps' => $plugin->getIsPro() && $user->checkPermission(OpsController::PERMISSION_MANAGE_OPS),
         ]);
     }
 

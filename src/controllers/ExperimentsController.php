@@ -31,6 +31,14 @@ use yii\web\Response;
  */
 class ExperimentsController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the A/B experiments screens.
+     */
+    public const PERMISSION_MANAGE_EXPERIMENTS = 'typesense:manageExperiments';
+
     // Public Methods
     // =========================================================================
 
@@ -48,7 +56,7 @@ class ExperimentsController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_EXPERIMENTS);
 
         return true;
     }
@@ -64,7 +72,7 @@ class ExperimentsController extends ProController
     public function actionDelete(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_EXPERIMENTS);
 
         Typesense::$plugin->getExperiments()->delete((string)$this->request->getRequiredBodyParam('handle'));
 
@@ -121,7 +129,7 @@ class ExperimentsController extends ProController
     public function actionSave(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_EXPERIMENTS);
 
         $request = $this->request;
 

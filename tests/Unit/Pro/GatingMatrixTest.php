@@ -25,17 +25,17 @@ use craftpulse\typesense\Typesense;
  * @return array<string, array{0: string, 1: string, 2: string}>
  */
 dataset('proActions', [
-    'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageCollections'],
+    'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageAliases'],
     'analytics' => ['typesense/analytics/index', 'get', 'typesense:viewAnalytics'],
     'collections' => ['typesense/collections/index', 'get', 'typesense:manageCollections'],
     'curation' => ['typesense/curation/index', 'get', 'typesense:manageCuration'],
-    'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manageCollections'],
-    'experiments' => ['typesense/experiments/index', 'get', 'typesense:manageCollections'],
+    'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manageDictionaries'],
+    'experiments' => ['typesense/experiments/index', 'get', 'typesense:manageExperiments'],
     'keys' => ['typesense/keys/index', 'get', 'typesense:manageKeys'],
-    'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manageCollections'],
-    'playground' => ['typesense/playground/index', 'get', 'typesense:manageCollections'],
-    'relevance' => ['typesense/relevance/index', 'get', 'typesense:manageCollections'],
-    'synonyms' => ['typesense/synonyms/index', 'get', 'typesense:manageCollections'],
+    'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manageOps'],
+    'playground' => ['typesense/playground/index', 'get', 'typesense:viewDiagnostics'],
+    'relevance' => ['typesense/relevance/index', 'get', 'typesense:manageRelevance'],
+    'synonyms' => ['typesense/synonyms/index', 'get', 'typesense:manageSynonyms'],
 ]);
 
 function aGatingAdmin(): User
@@ -95,5 +95,24 @@ it('fails closed for a user without the permission on every Pro controller', fun
             ? $this->post(UrlHelper::actionUrl($action))
             : $this->get(UrlHelper::actionUrl($action));
         $response->assertForbidden();
+    });
+})->with('proActions');
+
+it('grants nothing beyond its own screen family to a single-permission user (no umbrella)', function(string $action, string $method, string $permission) {
+    withGatingEdition(Typesense::EDITION_PRO, function() use ($permission) {
+        $user = aPermissionlessUser();
+        Craft::$app->getUserPermissions()->saveUserPermissions((int)$user->id, [$permission]);
+
+        // Holding exactly one handle grants nothing else: a screen from a
+        // different family stays forbidden (the allow side of each handle is
+        // covered by the per-feature admin tests).
+        $other = $permission === 'typesense:viewAnalytics'
+            ? 'typesense/keys/index'
+            : 'typesense/analytics/index';
+
+        $this->actingAs($user)
+            ->withExceptionHandling()
+            ->get(UrlHelper::actionUrl($other))
+            ->assertForbidden();
     });
 })->with('proActions');

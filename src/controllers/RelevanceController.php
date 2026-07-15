@@ -32,6 +32,14 @@ use yii\web\Response;
  */
 class RelevanceController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the relevance screens.
+     */
+    public const PERMISSION_MANAGE_RELEVANCE = 'typesense:manageRelevance';
+
     // Public Methods
     // =========================================================================
 
@@ -49,7 +57,7 @@ class RelevanceController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
 
         return true;
     }
@@ -115,7 +123,7 @@ class RelevanceController extends ProController
     public function actionSave(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
 
         $definition = $this->_requireDefinition((string)$this->request->getRequiredBodyParam('uid'));
         $definition->relevance = $this->_relevanceBody();
@@ -165,7 +173,7 @@ class RelevanceController extends ProController
     public function actionDeleteConversationModel(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
 
         Typesense::$plugin->getAiModels()->deleteConversationModel((string)$this->request->getRequiredBodyParam('id'));
 
@@ -185,7 +193,7 @@ class RelevanceController extends ProController
     public function actionSaveConversationModel(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
 
         $request = $this->request;
         $config = [

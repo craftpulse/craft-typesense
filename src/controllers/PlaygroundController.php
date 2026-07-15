@@ -47,6 +47,12 @@ class PlaygroundController extends ProController
      */
     public const MAX_PER_PAGE = 250;
 
+    /**
+     * @var string The permission that gates the search playground and document
+     * browser (diagnostics surfaces).
+     */
+    public const PERMISSION_VIEW_DIAGNOSTICS = 'typesense:viewDiagnostics';
+
     // Public Methods
     // =========================================================================
 
@@ -64,7 +70,7 @@ class PlaygroundController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_VIEW_DIAGNOSTICS);
 
         return true;
     }

@@ -42,12 +42,18 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\web\View;
 use craftpulse\typesense\base\PluginTrait;
+use craftpulse\typesense\controllers\AliasesController;
 use craftpulse\typesense\controllers\AnalyticsController;
 use craftpulse\typesense\controllers\CollectionsController;
 use craftpulse\typesense\controllers\CurationController;
+use craftpulse\typesense\controllers\DictionariesController;
+use craftpulse\typesense\controllers\ExperimentsController;
 use craftpulse\typesense\controllers\KeysController;
-
+use craftpulse\typesense\controllers\OpsController;
+use craftpulse\typesense\controllers\PlaygroundController;
+use craftpulse\typesense\controllers\RelevanceController;
 use craftpulse\typesense\controllers\SettingsController;
+use craftpulse\typesense\controllers\SynonymsController;
 use craftpulse\typesense\elementactions\Reindex;
 use craftpulse\typesense\elementactions\ViewInSearch;
 use craftpulse\typesense\fieldlayoutelements\MappingField;
@@ -266,31 +272,50 @@ class Typesense extends Plugin
         // Pro control-panel screens surface only in the Pro edition (hide, never
         // badge), and then only for users holding the matching permission.
         if ($this->getIsPro()) {
+            // One subnav item per screen family, each gated by its own handle.
             if ($currentUser->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)) {
                 $subNavs['collections'] = [
                     'label' => Craft::t('typesense', 'Collections'),
                     'url' => 'typesense/collections',
                 ];
+            }
+
+            if ($currentUser->checkPermission(PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS)) {
                 $subNavs['playground'] = [
                     'label' => Craft::t('typesense', 'Playground'),
                     'url' => 'typesense/playground',
                 ];
+            }
+
+            if ($currentUser->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)) {
                 $subNavs['relevance'] = [
                     'label' => Craft::t('typesense', 'Relevance'),
                     'url' => 'typesense/relevance',
                 ];
+            }
+
+            if ($currentUser->checkPermission(AliasesController::PERMISSION_MANAGE_ALIASES)) {
                 $subNavs['aliases'] = [
                     'label' => Craft::t('typesense', 'Aliases'),
                     'url' => 'typesense/aliases',
                 ];
+            }
+
+            if ($currentUser->checkPermission(ExperimentsController::PERMISSION_MANAGE_EXPERIMENTS)) {
                 $subNavs['experiments'] = [
                     'label' => Craft::t('typesense', 'A/B experiments'),
                     'url' => 'typesense/experiments',
                 ];
+            }
+
+            if ($currentUser->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS)) {
                 $subNavs['synonyms'] = [
                     'label' => Craft::t('typesense', 'Synonyms'),
                     'url' => 'typesense/synonyms',
                 ];
+            }
+
+            if ($currentUser->checkPermission(DictionariesController::PERMISSION_MANAGE_DICTIONARIES)) {
                 $subNavs['dictionaries'] = [
                     'label' => Craft::t('typesense', 'Dictionaries'),
                     'url' => 'typesense/dictionaries',
@@ -519,19 +544,41 @@ class Typesense extends Plugin
             ],
         ];
 
-        // Pro permissions are registered only in the Pro edition (hide, never badge).
+        // Pro permissions are registered only in the Pro edition (hide, never
+        // badge). One granular handle per screen family, no umbrellas.
         if ($this->getIsPro()) {
             $permissions[CollectionsController::PERMISSION_MANAGE_COLLECTIONS] = [
                 'label' => Craft::t('typesense', 'Manage collections and mappings'),
             ];
+            $permissions[RelevanceController::PERMISSION_MANAGE_RELEVANCE] = [
+                'label' => Craft::t('typesense', 'Manage relevance'),
+            ];
+            $permissions[SynonymsController::PERMISSION_MANAGE_SYNONYMS] = [
+                'label' => Craft::t('typesense', 'Manage synonyms'),
+            ];
             $permissions[CurationController::PERMISSION_MANAGE_CURATION] = [
                 'label' => Craft::t('typesense', 'Manage curation'),
+            ];
+            $permissions[DictionariesController::PERMISSION_MANAGE_DICTIONARIES] = [
+                'label' => Craft::t('typesense', 'Manage dictionaries'),
+            ];
+            $permissions[AliasesController::PERMISSION_MANAGE_ALIASES] = [
+                'label' => Craft::t('typesense', 'Manage aliases and rebuilds'),
+            ];
+            $permissions[ExperimentsController::PERMISSION_MANAGE_EXPERIMENTS] = [
+                'label' => Craft::t('typesense', 'Manage A/B experiments'),
             ];
             $permissions[KeysController::PERMISSION_MANAGE_KEYS] = [
                 'label' => Craft::t('typesense', 'Manage API keys'),
             ];
             $permissions[AnalyticsController::PERMISSION_VIEW_ANALYTICS] = [
                 'label' => Craft::t('typesense', 'View analytics'),
+            ];
+            $permissions[PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS] = [
+                'label' => Craft::t('typesense', 'Use the search playground and diagnostics'),
+            ];
+            $permissions[OpsController::PERMISSION_MANAGE_OPS] = [
+                'label' => Craft::t('typesense', 'Run sync operations (sync, flush, suspend, rebuild ops)'),
             ];
         }
 
@@ -731,7 +778,7 @@ class Typesense extends Plugin
                     return;
                 }
 
-                if (!Craft::$app->getUser()->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)) {
+                if (!Craft::$app->getUser()->checkPermission(PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS)) {
                     return;
                 }
 

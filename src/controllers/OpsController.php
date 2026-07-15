@@ -28,6 +28,16 @@ use yii\web\Response;
  */
 class OpsController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the operational actions (index
+     * lifecycle: clear cache, compact, snapshot) and the utility's sync, flush,
+     * and suspend controls.
+     */
+    public const PERMISSION_MANAGE_OPS = 'typesense:manageOps';
+
     // Public Methods
     // =========================================================================
 
@@ -45,7 +55,7 @@ class OpsController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_OPS);
 
         return true;
     }
@@ -61,7 +71,7 @@ class OpsController extends ProController
     public function actionClearCache(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_OPS);
 
         $response = Typesense::$plugin->getClient()->request('POST', '/operations/cache/clear');
 
@@ -83,7 +93,7 @@ class OpsController extends ProController
     public function actionCompact(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_OPS);
 
         $response = Typesense::$plugin->getClient()->request('POST', '/operations/db/compact');
 
@@ -105,7 +115,7 @@ class OpsController extends ProController
     public function actionSnapshot(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_OPS);
 
         $path = trim((string)$this->request->getBodyParam('snapshotPath', ''));
 

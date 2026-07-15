@@ -30,6 +30,14 @@ use yii\web\Response;
  */
 class SynonymsController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the synonyms screens.
+     */
+    public const PERMISSION_MANAGE_SYNONYMS = 'typesense:manageSynonyms';
+
     // Public Methods
     // =========================================================================
 
@@ -47,7 +55,7 @@ class SynonymsController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_SYNONYMS);
 
         return true;
     }

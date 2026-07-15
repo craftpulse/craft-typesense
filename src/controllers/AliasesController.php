@@ -30,6 +30,14 @@ use yii\web\Response;
  */
 class AliasesController extends ProController
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string The permission that gates the aliases screens.
+     */
+    public const PERMISSION_MANAGE_ALIASES = 'typesense:manageAliases';
+
     // Public Methods
     // =========================================================================
 
@@ -47,7 +55,7 @@ class AliasesController extends ProController
             return false;
         }
 
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_ALIASES);
 
         return true;
     }
@@ -63,7 +71,7 @@ class AliasesController extends ProController
     public function actionClone(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_ALIASES);
 
         $source = trim((string)$this->request->getRequiredBodyParam('source'));
         $target = trim((string)$this->request->getRequiredBodyParam('target'));
@@ -107,7 +115,7 @@ class AliasesController extends ProController
     public function actionRebuild(): ?Response
     {
         $this->requirePostRequest();
-        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+        $this->requirePermission(self::PERMISSION_MANAGE_ALIASES);
 
         $handle = (string)$this->request->getRequiredBodyParam('collection');
         $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
