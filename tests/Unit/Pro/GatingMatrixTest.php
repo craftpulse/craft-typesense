@@ -27,14 +27,14 @@ use craftpulse\typesense\Typesense;
 dataset('proActions', [
     'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageAliases'],
     'analytics' => ['typesense/analytics/index', 'get', 'typesense:viewAnalytics'],
-    'collections' => ['typesense/collections/index', 'get', 'typesense:manageCollections'],
+    'collections' => ['typesense/collections/edit', 'get', 'typesense:manageCollections'],
     'curation' => ['typesense/curation/index', 'get', 'typesense:manageCuration'],
     'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manageDictionaries'],
     'experiments' => ['typesense/experiments/index', 'get', 'typesense:manageExperiments'],
     'keys' => ['typesense/keys/index', 'get', 'typesense:manageKeys'],
     'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manageOps'],
     'playground' => ['typesense/playground/index', 'get', 'typesense:viewDiagnostics'],
-    'relevance' => ['typesense/relevance/index', 'get', 'typesense:manageRelevance'],
+    'relevance' => ['typesense/relevance/edit', 'get', 'typesense:manageRelevance'],
     'synonyms' => ['typesense/synonyms/index', 'get', 'typesense:manageSynonyms'],
 ]);
 

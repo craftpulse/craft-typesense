@@ -11,7 +11,7 @@ owns a `craft\models\FieldLayout`, edited with the genuine
 entry type. Placing a field in the layout indexes it; opening the field's
 slideout tunes its Typesense mapping.
 
-Open it from a saved collection's edit screen (Map fields).
+Open it from the Mapping tab of a saved collection's edit screen.
 
 ## The palette
 

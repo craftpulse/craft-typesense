@@ -4,15 +4,18 @@ description: Boost rules, search presets, buckets, grouping, and diversification
 ---
 # Relevance tuning (Pro)
 
-The Pro edition adds a control-panel relevance editor for each control-panel-
-managed collection. Config-file collections tune relevance in fluent config (the
-`preset()` builder); the editor is for CP-managed collections.
+The Pro edition adds a Relevance tab to each control-panel-managed collection's
+edit screen (Typesense, then Collections, then a collection, then the Relevance
+tab). Config-file collections tune relevance in fluent config (the `preset()`
+builder); the tab is for CP-managed collections.
 
 ## Editions and permissions
 
-Relevance tuning is a Pro feature, gated by `typesense:manageCollections`. In the
-Free edition the plugin renders none of the Pro control panel. Every Pro action
-is edition-checked server-side.
+Relevance tuning is a Pro feature, gated by `typesense:manageRelevance`. Holding
+that handle also reveals the collection's Vector / AI tab; the Settings and
+Mapping tabs are gated separately by `typesense:manageCollections`. In the Free
+edition the plugin renders none of the Pro control panel. Every Pro action is
+edition-checked server-side.
 
 ## Additive boost rules (baked to `boost_score`)
 

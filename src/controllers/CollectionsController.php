@@ -20,10 +20,12 @@ use craft\elements\Tag;
 use craft\elements\User;
 use craft\helpers\Cp;
 use craft\helpers\StringHelper;
+use craft\helpers\UrlHelper;
 use craft\web\assets\cp\CpAsset;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
+use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
@@ -48,6 +50,58 @@ class CollectionsController extends ProController
      */
     public const PERMISSION_MANAGE_COLLECTIONS = 'typesense:manageCollections';
 
+    // Static Methods
+    // =========================================================================
+
+    /**
+     * The collection edit screen's inner-sidebar nav items, filtered to the
+     * sections the current user may access: Settings and Mapping
+     * (manageCollections), Relevance and Vector / AI (manageRelevance). A section
+     * the viewer cannot access is omitted, so a user holding only one family sees
+     * only its sections. A new (unsaved) collection has no nav (single Settings
+     * pane). Each item keeps its own URL, controller action, and permission gate,
+     * matching Craft core's user-settings screens
+     * (vendor/craftcms/cms/src/templates/settings/users/_layout.twig).
+     *
+     * @param CollectionDefinition $definition
+     * @return array<string, array{label: string, url: string}>
+     * @author CraftPulse
+     */
+    public static function editScreenNavItems(CollectionDefinition $definition): array
+    {
+        if ($definition->uid === null) {
+            return [];
+        }
+
+        $user = Craft::$app->getUser();
+        $uid = $definition->uid;
+        $items = [];
+
+        if ($user->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS)) {
+            $items['settings'] = [
+                'label' => Craft::t('typesense', 'Settings'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}"),
+            ];
+            $items['mapping'] = [
+                'label' => Craft::t('typesense', 'Mapping'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/mapping"),
+            ];
+        }
+
+        if ($user->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)) {
+            $items['relevance'] = [
+                'label' => Craft::t('typesense', 'Relevance'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/relevance"),
+            ];
+            $items['vector'] = [
+                'label' => Craft::t('typesense', 'Vector / AI'),
+                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/vector"),
+            ];
+        }
+
+        return $items;
+    }
+
     // Public Methods
     // =========================================================================
 
@@ -55,7 +109,7 @@ class CollectionsController extends ProController
      * @inheritdoc
      * @param \yii\base\Action $action
      * @return bool
-     * @throws \yii\web\ForbiddenHttpException
+     * @throws ForbiddenHttpException
      * @throws \yii\base\InvalidConfigException
      * @throws \yii\web\BadRequestHttpException
      */
@@ -63,6 +117,22 @@ class CollectionsController extends ProController
     {
         if (!parent::beforeAction($action)) {
             return false;
+        }
+
+        // The index picker is the shared entry point for the collection edit
+        // screen's tabs, so it admits either collection-screen permission; every
+        // other action keeps its own manageCollections gate.
+        if ($action->id === 'index') {
+            $user = Craft::$app->getUser();
+
+            if (
+                !$user->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS)
+                && !$user->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)
+            ) {
+                throw new ForbiddenHttpException(Craft::t('typesense', 'User is not permitted to perform this action.'));
+            }
+
+            return true;
         }
 
         $this->requirePermission(self::PERMISSION_MANAGE_COLLECTIONS);
@@ -122,6 +192,7 @@ class CollectionsController extends ProController
             'isNew' => $definition->uid === null,
             'suspended' => $suspend->isCollectionSuspended($definition->name),
             'globallySuspended' => $suspend->isGloballySuspended(),
+            'navItems' => self::editScreenNavItems($definition),
         ]);
     }
 
@@ -141,6 +212,7 @@ class CollectionsController extends ProController
             'managed' => Typesense::$plugin->getManagedCollections()->getAll(),
             'configCollections' => $registry->getAll(),
             'overriddenNames' => $registry->getOverriddenNames(),
+            'canManageCollections' => Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS),
         ]);
     }
 
@@ -177,6 +249,7 @@ class CollectionsController extends ProController
             'definition' => $definition,
             'designerHtml' => $designerHtml,
             'readOnly' => $readOnly,
+            'navItems' => self::editScreenNavItems($definition),
         ]);
     }
 

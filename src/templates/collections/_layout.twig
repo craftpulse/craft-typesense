@@ -1,0 +1,32 @@
+{# =========================================================================
+   Typesense Pro - collection edit screen layout
+   =========================================================================
+   Shared chrome for a saved control-panel-managed collection's edit screen. Each
+   section (Settings, Mapping, Relevance, Vector / AI) is its own URL, controller
+   action, and permission gate, reached from the inner-sidebar nav, matching Craft
+   core's user-settings screens (vendor/craftcms/cms/src/templates/settings/users/
+   _layout.twig). The nav items are permission-filtered in
+   CollectionsController::editScreenNavItems(), so a section the viewer cannot
+   access is not shown.
+
+   @var definition      craftpulse\typesense\models\CollectionDefinition
+   @var navItems        array   the permission-filtered inner-sidebar nav items
+   @var selectedNavItem string  the active section key (set by each child screen)
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+
+{% set title = definition.name %}
+{% set selectedSubnavItem = 'collections' %}
+{% set crumbs = [
+    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+] %}
+
+{% block sidebar %}
+    {% if navItems|length > 1 %}
+        {% include '_includes/nav' with {
+            label: 'Collection'|t('typesense'),
+            items: navItems,
+            selectedItem: selectedNavItem,
+        } only %}
+    {% endif %}
+{% endblock %}

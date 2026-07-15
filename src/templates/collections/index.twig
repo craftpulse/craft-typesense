@@ -6,16 +6,19 @@
    collection that displaces a code-registered one carries the "overridden by
    the config file" notice.
 
-   @var managed           array
-   @var configCollections array
-   @var overriddenNames   array
+   @var managed              array
+   @var configCollections    array
+   @var overriddenNames      array
+   @var canManageCollections bool  whether the viewer may create/edit/delete
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = 'Collections'|t('typesense') %}
 {% set selectedSubnavItem = 'collections' %}
 
 {% block actionButton %}
-    <a href="{{ url('typesense/collections/new') }}" class="btn submit add icon">{{ 'New collection'|t('typesense') }}</a>
+    {% if canManageCollections %}
+        <a href="{{ url('typesense/collections/new') }}" class="btn submit add icon">{{ 'New collection'|t('typesense') }}</a>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -37,8 +40,11 @@
             </thead>
             <tbody>
                 {% for uid, def in managed %}
+                    {% set rowUrl = canManageCollections
+                        ? url('typesense/collections/' ~ uid)
+                        : url('typesense/collections/' ~ uid ~ '/relevance') %}
                     <tr>
-                        <td><a href="{{ url('typesense/collections/' ~ uid) }}"><code>{{ def.name }}</code></a></td>
+                        <td><a href="{{ rowUrl }}"><code>{{ def.name }}</code></a></td>
                         <td>{{ def.elementType|split('\\')|last }}</td>
                         <td>{{ def.source ?? 'All'|t('typesense') }}</td>
                         <td>
@@ -49,12 +55,14 @@
                             {% endif %}
                         </td>
                         <td class="thin">
-                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this collection? Its Typesense collection and mapping are removed.'|t('typesense') }}">
-                                {{ csrfInput() }}
-                                {{ actionInput('typesense/collections/delete') }}
-                                {{ hiddenInput('uid', uid) }}
-                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
-                            </form>
+                            {% if canManageCollections %}
+                                <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this collection? Its Typesense collection and mapping are removed.'|t('typesense') }}">
+                                    {{ csrfInput() }}
+                                    {{ actionInput('typesense/collections/delete') }}
+                                    {{ hiddenInput('uid', uid) }}
+                                    <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                                </form>
+                            {% endif %}
                         </td>
                     </tr>
                 {% endfor %}

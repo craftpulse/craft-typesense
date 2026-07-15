@@ -66,10 +66,21 @@ New collection, then:
   field per document), or one collection per site. See [Multi-site](multisite.md).
 - **Enabled**: whether the collection syncs.
 
-Save, then map its fields (see [Field mapping](mapping.md)). A CP-managed
-collection is an ordinary runtime collection: it flows through the same sync
-engine, drift detection, control-panel utility, and search layer as a config
-collection, with no special-casing.
+A new collection shows only the Settings tab. Save it, and the collection edit
+screen gains its remaining tabs (each with its own URL and permission gate):
+
+- **Settings**: the fields above (`typesense:manageCollections`).
+- **Mapping**: the field layout designer (`typesense:manageCollections`). See
+  [Field mapping](mapping.md).
+- **Relevance**: search preset, boosts, grouping, buckets, diversification
+  (`typesense:manageRelevance`). See [Relevance tuning](pro-relevance.md).
+- **Vector / AI**: auto-embedding and the experimental AI features
+  (`typesense:manageRelevance`). See [Vector and AI](pro-vector-ai.md).
+
+A tab the viewer's permissions do not cover is not shown. A CP-managed collection
+is an ordinary runtime collection: it flows through the same sync engine, drift
+detection, control-panel utility, and search layer as a config collection, with
+no special-casing.
 
 ## Where it lives
 

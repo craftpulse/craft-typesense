@@ -56,9 +56,12 @@ it('renders the Pro nav items in Pro for a permitted admin', function() {
     $admin = aNavAdmin();
     $keys = navSubnavKeys(Typesense::EDITION_PRO, $admin);
 
-    foreach (['collections', 'relevance', 'synonyms', 'dictionaries', 'curation', 'keys', 'aliases', 'experiments', 'analytics', 'settings'] as $expected) {
+    // Relevance and Vector / AI are now tabs on the collection edit screen, not
+    // a top-level subnav item (Fix 8), so they are absent from the subnav keys.
+    foreach (['collections', 'synonyms', 'dictionaries', 'curation', 'keys', 'aliases', 'experiments', 'analytics', 'settings'] as $expected) {
         expect($keys)->toContain($expected);
     }
+    expect($keys)->not->toContain('relevance');
 });
 
 it('pins the v28 server-capability gates (hide-not-badge at the source)', function() {

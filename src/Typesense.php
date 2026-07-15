@@ -267,8 +267,14 @@ class Typesense extends Plugin
         // Pro control-panel screens surface only in the Pro edition (hide, never
         // badge), and then only for users holding the matching permission.
         if ($this->getIsPro()) {
-            // One subnav item per screen family, each gated by its own handle.
-            if ($currentUser->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)) {
+            // The Collections screen is the home for everything per-collection
+            // (settings, mapping, relevance, vector/AI as tabs), so its nav item
+            // shows for either collection-screen family; each tab is gated
+            // per-action, and the tab strip hides tabs the viewer cannot access.
+            if (
+                $currentUser->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)
+                || $currentUser->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)
+            ) {
                 $subNavs['collections'] = [
                     'label' => Craft::t('typesense', 'Collections'),
                     'url' => 'typesense/collections',
@@ -279,13 +285,6 @@ class Typesense extends Plugin
                 $subNavs['playground'] = [
                     'label' => Craft::t('typesense', 'Playground'),
                     'url' => 'typesense/playground',
-                ];
-            }
-
-            if ($currentUser->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)) {
-                $subNavs['relevance'] = [
-                    'label' => Craft::t('typesense', 'Relevance'),
-                    'url' => 'typesense/relevance',
                 ];
             }
 
@@ -494,6 +493,9 @@ class Typesense extends Plugin
             $routes['typesense/collections'] = 'typesense/collections/index';
             $routes['typesense/collections/new'] = 'typesense/collections/edit';
             $routes['typesense/collections/<uid:[\w\-]+>/mapping'] = 'typesense/collections/mapping';
+            $routes['typesense/collections/<uid:[\w\-]+>/relevance'] = 'typesense/relevance/edit';
+            $routes['typesense/collections/<uid:[\w\-]+>/vector'] = 'typesense/relevance/vector';
+            $routes['typesense/collections/<uid:[\w\-]+>/conversation-models'] = 'typesense/relevance/conversation-models';
             $routes['typesense/collections/<uid:[\w\-]+>'] = 'typesense/collections/edit';
             $routes['typesense/playground'] = 'typesense/playground/index';
             $routes['typesense/playground/<collection:[\w\-]+>/browse'] = 'typesense/playground/browse';
@@ -502,9 +504,6 @@ class Typesense extends Plugin
             $routes['typesense/curation/<collection:[\w\-]+>/new'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
-            $routes['typesense/relevance'] = 'typesense/relevance/index';
-            $routes['typesense/relevance/conversation-models'] = 'typesense/relevance/conversation-models';
-            $routes['typesense/relevance/<uid:[\w\-]+>'] = 'typesense/relevance/edit';
             $routes['typesense/aliases'] = 'typesense/aliases/index';
             $routes['typesense/experiments'] = 'typesense/experiments/index';
             $routes['typesense/experiments/new'] = 'typesense/experiments/edit';

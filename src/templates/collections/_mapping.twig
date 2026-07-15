@@ -13,16 +13,12 @@
    @var definition   CollectionDefinition
    @var designerHtml string  the rendered Craft.FieldLayoutDesigner
    @var readOnly     bool
+   @var navItems     array  the collection edit screen's permission-filtered nav
    ========================================================================= #}
-{% extends '_layouts/cp' %}
+{% extends 'typesense/collections/_layout' %}
 
-{% set title = definition.name ~ ' ' ~ ('mapping'|t('typesense')) %}
-{% set selectedSubnavItem = 'collections' %}
+{% set selectedNavItem = 'mapping' %}
 {% set fullPageForm = not readOnly %}
-{% set crumbs = [
-    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
-    { label: definition.name, url: url('typesense/collections/' ~ definition.uid) },
-] %}
 
 {% block content %}
     {% if readOnly %}

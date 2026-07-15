@@ -10,9 +10,10 @@ experimental AI features.
 
 ## Editions and permissions
 
-Vector configuration lives on the relevance/vector editor, gated by
-`typesense:manageCollections`. The search helpers are Free-callable from Twig
-once a collection has an embedding field.
+Vector configuration lives on the Vector / AI tab of a control-panel-managed
+collection's edit screen (Typesense, then Collections, then a collection, then
+the Vector / AI tab), gated by `typesense:manageRelevance`. The search helpers
+are Free-callable from Twig once a collection has an embedding field.
 
 ## Auto-embedding
 

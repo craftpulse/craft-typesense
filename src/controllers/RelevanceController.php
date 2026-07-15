@@ -23,8 +23,9 @@ use yii\web\Response;
  * to the indexed boost_score at index time), text-match buckets, result grouping,
  * and MMR diversification. Version-sensitive controls (buckets, MMR) are hidden
  * on servers that do not support them. Config-file collections tune relevance in
- * fluent config, so only CP-managed collections are editable here. Gated by the
- * edition and `typesense:manageCollections`.
+ * fluent config, so only CP-managed collections are editable here. The Relevance
+ * and Vector / AI tabs live on the collection edit screen; gated by the edition
+ * and `typesense:manageRelevance`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -63,7 +64,9 @@ class RelevanceController extends ProController
     }
 
     /**
-     * The relevance editor for a CP-managed collection.
+     * The Relevance tab of a CP-managed collection's edit screen: search preset,
+     * boost rules, buckets, grouping, and diversification (the vector and AI
+     * controls live on the Vector / AI tab).
      *
      * @param string $uid
      * @return Response
@@ -77,6 +80,30 @@ class RelevanceController extends ProController
         $definition = $this->_requireDefinition($uid);
         $capabilities = Typesense::$plugin->getClient()->getServerCapabilities();
 
+        return $this->renderTemplate('typesense/relevance/_edit', [
+            'definition' => $definition,
+            'relevance' => $definition->relevance,
+            'supportsBuckets' => $capabilities?->textMatchBuckets() ?? false,
+            'supportsMmr' => $capabilities?->mmr() ?? false,
+            'navItems' => CollectionsController::editScreenNavItems($definition),
+        ]);
+    }
+
+    /**
+     * The Vector / AI tab of a CP-managed collection's edit screen:
+     * auto-embedding config plus the experimental-AI features and the link to the
+     * conversation (RAG) model manager.
+     *
+     * @param string $uid
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionVector(string $uid): Response
+    {
+        $definition = $this->_requireDefinition($uid);
         $embeddings = Typesense::$plugin->getEmbeddings();
         $modelOptions = [['label' => Craft::t('typesense', 'Choose a model'), 'value' => '']];
 
@@ -84,35 +111,19 @@ class RelevanceController extends ProController
             $modelOptions[] = ['label' => $model['label'] . ' (' . $id . ')', 'value' => $id];
         }
 
-        return $this->renderTemplate('typesense/relevance/_edit', [
+        return $this->renderTemplate('typesense/relevance/_vector', [
             'definition' => $definition,
-            'relevance' => $definition->relevance,
             'embedding' => $definition->embedding,
             'modelOptions' => $modelOptions,
             'providers' => $embeddings::PROVIDERS,
             'experimentalFeatures' => Typesense::$plugin->getAiModels()->experimentalFeatures(),
-            'supportsBuckets' => $capabilities?->textMatchBuckets() ?? false,
-            'supportsMmr' => $capabilities?->mmr() ?? false,
+            'navItems' => CollectionsController::editScreenNavItems($definition),
         ]);
     }
 
     /**
-     * The collection picker for the relevance editor (CP-managed collections).
-     *
-     * @return Response
-     * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    public function actionIndex(): Response
-    {
-        return $this->renderTemplate('typesense/relevance/index', [
-            'definitions' => Typesense::$plugin->getManagedCollections()->getAll(),
-        ]);
-    }
-
-    /**
-     * Persists the relevance definition for a CP-managed collection.
+     * Persists the Relevance tab (search preset, boosts, grouping, buckets, MMR)
+     * for a CP-managed collection and returns to the same tab.
      *
      * @return Response|null
      * @throws NotFoundHttpException
@@ -120,13 +131,34 @@ class RelevanceController extends ProController
      * @throws \Throwable
      * @author CraftPulse
      */
-    public function actionSave(): ?Response
+    public function actionSaveRelevance(): ?Response
     {
         $this->requirePostRequest();
         $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
 
         $definition = $this->_requireDefinition((string)$this->request->getRequiredBodyParam('uid'));
         $definition->relevance = $this->_relevanceBody();
+        Typesense::$plugin->getManagedCollections()->save($definition);
+
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost changes.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/relevance');
+    }
+
+    /**
+     * Persists the Vector / AI tab (auto-embedding config) for a CP-managed
+     * collection and returns to the same tab.
+     *
+     * @return Response|null
+     * @throws NotFoundHttpException
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \Throwable
+     * @author CraftPulse
+     */
+    public function actionSaveVector(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
+
+        $definition = $this->_requireDefinition((string)$this->request->getRequiredBodyParam('uid'));
         $embedding = $this->_embeddingBody();
 
         // Validate a remote embedding config's shape before persisting (never a
@@ -142,22 +174,27 @@ class RelevanceController extends ProController
         $definition->embedding = $embedding;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
-        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost or embedding changes.'), 'definition', [], 'typesense/relevance/' . $definition->uid);
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply embedding changes.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/vector');
     }
 
     /**
-     * The conversation (RAG) model management screen: lists the models and
-     * offers a create form. A modest surface on the vector/AI side; conversation
-     * models are global, so this is not per-collection.
+     * The conversation (RAG) model management screen, reached from a collection's
+     * Vector / AI tab. Conversation models are global (not per-collection); the
+     * collection uid only threads the back-link to the originating tab.
      *
+     * @param string $uid
      * @return Response
+     * @throws NotFoundHttpException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionConversationModels(): Response
+    public function actionConversationModels(string $uid): Response
     {
+        $definition = $this->_requireDefinition($uid);
+
         return $this->renderTemplate('typesense/relevance/_conversation-models', [
+            'definition' => $definition,
             'models' => Typesense::$plugin->getAiModels()->conversationModels(),
         ]);
     }
@@ -177,7 +214,7 @@ class RelevanceController extends ProController
 
         Typesense::$plugin->getAiModels()->deleteConversationModel((string)$this->request->getRequiredBodyParam('id'));
 
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), [], $this->request->getReferrer() ?: 'typesense/relevance');
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), [], $this->request->getReferrer() ?: 'typesense/collections');
     }
 
     /**
@@ -214,7 +251,7 @@ class RelevanceController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not create the conversation model.'));
         }
 
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), [], $this->request->getReferrer() ?: 'typesense/relevance');
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), [], $this->request->getReferrer() ?: 'typesense/collections');
     }
 
     // Private Methods

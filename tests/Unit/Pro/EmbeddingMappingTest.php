@@ -60,7 +60,7 @@ it('round-trips a built-in embedding config through the editor', function() {
     withEmbeddingEdition(Typesense::EDITION_PRO, function() use ($admin, $definition) {
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/relevance/save'), [
+            ->post(UrlHelper::actionUrl('typesense/relevance/save-vector'), [
                 'uid' => $definition->uid,
                 'embedEnabled' => '1',
                 'embedModel' => 'ts/all-MiniLM-L12-v2',
@@ -86,7 +86,7 @@ it('rejects an enabled remote embedding config with no credentials', function() 
         // must not persist the invalid config.
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/relevance/save'), [
+            ->post(UrlHelper::actionUrl('typesense/relevance/save-vector'), [
                 'uid' => $definition->uid,
                 'embedEnabled' => '1',
                 'embedModelRemote' => 'openai/text-embedding-3-small',

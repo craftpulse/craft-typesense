@@ -61,7 +61,7 @@ it('persists a posted relevance payload to project config', function() {
     withRelevanceEdition(Typesense::EDITION_PRO, function() use ($admin, $definition) {
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/relevance/save'), [
+            ->post(UrlHelper::actionUrl('typesense/relevance/save-relevance'), [
                 'uid' => $definition->uid,
                 'boostRules' => [
                     ['label' => 'Featured', 'field' => 'featured', 'operator' => 'eq', 'value' => '1', 'weight' => '50'],
@@ -98,7 +98,7 @@ it('forbids the relevance save on the Free edition (server-side gate)', function
     withRelevanceEdition(Typesense::EDITION_FREE, function() use ($admin, $definition) {
         $this->actingAs($admin)
             ->withExceptionHandling()
-            ->post(UrlHelper::actionUrl('typesense/relevance/save'), ['uid' => $definition->uid])
+            ->post(UrlHelper::actionUrl('typesense/relevance/save-relevance'), ['uid' => $definition->uid])
             ->assertForbidden();
     });
 

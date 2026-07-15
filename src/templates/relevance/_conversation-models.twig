@@ -1,13 +1,17 @@
 {# =========================================================================
    Typesense Pro - conversation (RAG) model management
    =========================================================================
-   @var models array
+   @var definition craftpulse\typesense\models\CollectionDefinition
+   @var models     array
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms.twig' as forms %}
 {% set title = 'Conversation models'|t('typesense') %}
-{% set selectedSubnavItem = 'relevance' %}
-{% set crumbs = [{ label: 'Relevance'|t('typesense'), url: url('typesense/relevance') }] %}
+{% set selectedSubnavItem = 'collections' %}
+{% set crumbs = [
+    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+    { label: definition.name, url: url('typesense/collections/' ~ definition.uid ~ '/vector') },
+] %}
 
 {% block content %}
     <blockquote class="note warning">

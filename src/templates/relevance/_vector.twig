@@ -1,0 +1,75 @@
+{# =========================================================================
+   Typesense Pro - collection edit screen: Vector / AI tab
+   =========================================================================
+   @var definition           craftpulse\typesense\models\CollectionDefinition
+   @var embedding            array
+   @var modelOptions         array
+   @var providers            array
+   @var experimentalFeatures array
+   @var navItems             array  the collection edit screen's permission-filtered nav
+   ========================================================================= #}
+{% extends 'typesense/collections/_layout' %}
+{% import '_includes/forms.twig' as forms %}
+{% set selectedNavItem = 'vector' %}
+{% set fullPageForm = true %}
+
+{% block content %}
+    {{ actionInput('typesense/relevance/save-vector') }}
+    {{ hiddenInput('uid', definition.uid) }}
+
+    <h2>{{ 'Vector / auto-embedding'|t('typesense') }}</h2>
+    <blockquote class="note">
+        {{ 'Auto-embedding generates vectors server-side at index time, so it powers semantic and hybrid search. Changing the model or source fields re-embeds every document: re-sync the collection after saving. Built-in ts/* models run on the server CPU (no key); remote providers make an API call per document at index time (cost).'|t('typesense') }}
+    </blockquote>
+
+    {{ forms.lightswitchField({
+        label: 'Enable auto-embedding'|t('typesense'),
+        id: 'embedEnabled',
+        name: 'embedEnabled',
+        on: embedding.enabled ?? false,
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Built-in model'|t('typesense'),
+        instructions: 'A local ONNX model (no API key). CLIP embeds images (see the image source below).'|t('typesense'),
+        id: 'embedModel',
+        name: 'embedModel',
+        options: modelOptions,
+        value: embedding.model ?? '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Remote model (optional)'|t('typesense'),
+        instructions: 'A provider model id (for example openai/text-embedding-3-small). When set, this overrides the built-in choice above.'|t('typesense'),
+        id: 'embedModelRemote',
+        name: 'embedModelRemote',
+        value: embedding.model is defined and (embedding.model starts with 'ts/') ? '' : (embedding.model ?? ''),
+        placeholder: 'openai/text-embedding-3-small',
+    }) }}
+
+    {{ forms.textareaField({
+        label: 'Source fields'|t('typesense'),
+        instructions: 'The document field handles to embed, one per line (or comma-separated). For CLIP image search, use the asset image field.'|t('typesense'),
+        id: 'embedFrom',
+        name: 'embedFrom',
+        value: (embedding.from ?? [])|join("\n"),
+        rows: 3,
+    }) }}
+
+    <p class="light">{{ 'Remote providers read their credentials from environment variables. Enter the environment reference (for example $OPENAI_API_KEY), never the raw key.'|t('typesense') }}</p>
+    {{ forms.textField({ label: 'api_key (env reference)'|t('typesense'), id: 'embed_api_key', name: 'embed_api_key', value: embedding.config.api_key ?? '' }) }}
+    {{ forms.textField({ label: 'url (Azure / Cloudflare)'|t('typesense'), id: 'embed_url', name: 'embed_url', value: embedding.config.url ?? '' }) }}
+    {{ forms.textField({ label: 'openai_url (custom endpoint)'|t('typesense'), id: 'embed_openai_url', name: 'embed_openai_url', value: embedding.config.openai_url ?? '' }) }}
+
+    {% if experimentalFeatures is not empty %}
+        <hr>
+        <h2>{{ 'Experimental AI features'|t('typesense') }}</h2>
+        <p class="light">{{ 'Available on this server, shown with their honest trade-offs. Configure conversation (RAG) models and use the search helpers (craft.typesense.ask, naturalLanguageSearch); each is opt-in.'|t('typesense') }}</p>
+        {% for feature in experimentalFeatures %}
+            <blockquote class="note warning">
+                <strong>{{ feature.label }}</strong>: {{ feature.reason }}
+            </blockquote>
+        {% endfor %}
+        <p><a class="go" href="{{ url('typesense/collections/' ~ definition.uid ~ '/conversation-models') }}">{{ 'Manage conversation (RAG) models'|t('typesense') }}</a></p>
+    {% endif %}
+{% endblock %}

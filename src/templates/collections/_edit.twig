@@ -1,24 +1,30 @@
 {# =========================================================================
    Typesense Pro - Collections cockpit (create/edit)
    =========================================================================
-   The create/edit form for a control-panel-managed collection. Persists to
-   project config via typesense/collections/save. The field mapping UI attaches
-   to this collection once it is saved (see the mapping screen).
+   The Settings section of a control-panel-managed collection's edit screen. A
+   new (unsaved) collection is a single-pane form; once saved, it becomes the
+   Settings section of the shared collection edit layout (Mapping, Relevance, and
+   Vector / AI sections join it from the inner-sidebar nav). Persists to project
+   config via typesense/collections/save.
 
    @var definition    CollectionDefinition
    @var sourceOptions array
    @var isNew         bool
+   @var navItems      array  the collection edit screen's permission-filtered nav
    ========================================================================= #}
-{% extends '_layouts/cp' %}
+{% extends isNew ? '_layouts/cp' : 'typesense/collections/_layout' %}
 {% import '_includes/forms.twig' as forms %}
 
-{% set title = isNew ? 'New collection'|t('typesense') : definition.name %}
-{% set selectedSubnavItem = 'collections' %}
+{% if isNew %}
+    {% set title = 'New collection'|t('typesense') %}
+    {% set selectedSubnavItem = 'collections' %}
+    {% set crumbs = [
+        { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
+    ] %}
+{% else %}
+    {% set selectedNavItem = 'settings' %}
+{% endif %}
 {% set fullPageForm = true %}
-
-{% set crumbs = [
-    { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
-] %}
 
 {% block content %}
     {{ actionInput('typesense/collections/save') }}
@@ -67,10 +73,7 @@
     }) }}
 
     {% if isNew %}
-        <p class="light">{{ 'Save the collection, then map its fields from the mapping screen.'|t('typesense') }}</p>
-    {% else %}
-        <hr>
-        <a href="{{ url('typesense/collections/' ~ definition.uid ~ '/mapping') }}" class="btn">{{ 'Map fields'|t('typesense') }}</a>
+        <p class="light">{{ 'Save the collection, then map its fields and tune relevance from the tabs that appear.'|t('typesense') }}</p>
     {% endif %}
 {% endblock %}
 
