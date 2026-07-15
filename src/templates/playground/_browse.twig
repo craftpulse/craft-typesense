@@ -33,8 +33,8 @@
             <div class="ts-pg-bar__params">
                 <fieldset class="ts-pg-group">
                     <legend>{{ 'Filter'|t('typesense') }}</legend>
-                    {{ forms.textField({ label: 'filter_by'|t('typesense'), class: 'ts-db-filter' }) }}
-                    {{ forms.textField({ label: 'sort_by'|t('typesense'), class: 'ts-db-sort' }) }}
+                    {{ forms.textField({ label: 'Filter by'|t('typesense'), instructions: 'A filter expression to narrow the page.'|t('typesense') ~ '<span class="info">' ~ 'Typesense search parameter <code>filter_by</code>.'|t('typesense') ~ '</span>', class: 'ts-db-filter' }) }}
+                    {{ forms.textField({ label: 'Sort by'|t('typesense'), instructions: 'Fields and directions to order the page.'|t('typesense') ~ '<span class="info">' ~ 'Typesense search parameter <code>sort_by</code>.'|t('typesense') ~ '</span>', class: 'ts-db-sort' }) }}
                 </fieldset>
 
                 <div class="ts-db-paging">

@@ -65,15 +65,57 @@
 
     <hr>
 
-    <h2>{{ 'Search preset'|t('typesense') }}</h2>
-    <p class="light">{{ 'Raw Typesense preset parameters, passed with every search against this collection. Leave blank to use the server default.'|t('typesense') }}</p>
+    <h2>{{ 'Search defaults'|t('typesense') }}</h2>
+    <p class="light">{{ 'These defaults are passed with every search against this collection. Leave a field blank to use the server default.'|t('typesense') }}</p>
 
-    {{ forms.textField({ label: 'num_typos', id: 'num_typos', name: 'num_typos', value: preset.num_typos ?? '', size: 6 }) }}
-    {{ forms.textField({ label: 'prefix', instructions: 'true, false, or a comma-separated per-field list.'|t('typesense'), id: 'prefix', name: 'prefix', value: preset.prefix ?? '' }) }}
-    {{ forms.textField({ label: 'drop_tokens_threshold', id: 'drop_tokens_threshold', name: 'drop_tokens_threshold', value: preset.drop_tokens_threshold ?? '', size: 6 }) }}
-    {{ forms.textField({ label: 'typo_tokens_threshold', id: 'typo_tokens_threshold', name: 'typo_tokens_threshold', value: preset.typo_tokens_threshold ?? '', size: 6 }) }}
-    {{ forms.textField({ label: 'min_len_1typo', id: 'min_len_1typo', name: 'min_len_1typo', value: preset.min_len_1typo ?? '', size: 6 }) }}
-    {{ forms.textField({ label: 'min_len_2typo', id: 'min_len_2typo', name: 'min_len_2typo', value: preset.min_len_2typo ?? '', size: 6 }) }}
+    {{ forms.textField({
+        label: 'Typo tolerance'|t('typesense'),
+        instructions: 'How many typos a match may contain (0, 1, or 2).'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'The maximum number of typographical errors (Damerau-Levenshtein distance) tolerated per word. Typesense search parameter <code>num_typos</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'num_typos', name: 'num_typos', value: preset.num_typos ?? '', size: 6,
+    }) }}
+    {{ forms.textField({
+        label: 'Prefix matching'|t('typesense'),
+        instructions: 'Whether the last word is matched as a prefix (for autocomplete).'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'Treats the last query word as a prefix, not a whole word, which powers instant-search and autocomplete. Set to false to disable, or give a comma-separated per-field list. Typesense search parameter <code>prefix</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'prefix', name: 'prefix', value: preset.prefix ?? '',
+    }) }}
+    {{ forms.textField({
+        label: 'Drop-tokens threshold'|t('typesense'),
+        instructions: 'When to start dropping query words to find enough results.'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'If fewer than this many results contain all query words, Typesense drops words (from the right) and retries, broadening a multi-word query. Typesense search parameter <code>drop_tokens_threshold</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'drop_tokens_threshold', name: 'drop_tokens_threshold', value: preset.drop_tokens_threshold ?? '', size: 6,
+    }) }}
+    {{ forms.textField({
+        label: 'Typo-correction threshold'|t('typesense'),
+        instructions: 'When to start looking for typo-corrected variations.'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'If fewer than this many results are found for a term, Typesense looks for typo-corrected variations until it reaches the threshold. Typesense search parameter <code>typo_tokens_threshold</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'typo_tokens_threshold', name: 'typo_tokens_threshold', value: preset.typo_tokens_threshold ?? '', size: 6,
+    }) }}
+    {{ forms.textField({
+        label: 'Min length for 1 typo'|t('typesense'),
+        instructions: 'Shortest word that may be matched with one typo (default 4).'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'The minimum word length before a single-typo correction applies; shorter words must match exactly. Typesense search parameter <code>min_len_1typo</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'min_len_1typo', name: 'min_len_1typo', value: preset.min_len_1typo ?? '', size: 6,
+    }) }}
+    {{ forms.textField({
+        label: 'Min length for 2 typos'|t('typesense'),
+        instructions: 'Shortest word that may be matched with two typos (default 7).'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'The minimum word length before a two-typo correction applies. Typesense search parameter <code>min_len_2typo</code>.'|t('typesense')
+            ~ '</span>',
+        id: 'min_len_2typo', name: 'min_len_2typo', value: preset.min_len_2typo ?? '', size: 6,
+    }) }}
 
     <hr>
 

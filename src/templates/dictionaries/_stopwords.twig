@@ -29,19 +29,29 @@
         {{ actionInput('typesense/dictionaries/save-stopwords') }}
         {{ hiddenInput('collection', handle) }}
 
-        {{ forms.textareaField({
+        {{ forms.editableTableField({
             first: true,
             label: 'Stopwords'|t('typesense'),
-            instructions: 'One per line (or comma-separated). These words are dropped from queries against this collection.'|t('typesense'),
+            instructions: 'Words dropped from a search query against this collection before matching.'|t('typesense')
+                ~ '<span class="info">'
+                ~ 'Stopwords are removed from the query at search time, not during indexing, so the documents keep every word. Forwarded to Typesense as the '
+                ~ '<code>stopwords</code> search parameter.'|t('typesense')
+                ~ '</span>',
             id: 'stopwords',
             name: 'stopwords',
-            value: stopwords|join("\n"),
-            rows: 6,
+            cols: {
+                word: { heading: 'Word'|t('typesense'), type: 'singleline' },
+            },
+            rows: stopwords|map(word => { word: word }),
+            addRowLabel: 'Add a word'|t('typesense'),
         }) }}
 
-        {{ forms.textField({
+        {{ forms.languageMenuField({
             label: 'Locale'|t('typesense'),
-            instructions: 'Optional language code (for example, en).'|t('typesense'),
+            instructions: 'Optional language for stopword matching.'|t('typesense')
+                ~ '<span class="info">'
+                ~ 'Typesense scopes a stopword set to an ISO language code (for example en, nl). The region is dropped on save, so en-GB is stored as en.'|t('typesense')
+                ~ '</span>',
             id: 'locale',
             name: 'locale',
             value: locale,

@@ -14,6 +14,7 @@ use Craft;
 use craft\helpers\Json;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
+use craftpulse\typesense\helpers\Locale;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -131,9 +132,9 @@ class DictionariesController extends ProController
 
         $handle = (string)$this->request->getRequiredBodyParam('collection');
         $collection = $this->_editableCollection($handle);
-        $locale = trim((string)$this->request->getBodyParam('locale', ''));
+        $locale = Locale::toTypesense((string)$this->request->getBodyParam('locale', ''));
 
-        Typesense::$plugin->getDictionaries()->saveStopwords($collection, $this->_words(), $locale === '' ? null : $locale);
+        Typesense::$plugin->getDictionaries()->saveStopwords($collection, $this->_words(), $locale);
 
         return $this->asSuccess(Craft::t('typesense', 'Stopwords saved.'), [], 'typesense/dictionaries/' . $handle);
     }
@@ -261,15 +262,21 @@ class DictionariesController extends ProController
     }
 
     /**
-     * Normalises the posted stopwords (newline- or comma-separated) into a list.
+     * Normalises the posted stopwords (an editable-table body param, one word per
+     * row) into a clean list.
      *
      * @return array<int, string>
      * @author CraftPulse
      */
     private function _words(): array
     {
-        $raw = (string)$this->request->getBodyParam('stopwords', '');
-        $words = array_map('trim', preg_split('/[\r\n,]+/', $raw) ?: []);
+        $raw = $this->request->getBodyParam('stopwords', []);
+
+        if (!is_array($raw)) {
+            return [];
+        }
+
+        $words = array_map(static fn($row): string => trim((string)($row['word'] ?? '')), $raw);
 
         return array_values(array_filter($words, static fn(string $word): bool => $word !== ''));
     }

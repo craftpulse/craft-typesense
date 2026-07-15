@@ -13,6 +13,7 @@ namespace craftpulse\typesense\controllers;
 use Craft;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
+use craftpulse\typesense\helpers\Locale;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
@@ -256,13 +257,13 @@ class SynonymsController extends ProController
     {
         $body = ['synonyms' => $synonyms];
         $root = trim((string)$this->request->getBodyParam('root', ''));
-        $locale = trim((string)$this->request->getBodyParam('locale', ''));
+        $locale = Locale::toTypesense((string)$this->request->getBodyParam('locale', ''));
 
         if ($root !== '') {
             $body['root'] = $root;
         }
 
-        if ($locale !== '') {
+        if ($locale !== null) {
             $body['locale'] = $locale;
         }
 

@@ -42,16 +42,22 @@
     }) }}
 
     {{ forms.textField({
-        label: 'Root (one-way)'|t('typesense'),
-        instructions: 'Optional. When set, the terms above map one-way to this root query. Leave blank for a multi-way synonym.'|t('typesense'),
+        label: 'Root term (one-way)'|t('typesense'),
+        instructions: 'Set this to make the terms above resolve one-way to a single query. Leave blank for a multi-way synonym.'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'With a root, a search for any term is treated as a search for the root (the terms map to it). Without a root, all terms are interchangeable both ways. Typesense stores this as the synonym’s <code>root</code>.'|t('typesense')
+            ~ '</span>',
         id: 'root',
         name: 'root',
         value: synonym.root ?? '',
     }) }}
 
-    {{ forms.textField({
+    {{ forms.languageMenuField({
         label: 'Locale'|t('typesense'),
-        instructions: 'Optional language code that scopes this synonym (for example, en).'|t('typesense'),
+        instructions: 'Optional language this synonym applies to.'|t('typesense')
+            ~ '<span class="info">'
+            ~ 'Typesense scopes a synonym to an ISO language code (for example en, nl) via its <code>locale</code>. The region is dropped on save, so en-GB is stored as en.'|t('typesense')
+            ~ '</span>',
         id: 'locale',
         name: 'locale',
         value: synonym.locale ?? '',

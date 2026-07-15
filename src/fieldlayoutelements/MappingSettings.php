@@ -171,6 +171,22 @@ trait MappingSettings
     // =========================================================================
 
     /**
+     * A mapping-layout element carries only Typesense mapping settings, never
+     * element visibility/editability rules, so it opts out of the field-layout
+     * "Visibility Conditions" UI. Craft gates that UI on
+     * craft\base\FieldLayoutComponent::conditional() (its conditionalSettingsHtml()
+     * returns null when conditional() is false), so overriding it here suppresses
+     * both the user and element condition builders in the slideout.
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    protected function conditional(): bool
+    {
+        return false;
+    }
+
+    /**
      * @inheritdoc
      */
     protected function settingsHtml(): ?string
