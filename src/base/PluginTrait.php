@@ -19,6 +19,7 @@ use craftpulse\typesense\services\Curation;
 use craftpulse\typesense\services\Dictionaries;
 use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
+use craftpulse\typesense\services\Inspector;
 use craftpulse\typesense\services\Keys;
 use craftpulse\typesense\services\LegacyConfig;
 use craftpulse\typesense\services\ManagedCollections;
@@ -181,6 +182,19 @@ trait PluginTrait
         $drift = $this->get('drift');
 
         return $drift;
+    }
+
+    /**
+     * @return Inspector
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getInspector(): Inspector
+    {
+        /** @var Inspector $inspector */
+        $inspector = $this->get('inspector');
+
+        return $inspector;
     }
 
     /**
@@ -349,6 +363,7 @@ trait PluginTrait
             'compatibility' => Compatibility::class,
             'keys' => Keys::class,
             'drift' => Drift::class,
+            'inspector' => Inspector::class,
             'managedCollections' => ManagedCollections::class,
             'mappingSources' => MappingSources::class,
             'notifications' => Notifications::class,
