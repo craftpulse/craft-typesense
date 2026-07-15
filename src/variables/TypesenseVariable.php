@@ -33,6 +33,19 @@ class TypesenseVariable
     // =========================================================================
 
     /**
+     * Returns the front-end analytics event endpoint URL. Post a click or
+     * conversion event to it (the admin key stays server-side); wire it into a
+     * Datastar action or a plain fetch.
+     *
+     * @return string
+     * @author CraftPulse
+     */
+    public function eventEndpoint(): string
+    {
+        return UrlHelper::actionUrl('typesense/search/track-event');
+    }
+
+    /**
      * Resolves an A/B experiment into a chosen variant and its derived scoped
      * search key (embedding the variant's analytics tag and applying its
      * scoped-key profile), for splitting front-end search traffic. Returns null

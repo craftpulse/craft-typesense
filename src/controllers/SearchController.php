@@ -42,10 +42,44 @@ class SearchController extends Controller
     /**
      * @inheritdoc
      */
-    protected array|bool|int $allowAnonymous = ['results'];
+    protected array|bool|int $allowAnonymous = ['results', 'track-event'];
 
     // Public Methods
     // =========================================================================
+
+    /**
+     * Records a front-end analytics event (a click or a conversion) server-side,
+     * so the admin key never reaches the browser. Fail-soft: an unconfigured or
+     * opted-out install records nothing and still returns cleanly. Only the click
+     * and conversion event types are accepted from the front end.
+     *
+     * @return Response
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionTrackEvent(): Response
+    {
+        $this->requirePostRequest();
+
+        $request = $this->request;
+        $type = (string)$request->getBodyParam('type', 'click');
+        $type = in_array($type, ['click', 'conversion'], true) ? $type : 'click';
+
+        $data = array_filter([
+            'doc_id' => (string)$request->getBodyParam('docId', ''),
+            'q' => (string)$request->getBodyParam('q', ''),
+            'user_id' => (string)$request->getBodyParam('userId', ''),
+        ], static fn(string $value): bool => $value !== '');
+
+        Typesense::$plugin->getAnalytics()->sendEvent(
+            $type,
+            (string)$request->getBodyParam('name', $type),
+            $data,
+        );
+
+        return $this->asJson(['ok' => true]);
+    }
 
     /**
      * Renders the results, facets, and pagination fragments for a search.

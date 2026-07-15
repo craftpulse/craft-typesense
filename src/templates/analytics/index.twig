@@ -1,10 +1,110 @@
 {# =========================================================================
    Typesense Pro - Analytics dashboard
+   =========================================================================
+   @var optedIn       bool
+   @var serverEnabled bool
+   @var userIdEnabled bool
+   @var retentionDays int
+   @var supportsTags  bool
+   @var readouts      array
+   @var experiments   craftpulse\typesense\models\Experiment[]
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = 'Analytics'|t('typesense') %}
 {% set selectedSubnavItem = 'analytics' %}
 
 {% block content %}
-    <p class="light">{{ 'The analytics dashboard lands here.'|t('typesense') }}</p>
+    {# GDPR posture #}
+    <blockquote class="note">
+        <p>
+            {% if optedIn %}
+                {{ 'Search analytics collection is enabled in the plugin settings.'|t('typesense') }}
+            {% else %}
+                {{ 'Search analytics collection is off. Enable it in the plugin settings to start collecting.'|t('typesense') }}
+            {% endif %}
+        </p>
+        <p>
+            {{ userIdEnabled
+                ? 'User-id association is ON: events are attributed to a user id.'|t('typesense')
+                : 'User-id association is off by default: no per-user data is collected.'|t('typesense') }}
+        </p>
+        <p>
+            {% if retentionDays > 0 %}
+                {{ 'Retention guidance: {n} days.'|t('typesense', { n: retentionDays }) }}
+            {% else %}
+                {{ 'No plugin-managed retention is set. Typesense keeps aggregate counts until they are overwritten; document your own retention policy.'|t('typesense') }}
+            {% endif %}
+        </p>
+    </blockquote>
+
+    {% if not serverEnabled %}
+        <blockquote class="note warning">
+            {{ 'The Typesense server was not started with search analytics enabled (--enable-search-analytics). No analytics can be collected until it is.'|t('typesense') }}
+        </blockquote>
+    {% else %}
+        {% if readouts is empty %}
+            <p class="light">{{ 'No analytics rules yet.'|t('typesense') }}</p>
+            <form method="post" accept-charset="UTF-8">
+                {{ csrfInput() }}
+                {{ actionInput('typesense/analytics/set-up-rules') }}
+                {{ redirectInput('typesense/analytics') }}
+                <button type="submit" class="btn submit">{{ 'Set up recommended rules'|t('typesense') }}</button>
+            </form>
+        {% else %}
+            {% for readout in readouts %}
+                <h2>
+                    {{ readout.type == 'popular_queries' ? 'Popular queries'|t('typesense') : 'Zero-result queries'|t('typesense') }}
+                    <span class="light">(<code>{{ readout.name }}</code>)</span>
+                </h2>
+                {% if readout.rows is empty %}
+                    <p class="light">{{ 'No data yet. Run some searches, then check back after the analytics flush interval.'|t('typesense') }}</p>
+                {% else %}
+                    <table class="data fullwidth">
+                        <thead>
+                            <tr>
+                                <th>{{ 'Query'|t('typesense') }}</th>
+                                <th>{{ 'Count'|t('typesense') }}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in readout.rows %}
+                                <tr>
+                                    <td>{{ row.q }}</td>
+                                    <td>{{ row.count }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            {% endfor %}
+        {% endif %}
+
+        {# A/B comparison, only on tag-capable servers (v29+). #}
+        {% if supportsTags and experiments is not empty %}
+            <hr>
+            <h2>{{ 'A/B experiments'|t('typesense') }}</h2>
+            <p class="light">{{ 'Each variant tags its searches so results are attributed per variant. Compare the tagged volumes below.'|t('typesense') }}</p>
+            {% for handle, experiment in experiments %}
+                <h3>{{ experiment.name }} <span class="light"><code>{{ handle }}</code></span></h3>
+                <table class="data fullwidth">
+                    <thead>
+                        <tr>
+                            <th>{{ 'Variant'|t('typesense') }}</th>
+                            <th>{{ 'Weight'|t('typesense') }}</th>
+                            <th>{{ 'Analytics tag'|t('typesense') }}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for variant in experiment.variants %}
+                            <tr>
+                                <td>{{ variant.name ?? variant.handle }}</td>
+                                <td>{{ variant.weight ?? 1 }}</td>
+                                <td>{% if variant.analyticsTag %}<code>{{ variant.analyticsTag }}</code>{% else %}{{ 'None'|t('typesense') }}{% endif %}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% endfor %}
+        {% endif %}
+    {% endif %}
 {% endblock %}
