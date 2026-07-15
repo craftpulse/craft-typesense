@@ -12,12 +12,14 @@ namespace craftpulse\typesense;
 
 use Craft;
 use craft\base\Element;
+use craft\base\ElementInterface;
 use craft\base\Model;
 use craft\base\Plugin;
 use craft\console\Application as ConsoleApplication;
 use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
+use craft\events\DefineHtmlEvent;
 use craft\events\RegisterComponentTypesEvent;
 use craft\events\RegisterCpAlertsEvent;
 use craft\events\RegisterElementActionsEvent;
@@ -114,7 +116,7 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public string $schemaVersion = '5.9.0';
+    public string $schemaVersion = '5.9.1';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
@@ -192,6 +194,7 @@ class Typesense extends Plugin
         $this->_registerSyncFailureAlerts();
         $this->_registerVariable();
         $this->_registerSiteTemplateRoots();
+        $this->_registerCurationSidebar();
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -429,6 +432,9 @@ class Typesense extends Plugin
             $routes['typesense/playground/<collection:[\w\-]+>/browse'] = 'typesense/playground/browse';
             $routes['typesense/playground/<collection:[\w\-]+>'] = 'typesense/playground/query';
             $routes['typesense/curation'] = 'typesense/curation/index';
+            $routes['typesense/curation/<collection:[\w\-]+>/new'] = 'typesense/curation/edit-rule';
+            $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
+            $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
         }
 
@@ -519,6 +525,82 @@ class Typesense extends Plugin
      * @return void
      * @author CraftPulse
      */
+    /**
+     * Registers the entry-edit curation sidebar panel (Pro + manageCuration),
+     * listing the element's pins and offering a quick-pin. Renders nothing for
+     * Free, for users without the permission, or for elements that match no
+     * control-panel-managed curation collection.
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    private function _registerCurationSidebar(): void
+    {
+        Event::on(
+            Element::class,
+            Element::EVENT_DEFINE_SIDEBAR_HTML,
+            function(DefineHtmlEvent $event) {
+                if (!$this->getIsPro()) {
+                    return;
+                }
+
+                if (!Craft::$app->getUser()->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
+                    return;
+                }
+
+                $element = $event->sender;
+
+                if (!$element instanceof ElementInterface || $element->id === null) {
+                    return;
+                }
+
+                $collections = $this->_curatableCollections($element);
+
+                if ($collections === []) {
+                    return;
+                }
+
+                $event->html .= Craft::$app->getView()->renderTemplate('typesense/_sidebar/curation', [
+                    'element' => $element,
+                    'collections' => $collections,
+                    'pins' => $this->getCurationIndex()->forElement((int)$element->id),
+                ]);
+            }
+        );
+    }
+
+    /**
+     * The control-panel-managed curation collections an element is a member of.
+     *
+     * @param ElementInterface $element
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    private function _curatableCollections(ElementInterface $element): array
+    {
+        $curation = $this->getCuration();
+        $sync = $this->getSync();
+        $names = [];
+
+        foreach ($this->getCollectionRegistry()->getAll() as $name => $collection) {
+            $type = $collection->getElementType();
+
+            if (!$element instanceof $type) {
+                continue;
+            }
+
+            if ($curation->getManagedBy($collection) !== Settings::MANAGED_BY_CP) {
+                continue;
+            }
+
+            if ($sync->matchesCollection($collection, $element)) {
+                $names[] = $name;
+            }
+        }
+
+        return $names;
+    }
+
     private function _registerSiteTemplateRoots(): void
     {
         Event::on(

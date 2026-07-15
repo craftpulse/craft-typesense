@@ -84,6 +84,7 @@ class Curation extends Component
             }
 
             $this->_setRequest('PUT', $this->_setName($collection), ['items' => $items]);
+            $this->_reindex($collection);
 
             return;
         }
@@ -107,7 +108,17 @@ class Curation extends Component
     public function upsert(Collection $collection, string $id, array $rule): void
     {
         if ($this->_useSets()) {
-            $this->_setRequest('PUT', $this->_setName($collection) . '/items/' . $id, $rule + ['id' => $id]);
+            // curation_sets do not auto-create on a per-item PUT (unlike synonym
+            // sets), so upsert reads the whole set, replaces the target item, and
+            // writes it back, which also creates the set when it is absent.
+            $items = array_values(array_filter(
+                $this->all($collection),
+                static fn(array $item): bool => (string)($item['id'] ?? '') !== $id,
+            ));
+            $items[] = $rule + ['id' => $id];
+
+            $this->_setRequest('PUT', $this->_setName($collection), ['items' => $items]);
+            $this->_reindex($collection);
 
             return;
         }
@@ -120,9 +131,87 @@ class Curation extends Component
 
         try {
             $client->collections[$this->_target($collection)]->overrides->upsert($id, $rule);
+            $this->_reindex($collection);
         } catch (Throwable $e) {
             Craft::error("Could not upsert curation {$id} on {$collection->getName()}: {$e->getMessage()}", 'typesense');
         }
+    }
+
+    /**
+     * Deletes one curation rule (dual-shape) and refreshes the lookup index.
+     *
+     * @param Collection $collection
+     * @param string $id
+     * @return void
+     * @author CraftPulse
+     */
+    public function deleteRule(Collection $collection, string $id): void
+    {
+        if ($this->_useSets()) {
+            $this->_setRequest('DELETE', $this->_setName($collection) . '/items/' . $id);
+        } else {
+            $client = Typesense::$plugin->getClient()->client();
+
+            if ($client !== null) {
+                try {
+                    $client->collections[$this->_target($collection)]->overrides[$id]->delete();
+                } catch (Throwable) {
+                    // already gone
+                }
+            }
+        }
+
+        $this->_reindex($collection);
+    }
+
+    /**
+     * Pins a document for a query: finds the rule matching the query and match
+     * type (creating it when absent) and adds or moves an include at a position.
+     * Returns the rule id. Refreshes the lookup index through upsert.
+     *
+     * @param Collection $collection
+     * @param string $query
+     * @param string $documentId
+     * @param string $match
+     * @param int|null $position
+     * @return string
+     * @author CraftPulse
+     */
+    public function pin(Collection $collection, string $query, string $documentId, string $match = 'exact', ?int $position = null): string
+    {
+        $rule = null;
+
+        foreach ($this->all($collection) as $existing) {
+            if (($existing['rule']['query'] ?? null) === $query && ($existing['rule']['match'] ?? 'exact') === $match) {
+                $rule = $existing;
+                break;
+            }
+        }
+
+        if ($rule === null) {
+            $id = 'pin-' . substr(md5($query . '|' . $match), 0, 12);
+            $body = ['rule' => ['query' => $query, 'match' => $match], 'includes' => []];
+        } else {
+            $id = (string)$rule['id'];
+            unset($rule['id']);
+            $body = $rule;
+            $body['includes'] ??= [];
+        }
+
+        $includes = [];
+
+        foreach ($body['includes'] as $include) {
+            if (($include['id'] ?? null) !== $documentId) {
+                $includes[] = $include;
+            }
+        }
+
+        $includes[] = ['id' => $documentId, 'position' => $position ?? (count($includes) + 1)];
+        $body['includes'] = $includes;
+
+        $this->upsert($collection, $id, $body);
+
+        return $id;
     }
 
     /**
@@ -162,6 +251,7 @@ class Curation extends Component
     {
         if ($this->_useSets()) {
             $this->_setRequest('DELETE', $this->_setName($collection));
+            $this->_reindex($collection);
 
             return;
         }
@@ -181,6 +271,8 @@ class Curation extends Component
                 }
             }
         }
+
+        $this->_reindex($collection);
     }
 
     /**
@@ -194,6 +286,23 @@ class Curation extends Component
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Refreshes the element-to-rule lookup table from the collection's current
+     * rules. Fail-soft: a lookup failure never blocks a curation write.
+     *
+     * @param Collection $collection
+     * @return void
+     * @author CraftPulse
+     */
+    private function _reindex(Collection $collection): void
+    {
+        try {
+            Typesense::$plugin->getCurationIndex()->rebuildForCollection($collection->getName(), $this->all($collection));
+        } catch (Throwable $e) {
+            Craft::error("Could not rebuild curation index for {$collection->getName()}: {$e->getMessage()}", 'typesense');
+        }
+    }
 
     /**
      * @return Settings

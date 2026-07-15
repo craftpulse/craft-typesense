@@ -1,0 +1,116 @@
+{# =========================================================================
+   Typesense Pro - curation manager (rule editor)
+   =========================================================================
+   @var handle string
+   @var rule   array|null
+   @var isNew  bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = isNew ? 'New rule'|t('typesense') : (rule.id ?? '') %}
+{% set selectedSubnavItem = 'curation' %}
+{% set fullPageForm = true %}
+{% set crumbs = [
+    { label: 'Curation'|t('typesense'), url: url('typesense/curation') },
+    { label: handle, url: url('typesense/curation/' ~ handle) },
+] %}
+
+{% block content %}
+    {{ actionInput('typesense/curation/save-rule') }}
+    {{ hiddenInput('collection', handle) }}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Rule id'|t('typesense'),
+        instructions: 'A stable identifier for this rule.'|t('typesense'),
+        id: 'id',
+        name: 'id',
+        value: rule.id ?? '',
+        disabled: not isNew,
+        required: true,
+    }) }}
+    {% if not isNew %}{{ hiddenInput('id', rule.id) }}{% endif %}
+
+    {{ forms.textField({
+        label: 'Query'|t('typesense'),
+        instructions: 'The search query this rule applies to.'|t('typesense'),
+        id: 'query',
+        name: 'query',
+        value: rule.rule.query ?? '',
+        required: true,
+    }) }}
+
+    {{ forms.selectField({
+        label: 'Match'|t('typesense'),
+        id: 'match',
+        name: 'match',
+        options: [
+            { label: 'Exact'|t('typesense'), value: 'exact' },
+            { label: 'Contains'|t('typesense'), value: 'contains' },
+        ],
+        value: rule.rule.match ?? 'exact',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Rule filter (condition)'|t('typesense'),
+        instructions: 'Optional filter_by that scopes when this rule matches.'|t('typesense'),
+        id: 'ruleFilterBy',
+        name: 'ruleFilterBy',
+        value: rule.rule.filter_by ?? '',
+    }) }}
+
+    {{ forms.editableTableField({
+        label: 'Includes (pins)'|t('typesense'),
+        instructions: 'Document ids to pin, at 1-based positions.'|t('typesense'),
+        id: 'includes',
+        name: 'includes',
+        cols: {
+            id: { heading: 'Document ID'|t('typesense'), type: 'singleline' },
+            position: { heading: 'Position'|t('typesense'), type: 'number' },
+        },
+        rows: rule.includes ?? [],
+        addRowLabel: 'Add a pin'|t('typesense'),
+    }) }}
+
+    {{ forms.editableTableField({
+        label: 'Excludes (hides)'|t('typesense'),
+        instructions: 'Document ids to hide from results.'|t('typesense'),
+        id: 'excludes',
+        name: 'excludes',
+        cols: {
+            id: { heading: 'Document ID'|t('typesense'), type: 'singleline' },
+        },
+        rows: rule.excludes ?? [],
+        addRowLabel: 'Add a hide'|t('typesense'),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Action: filter_by'|t('typesense'),
+        instructions: 'Apply a filter to matching queries.'|t('typesense'),
+        id: 'filterBy',
+        name: 'filterBy',
+        value: rule.filter_by ?? '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Action: sort_by'|t('typesense'),
+        id: 'sortBy',
+        name: 'sortBy',
+        value: rule.sort_by ?? '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Valid from'|t('typesense'),
+        instructions: 'Optional start of the effective window (any parseable date/time).'|t('typesense'),
+        id: 'validFrom',
+        name: 'validFrom',
+        value: rule.effective_from_ts is defined ? ('@' ~ rule.effective_from_ts)|date('Y-m-d H:i:s') : '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Valid until'|t('typesense'),
+        id: 'validUntil',
+        name: 'validUntil',
+        value: rule.effective_to_ts is defined ? ('@' ~ rule.effective_to_ts)|date('Y-m-d H:i:s') : '',
+    }) }}
+{% endblock %}

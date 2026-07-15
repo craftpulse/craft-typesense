@@ -147,3 +147,32 @@ it('returns real hits from a search on the 30.2 server', function() {
         }
     });
 })->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
+
+it('upserts, lists, and deletes a curation rule through the global curation_sets path', function() {
+    withV302(function() {
+        $collection = Collection::make(V302_TEST_COLLECTION)
+            ->multisite(MultisiteStrategy::SharedWithSiteFilter)
+            ->curation(\craftpulse\typesense\models\Settings::MANAGED_BY_CP);
+        $curation = Typesense::$plugin->getCuration();
+
+        expect($curation->usesSets())->toBeTrue();
+
+        try {
+            // upsert creates the curation set (read-modify-write whole set).
+            $curation->upsert($collection, 'pin-coat', [
+                'rule' => ['query' => 'coat', 'match' => 'exact'],
+                'includes' => [['id' => '1', 'position' => 1]],
+            ]);
+
+            $all = $curation->all($collection);
+            expect($all)->toHaveCount(1)
+                ->and($all[0]['id'])->toBe('pin-coat')
+                ->and(array_column($all[0]['includes'] ?? [], 'id'))->toContain('1');
+
+            $curation->deleteRule($collection, 'pin-coat');
+            expect($curation->all($collection))->toBe([]);
+        } finally {
+            $curation->clear($collection);
+        }
+    });
+})->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');

@@ -1,10 +1,33 @@
 {# =========================================================================
-   Typesense Pro - Curation manager
+   Typesense Pro - curation manager (collection picker)
+   =========================================================================
+   @var collections array
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = 'Curation'|t('typesense') %}
 {% set selectedSubnavItem = 'curation' %}
 
 {% block content %}
-    <p class="light">{{ 'The curation manager lands here.'|t('typesense') }}</p>
+    <p class="light">{{ 'Pick a collection to manage its curation rules (pins, hides, and boosts).'|t('typesense') }}</p>
+
+    {% if collections is empty %}
+        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Collection'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle in collections %}
+                    <tr>
+                        <td><code>{{ handle }}</code></td>
+                        <td class="thin"><a class="btn small" href="{{ url('typesense/curation/' ~ handle) }}">{{ 'Manage rules'|t('typesense') }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 {% endblock %}

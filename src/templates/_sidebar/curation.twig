@@ -1,0 +1,63 @@
+{# =========================================================================
+   Typesense Pro - entry-edit curation sidebar (quick-pin)
+   =========================================================================
+   Appended to the element edit sidebar. Lists the element's existing pins and
+   offers a quick-pin: pin this element for a query in one of the control-panel-
+   managed collections it belongs to.
+
+   @var element     craft\base\ElementInterface
+   @var collections array  CP-managed collection handles the element is in
+   @var pins        array  rows from CurationIndex::forElement
+   ========================================================================= #}
+{% import '_includes/forms.twig' as forms %}
+
+<div class="pane ts-curation-sidebar">
+    <h2>{{ 'Typesense curation'|t('typesense') }}</h2>
+
+    {% if pins is empty %}
+        <p class="light">{{ 'This element is not pinned for any query.'|t('typesense') }}</p>
+    {% else %}
+        <ul class="ts-curation-sidebar__pins">
+            {% for pin in pins %}
+                <li>
+                    <code>{{ pin.collectionHandle }}</code>
+                    {{ 'pinned at position {n} by rule {rule}'|t('typesense', { n: pin.position ?? '?', rule: pin.ruleId }) }}
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+
+    <form method="post" accept-charset="UTF-8" class="ts-curation-sidebar__form">
+        {{ csrfInput() }}
+        {{ actionInput('typesense/curation/pin') }}
+        {{ hiddenInput('elementId', element.id) }}
+        {{ redirectInput(element.cpEditUrl ?? '') }}
+
+        {% if collections|length > 1 %}
+            {{ forms.selectField({
+                label: 'Collection'|t('typesense'),
+                name: 'collection',
+                options: collections|map(c => { label: c, value: c }),
+            }) }}
+        {% else %}
+            {{ hiddenInput('collection', collections|first) }}
+        {% endif %}
+
+        {{ forms.textField({
+            label: 'Pin for query'|t('typesense'),
+            name: 'query',
+            placeholder: 'e.g. coat'|t('typesense'),
+            required: true,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Position'|t('typesense'),
+            type: 'number',
+            name: 'position',
+            value: 1,
+            inputAttributes: { min: 1 },
+        }) }}
+
+        <button type="submit" class="btn submit">{{ 'Pin this element'|t('typesense') }}</button>
+    </form>
+</div>

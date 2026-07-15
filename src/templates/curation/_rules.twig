@@ -1,0 +1,74 @@
+{# =========================================================================
+   Typesense Pro - curation manager (rules for a collection)
+   =========================================================================
+   @var handle     string
+   @var rules      array
+   @var editable   bool   whether this collection's curation is CP-managed
+   @var overridden bool   whether a per-collection config override is in force
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = handle ~ ' ' ~ ('curation'|t('typesense')) %}
+{% set selectedSubnavItem = 'curation' %}
+{% set crumbs = [{ label: 'Curation'|t('typesense'), url: url('typesense/curation') }] %}
+
+{% block actionButton %}
+    {% if editable %}
+        <a class="btn submit add icon" href="{{ url('typesense/curation/' ~ handle ~ '/new') }}">{{ 'New rule'|t('typesense') }}</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if not editable %}
+        <blockquote class="note">
+            {% if overridden %}
+                {{ 'This collection’s curation is managed by the config file (overridden). It is read-only here.'|t('typesense') }}
+            {% else %}
+                {{ 'This collection’s curation is managed by config. It is read-only here.'|t('typesense') }}
+            {% endif %}
+        </blockquote>
+    {% endif %}
+
+    {% if rules is empty %}
+        <p class="light">{{ 'No curation rules yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Rule'|t('typesense') }}</th>
+                    <th>{{ 'Query'|t('typesense') }}</th>
+                    <th>{{ 'Match'|t('typesense') }}</th>
+                    <th>{{ 'Pins'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rule in rules %}
+                    <tr>
+                        <td>
+                            {% if editable %}
+                                <a href="{{ url('typesense/curation/' ~ handle ~ '/rule/' ~ rule.id) }}"><code>{{ rule.id }}</code></a>
+                            {% else %}
+                                <code>{{ rule.id }}</code>
+                            {% endif %}
+                        </td>
+                        <td>{{ rule.rule.query ?? '' }}</td>
+                        <td>{{ rule.rule.match ?? 'exact' }}</td>
+                        <td>{{ (rule.includes ?? [])|length }}</td>
+                        <td class="thin">
+                            {% if editable %}
+                                <form method="post" accept-charset="UTF-8">
+                                    {{ csrfInput() }}
+                                    {{ actionInput('typesense/curation/delete-rule') }}
+                                    {{ hiddenInput('collection', handle) }}
+                                    {{ hiddenInput('id', rule.id) }}
+                                    {{ redirectInput('typesense/curation/' ~ handle) }}
+                                    <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}
