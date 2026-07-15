@@ -110,6 +110,60 @@ class Search extends Component
     }
 
     /**
+     * Runs a hybrid search: keyword search on the text fields fused with semantic
+     * search on the auto-embedding vector field. `alpha` weights the semantic
+     * side (0 keyword only, 1 semantic only). Reranking computes both scores for
+     * the whole result set and is applied only when the server supports it.
+     *
+     * @param string $handle
+     * @param array<string, mixed> $params
+     * @param float $alpha
+     * @param bool $rerank
+     * @param string $vectorField
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function hybridSearch(string $handle, array $params, float $alpha = 0.3, bool $rerank = false, string $vectorField = 'embedding'): array
+    {
+        $queryBy = (string)($params['query_by'] ?? '');
+
+        if (!str_contains($queryBy, $vectorField)) {
+            $params['query_by'] = $queryBy === '' ? $vectorField : "{$queryBy},{$vectorField}";
+        }
+
+        $params['vector_query'] = sprintf('%s:([], alpha: %s)', $vectorField, $this->_clampAlpha($alpha));
+        $params['exclude_fields'] = $vectorField;
+
+        if ($rerank && (Typesense::$plugin->getClient()->getServerCapabilities()?->rerankHybridMatches() ?? false)) {
+            $params['rerank_hybrid_matches'] = true;
+        }
+
+        return $this->search($handle, $params);
+    }
+
+    /**
+     * Finds items similar to a given document by its vector, using vector-query
+     * by id (empty vector plus an id). The vector field is excluded from the
+     * response to keep the payload small.
+     *
+     * @param string $handle
+     * @param string $documentId
+     * @param int $limit
+     * @param string $vectorField
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function similar(string $handle, string $documentId, int $limit = 10, string $vectorField = 'embedding'): array
+    {
+        return $this->search($handle, [
+            'q' => '*',
+            'vector_query' => sprintf('%s:([], id: %s)', $vectorField, $documentId),
+            'exclude_fields' => $vectorField,
+            'per_page' => max(1, min(self::MAX_PER_PAGE, $limit)),
+        ]);
+    }
+
+    /**
      * Runs a multi-search (union) across several collections, fail-soft.
      *
      * @param array<int, array<string, mixed>> $searches
@@ -149,6 +203,19 @@ class Search extends Component
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Clamps a hybrid alpha to the valid 0 to 1 range and formats it for the
+     * vector_query string.
+     *
+     * @param float $alpha
+     * @return string
+     * @author CraftPulse
+     */
+    private function _clampAlpha(float $alpha): string
+    {
+        return rtrim(rtrim(number_format(max(0.0, min(1.0, $alpha)), 2, '.', ''), '0'), '.') ?: '0';
+    }
 
     /**
      * Enriches search params with the collection's preset, synonym set, and

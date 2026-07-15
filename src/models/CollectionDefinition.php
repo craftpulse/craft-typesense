@@ -76,6 +76,14 @@ class CollectionDefinition extends Model
     public array $metadata = [];
 
     /**
+     * @var array<string, mixed> Auto-embedding config authored in the mapping UI:
+     * `enabled`, `model` (a ts/* id or `provider/name`), `from` (source field
+     * handles, or the asset image field for CLIP), and `config` (remote provider
+     * credential env-var references).
+     */
+    public array $embedding = [];
+
+    /**
      * @var array<string, mixed> Relevance tuning authored in the presets editor:
      * `boostRules` (additive rules compiled to an indexed `boost_score`),
      * `textMatchBuckets`, `grouping` (`field`, `limit`), `mmr` (`enabled`,
@@ -97,7 +105,7 @@ class CollectionDefinition extends Model
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
         $rules[] = [['enabled'], 'boolean'];
-        $rules[] = [['mappings', 'metadata', 'relevance'], 'safe'];
+        $rules[] = [['mappings', 'metadata', 'relevance', 'embedding'], 'safe'];
 
         return $rules;
     }
@@ -119,6 +127,7 @@ class CollectionDefinition extends Model
             'mappings' => $this->mappings,
             'metadata' => $this->metadata,
             'relevance' => $this->relevance,
+            'embedding' => $this->embedding,
         ];
     }
 }

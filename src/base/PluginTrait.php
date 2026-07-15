@@ -22,6 +22,7 @@ use craftpulse\typesense\services\CurationIndex;
 use craftpulse\typesense\services\Dictionaries;
 use craftpulse\typesense\services\Documents;
 use craftpulse\typesense\services\Drift;
+use craftpulse\typesense\services\Embeddings;
 use craftpulse\typesense\services\Experiments;
 use craftpulse\typesense\services\Inspector;
 use craftpulse\typesense\services\Keys;
@@ -333,6 +334,19 @@ trait PluginTrait
     }
 
     /**
+     * @return Embeddings
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getEmbeddings(): Embeddings
+    {
+        /** @var Embeddings $embeddings */
+        $embeddings = $this->get('embeddings');
+
+        return $embeddings;
+    }
+
+    /**
      * @return Experiments
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -444,6 +458,7 @@ trait PluginTrait
             'relevance' => Relevance::class,
             'aliases' => Aliases::class,
             'analytics' => Analytics::class,
+            'embeddings' => Embeddings::class,
             'experiments' => Experiments::class,
             'dictionaries' => Dictionaries::class,
             'search' => Search::class,

@@ -111,6 +111,16 @@ class Compiler extends Component
             $collection->boost($boostRules);
         }
 
+        // Auto-embedding: one vector field embedding the chosen source fields
+        // (or the asset image field for CLIP), generated server-side at index.
+        if (!empty($definition->embedding['enabled'])) {
+            $embedField = Typesense::$plugin->getEmbeddings()->embedField('embedding', $definition->embedding);
+
+            if ($embedField !== null) {
+                $fields[] = $embedField;
+            }
+        }
+
         $collection->fields(...$fields)->mapping(...$mappings);
 
         $preset = [];

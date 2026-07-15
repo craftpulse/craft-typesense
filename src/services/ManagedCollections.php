@@ -154,6 +154,7 @@ class ManagedCollections extends Component
         $definition->mappings = is_array($config['mappings'] ?? null) ? $config['mappings'] : [];
         $definition->metadata = is_array($config['metadata'] ?? null) ? $config['metadata'] : [];
         $definition->relevance = is_array($config['relevance'] ?? null) ? $config['relevance'] : [];
+        $definition->embedding = is_array($config['embedding'] ?? null) ? $config['embedding'] : [];
 
         return $definition;
     }

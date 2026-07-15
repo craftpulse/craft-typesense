@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\variables;
 
+use craft\base\ElementInterface;
 use craft\helpers\UrlHelper;
 use craftpulse\typesense\twig\tags\RegionTag;
 use craftpulse\typesense\twig\tags\SearchFormTag;
@@ -162,6 +163,25 @@ class TypesenseVariable
     public function search(string $handle, array $params = []): array
     {
         return Typesense::$plugin->getSearch()->search($handle, $params);
+    }
+
+    /**
+     * Finds items similar to an element (or a document id) in a collection, using
+     * vector similarity. Requires the collection to have an auto-embedding field.
+     *
+     * {% set related = craft.typesense.similar(entry, 'products', 6) %}
+     *
+     * @param ElementInterface|int|string $elementOrId
+     * @param string $handle
+     * @param int $limit
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    public function similar(ElementInterface|int|string $elementOrId, string $handle, int $limit = 10): array
+    {
+        $id = $elementOrId instanceof ElementInterface ? (string)$elementOrId->id : (string)$elementOrId;
+
+        return Typesense::$plugin->getSearch()->similar($handle, $id, $limit);
     }
 
     /**
