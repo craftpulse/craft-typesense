@@ -148,6 +148,28 @@ it('returns real hits from a search on the 30.2 server', function() {
     });
 })->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
 
+it('opens the native personalization gate on the 30.2 server', function() {
+    withV302(function() {
+        $aiModels = Typesense::$plugin->getAiModels();
+        $analytics = Typesense::$plugin->getAnalytics();
+        $destination = 'ts_v302_personalization_log';
+
+        // The gate is open on v30.2 (unlike v28, where it refuses). The log-rule
+        // wiring is best-effort for an undocumented feature, so the gate result
+        // is what is pinned, not the server's acceptance of the rule shape.
+        expect(Typesense::$plugin->getClient()->getServerCapabilities()?->personalizationModels())->toBeTrue()
+            ->and($aiModels->configurePersonalizationLog('ts_v302_test', $destination))->toBeTrue();
+
+        $analytics->deleteRule('ts_v302_test_personalization_log');
+
+        try {
+            Typesense::$plugin->getClient()->client()->collections[$destination]->delete();
+        } catch (Throwable) {
+            // already gone (or the undocumented rule shape was rejected)
+        }
+    });
+})->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
+
 it('clones a collection schema via src_name on the 30.2 server', function() {
     withV302(function() {
         $client = Typesense::$plugin->getClient()->client();

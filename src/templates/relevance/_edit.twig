@@ -189,5 +189,6 @@
                 <strong>{{ feature.label }}</strong>: {{ feature.reason }}
             </blockquote>
         {% endfor %}
+        <p><a class="go" href="{{ url('typesense/relevance/conversation-models') }}">{{ 'Manage conversation (RAG) models'|t('typesense') }}</a></p>
     {% endif %}
 {% endblock %}

@@ -139,6 +139,78 @@ class RelevanceController extends ProController
         ]);
     }
 
+    /**
+     * The conversation (RAG) model management screen: lists the models and
+     * offers a create form. A modest surface on the vector/AI side; conversation
+     * models are global, so this is not per-collection.
+     *
+     * @return Response
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionConversationModels(): Response
+    {
+        return $this->renderTemplate('typesense/relevance/_conversation-models', [
+            'models' => Typesense::$plugin->getAiModels()->conversationModels(),
+        ]);
+    }
+
+    /**
+     * Deletes a conversation (RAG) model.
+     *
+     * @return Response|null
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionDeleteConversationModel(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+
+        Typesense::$plugin->getAiModels()->deleteConversationModel((string)$this->request->getRequiredBodyParam('id'));
+
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), ['redirect' => $this->request->getReferrer() ?: 'typesense/relevance']);
+    }
+
+    /**
+     * Creates a conversation (RAG) model from the vector/AI editor. The api key
+     * is an environment reference, validated (shape + resolution) before any
+     * request; no live LLM call is made.
+     *
+     * @return Response|null
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionSaveConversationModel(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS);
+
+        $request = $this->request;
+        $config = [
+            'id' => trim((string)$request->getBodyParam('id', '')),
+            'model_name' => trim((string)$request->getBodyParam('model_name', '')),
+            'api_key' => trim((string)$request->getBodyParam('api_key', '')),
+            'history_collection' => trim((string)$request->getBodyParam('history_collection', '')),
+            'system_prompt' => trim((string)$request->getBodyParam('system_prompt', '')),
+        ];
+
+        $errors = Typesense::$plugin->getAiModels()->validateConversationModel($config);
+
+        if ($errors !== []) {
+            return $this->asFailure(Craft::t('typesense', 'Conversation model: {error}', ['error' => reset($errors)]));
+        }
+
+        if (Typesense::$plugin->getAiModels()->upsertConversationModel($config) === null) {
+            return $this->asFailure(Craft::t('typesense', 'Could not create the conversation model.'));
+        }
+
+        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), ['redirect' => $this->request->getReferrer() ?: 'typesense/relevance']);
+    }
+
     // Private Methods
     // =========================================================================
 

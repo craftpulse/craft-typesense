@@ -135,6 +135,39 @@ class AiModels extends Component
     }
 
     /**
+     * Wires native personalization for a collection by creating the analytics
+     * `log` rule that records the interaction events personalization models learn
+     * from. Version-gated (v30.2+); returns false on servers without native
+     * personalization (hide, never badge). Experimental and undocumented
+     * upstream, so this only lays the log-rule groundwork the plan describes.
+     *
+     * @param string $collection The source collection handle.
+     * @param string $destination The log destination collection.
+     * @return bool
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function configurePersonalizationLog(string $collection, string $destination): bool
+    {
+        if (!(Typesense::$plugin->getClient()->getServerCapabilities()?->personalizationModels() ?? false)) {
+            return false;
+        }
+
+        // Attempt the log-rule wiring to the best-grounded shape. Native
+        // personalization is undocumented upstream and the analytics rule shape
+        // shifts across v30 builds, so acceptance is not guaranteed; the gate is
+        // authoritative, the wiring is best-effort (fail-soft).
+        $analytics = Typesense::$plugin->getAnalytics();
+        $analytics->ensureDestination($destination);
+        $analytics->upsertRule("{$collection}_personalization_log", $analytics::TYPE_LOG, [
+            'source' => ['collections' => [$collection]],
+            'destination' => ['collection' => $destination],
+        ]);
+
+        return true;
+    }
+
+    /**
      * Creates or replaces a conversation (RAG) model, resolving the api_key from
      * an environment reference. Validates the shape first (no live call).
      *

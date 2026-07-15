@@ -1,0 +1,62 @@
+{# =========================================================================
+   Typesense Pro - conversation (RAG) model management
+   =========================================================================
+   @var models array
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Conversation models'|t('typesense') %}
+{% set selectedSubnavItem = 'relevance' %}
+{% set crumbs = [{ label: 'Relevance'|t('typesense'), url: url('typesense/relevance') }] %}
+
+{% block content %}
+    <blockquote class="note warning">
+        {{ 'Conversational RAG makes a per-search call to an LLM provider, so each conversational query has a cost. The API key is read from an environment variable and never stored by the plugin.'|t('typesense') }}
+    </blockquote>
+
+    <h2>{{ 'Models'|t('typesense') }}</h2>
+    {% if models is empty %}
+        <p class="light">{{ 'No conversation models yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'ID'|t('typesense') }}</th>
+                    <th>{{ 'Model'|t('typesense') }}</th>
+                    <th>{{ 'History collection'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for model in models %}
+                    <tr>
+                        <td><code>{{ model.id }}</code></td>
+                        <td>{{ model.model_name ?? '' }}</td>
+                        <td><code>{{ model.history_collection ?? '' }}</code></td>
+                        <td class="thin">
+                            <form method="post" accept-charset="UTF-8" data-confirm="{{ 'Delete this conversation model?'|t('typesense') }}">
+                                {{ csrfInput() }}
+                                {{ actionInput('typesense/relevance/delete-conversation-model') }}
+                                {{ hiddenInput('id', model.id) }}
+                                <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <hr>
+    <h2>{{ 'Add a model'|t('typesense') }}</h2>
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('typesense/relevance/save-conversation-model') }}
+        {{ forms.textField({ first: true, label: 'ID'|t('typesense'), name: 'id', required: true }) }}
+        {{ forms.textField({ label: 'Model name'|t('typesense'), instructions: 'For example openai/gpt-4o-mini.'|t('typesense'), name: 'model_name', required: true }) }}
+        {{ forms.textField({ label: 'API key (env reference)'|t('typesense'), instructions: 'Enter the environment reference, for example $OPENAI_API_KEY, never the raw key.'|t('typesense'), name: 'api_key', required: true }) }}
+        {{ forms.textField({ label: 'History collection'|t('typesense'), instructions: 'Created automatically if it does not exist.'|t('typesense'), name: 'history_collection', value: 'conversation_store', required: true }) }}
+        {{ forms.textareaField({ label: 'System prompt'|t('typesense'), name: 'system_prompt', rows: 3 }) }}
+        <div class="buttons"><button type="submit" class="btn submit">{{ 'Create'|t('typesense') }}</button></div>
+    </form>
+{% endblock %}

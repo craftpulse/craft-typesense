@@ -57,6 +57,15 @@ it('never upserts a conversation model with an invalid config (no live call)', f
     ]))->toBeNull();
 });
 
+it('refuses personalization log wiring on a server without native personalization', function() {
+    // The v28 playground has no native personalization (v30.2+), so the gate is
+    // closed and no analytics rule is created (hide, never badge).
+    $capabilities = Typesense::$plugin->getClient()->getServerCapabilities();
+
+    expect($capabilities?->personalizationModels() ?? false)->toBeFalse()
+        ->and(aiModels()->configurePersonalizationLog('heroes', 'ts_pest_personalization'))->toBeFalse();
+});
+
 it('lists RAG and BYO experimental features and gates the version-locked ones', function() {
     $keys = array_column(aiModels()->experimentalFeatures(), 'key');
 

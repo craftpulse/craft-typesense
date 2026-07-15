@@ -476,6 +476,7 @@ class Typesense extends Plugin
             $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
             $routes['typesense/relevance'] = 'typesense/relevance/index';
+            $routes['typesense/relevance/conversation-models'] = 'typesense/relevance/conversation-models';
             $routes['typesense/relevance/<uid:[\w\-]+>'] = 'typesense/relevance/edit';
             $routes['typesense/aliases'] = 'typesense/aliases/index';
             $routes['typesense/experiments'] = 'typesense/experiments/index';
