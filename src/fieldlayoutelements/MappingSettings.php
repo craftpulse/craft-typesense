@@ -131,6 +131,24 @@ trait MappingSettings
     }
 
     /**
+     * @inheritdoc
+     */
+    public function tsFieldSettings(): array
+    {
+        return [
+            'facet' => $this->facet,
+            'sortable' => $this->sortable,
+            'infix' => $this->infix,
+            'stem' => $this->stem,
+            'locale' => $this->locale,
+            'weight' => $this->weight,
+            'description' => $this->description,
+            'embed' => $this->embed,
+            'imageEmbed' => $this->imageEmbed,
+        ];
+    }
+
+    /**
      * The resolved Typesense type: the bounded override when set, else the
      * server-derived type.
      *

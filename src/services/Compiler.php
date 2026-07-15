@@ -18,6 +18,7 @@ use craft\elements\Tag;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\enums\MultisiteStrategy;
+use craftpulse\typesense\fieldlayoutelements\MappingElementInterface;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\models\FieldMapping;
 use craftpulse\typesense\Typesense;
@@ -41,14 +42,6 @@ use craftpulse\typesense\Typesense;
  */
 class Compiler extends Component
 {
-    // Constants
-    // =========================================================================
-
-    /**
-     * @var array<int, string> The Typesense types a field override may use.
-     */
-    public const VALID_TYPES = ['string', 'string[]', 'int32', 'int64', 'float', 'bool', 'object', 'object[]', 'geopoint'];
-
     // Public Methods
     // =========================================================================
 
@@ -78,26 +71,34 @@ class Compiler extends Component
         $weights = [];
         $descriptions = [];
 
-        foreach (Typesense::$plugin->getMappingSources()->descriptorsFor($definition) as $descriptor) {
-            $mapping = $definition->mappings[$descriptor['uid']] ?? null;
+        // Every element placed in the mapping layout is an indexed field; the
+        // element carries its own resolved type and per-field settings.
+        foreach ($definition->getFieldLayout()->getTabs() as $tab) {
+            foreach ($tab->getElements() as $element) {
+                if (!$element instanceof MappingElementInterface) {
+                    continue;
+                }
 
-            if (!is_array($mapping) || empty($mapping['indexable'])) {
-                continue;
-            }
+                $key = $element->tsHandle();
 
-            $key = (string)$descriptor['handle'];
-            $type = $this->_resolveType($mapping, (string)$descriptor['derivedType']);
+                if ($key === '') {
+                    continue;
+                }
 
-            $fields[] = $this->_field($key, $type, $mapping);
-            $mappings[] = $this->_mapping($key, $type, (string)$descriptor['kind']);
+                $type = $element->tsResolvedType();
+                $settings = $element->tsFieldSettings();
 
-            if (in_array($type, ['string', 'string[]'], true) && (int)($mapping['weight'] ?? 0) > 0) {
-                $queryBy[] = $key;
-                $weights[] = (int)$mapping['weight'];
-            }
+                $fields[] = $this->_field($key, $type, $settings);
+                $mappings[] = $this->_mapping($key, $type, $element->tsKind());
 
-            if (!empty($mapping['description'])) {
-                $descriptions[$key] = (string)$mapping['description'];
+                if (in_array($type, ['string', 'string[]'], true) && (int)($settings['weight'] ?? 0) > 0) {
+                    $queryBy[] = $key;
+                    $weights[] = (int)$settings['weight'];
+                }
+
+                if (!empty($settings['description'])) {
+                    $descriptions[$key] = (string)$settings['description'];
+                }
             }
         }
 
@@ -195,38 +196,38 @@ class Compiler extends Component
     }
 
     /**
-     * Builds a schema field from a mapping.
+     * Builds a schema field from a mapping element's settings.
      *
      * @param string $key
      * @param string $type
-     * @param array<string, mixed> $mapping
+     * @param array<string, mixed> $settings
      * @return Field
      * @author CraftPulse
      */
-    private function _field(string $key, string $type, array $mapping): Field
+    private function _field(string $key, string $type, array $settings): Field
     {
         // Craft content is frequently empty, so mapped fields are optional; the
         // generated path omits null values and Typesense accepts the absence.
         $field = Field::make($key, $type)->optional();
 
-        if (!empty($mapping['facet'])) {
+        if (!empty($settings['facet'])) {
             $field->facet();
         }
 
-        if (!empty($mapping['sortable'])) {
+        if (!empty($settings['sortable'])) {
             $field->sort();
         }
 
-        if (!empty($mapping['infix'])) {
+        if (!empty($settings['infix'])) {
             $field->infix();
         }
 
-        if (!empty($mapping['stem'])) {
+        if (!empty($settings['stem'])) {
             $field->stem();
         }
 
-        if (!empty($mapping['locale'])) {
-            $field->locale((string)$mapping['locale']);
+        if (!empty($settings['locale'])) {
+            $field->locale((string)$settings['locale']);
         }
 
         return $field;
@@ -257,21 +258,5 @@ class Compiler extends Component
         }
 
         return $mapping;
-    }
-
-    /**
-     * Resolves the field type: the bounded override when valid, else the
-     * server-derived type.
-     *
-     * @param array<string, mixed> $mapping
-     * @param string $derivedType
-     * @return string
-     * @author CraftPulse
-     */
-    private function _resolveType(array $mapping, string $derivedType): string
-    {
-        $override = isset($mapping['type']) ? (string)$mapping['type'] : '';
-
-        return in_array($override, self::VALID_TYPES, true) ? $override : $derivedType;
     }
 }

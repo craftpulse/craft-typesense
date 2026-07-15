@@ -26,7 +26,7 @@ use craftpulse\typesense\Typesense;
  * @package   Typesense
  * @since     5.9.0
  */
-class MappingField extends CustomField
+class MappingField extends CustomField implements MappingElementInterface
 {
     use MappingSettings;
 

@@ -12,6 +12,7 @@ namespace craftpulse\typesense\services;
 
 use Craft;
 use craft\base\Component;
+use craft\base\ElementInterface;
 use craft\helpers\StringHelper;
 use craft\models\FieldLayout;
 use craftpulse\typesense\models\CollectionDefinition;
@@ -146,7 +147,7 @@ class ManagedCollections extends Component
         $definition = new CollectionDefinition();
         $definition->uid = $uid;
         $definition->name = (string)($config['name'] ?? '');
-        /** @var class-string $elementType */
+        /** @var class-string<ElementInterface> $elementType */
         $elementType = (string)($config['elementType'] ?? '');
         $definition->elementType = $elementType;
         $definition->source = isset($config['source']) ? (string)$config['source'] : null;

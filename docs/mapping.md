@@ -5,43 +5,45 @@ description: Mapping element fields to Typesense in the control panel
 # Field mapping (Pro)
 
 The mapping screen is where a control-panel-managed collection decides how each
-element field lands in Typesense. It presents one card per field in the
-FieldLayoutDesigner visual language, with a disclosure panel per card for the
-field's options. (It borrows the designer's look and interaction only; it never
-touches Craft's field-layout authoring.)
+element field lands in Typesense. It is a real Craft field layout: the collection
+owns a `craft\models\FieldLayout`, edited with the genuine
+`Craft.FieldLayoutDesigner`, and serialised into project config exactly like an
+entry type. Placing a field in the layout indexes it; opening the field's
+slideout tunes its Typesense mapping.
 
 Open it from a saved collection's edit screen (Map fields).
 
-## The cards
+## The palette
 
-The screen shows a card for every mappable field of the collection's source:
+The designer's field library is scoped to the collection's source (through
+`FieldLayout::EVENT_DEFINE_CUSTOM_FIELDS` and `EVENT_DEFINE_NATIVE_FIELDS`, both
+keyed on the layout's provider so ordinary entry-type layouts are untouched):
 
-- each field in the element source's field layout (for entries, the union of the
-  section's entry types);
-- for asset sources, the file-derived pseudo fields: filename, kind, size,
-  width, height;
-- for Commerce product sources, the variant fields (surfaced on the product
-  card) when Commerce is installed;
-- every registered computed field (see [Extending](extending.md)).
+- each custom field in the element source's field layout (for entries, the union
+  of the section's entry types), as the custom-field palette;
+- for asset sources, the file-derived pseudo fields (filename, kind, size,
+  width, height) as native fields;
+- for Commerce product sources, the variant fields when Commerce is installed;
+- every registered computed field (see [Extending](extending.md)) as a native
+  field.
 
-Each card shows the field name, the Typesense type the server derived for it,
-and a one-line summary of the current mapping.
+Drag a field into the layout to index it; drag it back out to stop indexing it.
 
 ## Server-authoritative derivation
 
 The server, not the browser, decides two things: the Typesense type a field
 derives to (through the Schema service, extensible with
-`Schema::EVENT_DEFINE_TYPE_MAP`) and which controls apply to that type. The
-disclosure panel only offers the controls the server allows for the field, so
-you cannot map a field to something the server would reject.
+`Schema::EVENT_DEFINE_TYPE_MAP`) and which controls apply to that type. A field's
+slideout only offers the controls the server allows for the field, so you cannot
+map a field to something the server would reject.
 
 ## The controls
 
-Opening a card's panel reveals the applicable controls:
+A field's slideout reveals the applicable controls:
 
 | Control | Applies to | Effect |
 | --- | --- | --- |
-| Indexed | all | Whether the field is included in the document and schema. |
+| (placement) | all | Placing the field in the layout indexes it (there is no separate "Indexed" toggle). |
 | Facet | string, string[], int, bool | Aggregate the field for faceted browsing. |
 | Sortable | string, numeric, bool | Allow sorting on the field. |
 | Search weight | string, string[] | The field's `query_by_weights` weight, compiled into the collection preset. |
@@ -53,8 +55,9 @@ Opening a card's panel reveals the applicable controls:
 | Embed image | asset sources | Auto-embed the asset image with CLIP for image search (see `docs/pro-vector-ai.md`). |
 | Description | all | A natural-language description of the field. |
 
-Applying the panel writes the choices back to the card and, on Save, persists
-them to the collection definition in project config, keyed by field UID.
+On Save, the whole field layout (each element carrying its mapping settings) is
+assembled from the designer post and persisted into the collection definition in
+project config, exactly as an entry type persists its field layout.
 
 ## Natural-language descriptions
 

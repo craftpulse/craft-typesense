@@ -11,15 +11,16 @@
 namespace craftpulse\typesense\controllers;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\elements\Asset;
 use craft\elements\Category;
 use craft\elements\Entry;
 use craft\elements\GlobalSet;
 use craft\elements\Tag;
 use craft\elements\User;
-use craft\helpers\Json;
+use craft\helpers\Cp;
+use craft\helpers\StringHelper;
 use craft\web\assets\cp\CpAsset;
-use craftpulse\typesense\assetbundles\mapping\MappingAsset;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
@@ -158,11 +159,20 @@ class CollectionsController extends ProController
         }
 
         $this->getView()->registerAssetBundle(CpAsset::class);
-        $this->getView()->registerAssetBundle(MappingAsset::class);
+
+        $readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+
+        $designerHtml = Cp::fieldLayoutDesignerHtml($definition->getFieldLayout(), [
+            'customizableTabs' => false,
+            'customizableUi' => false,
+            'pretendTabName' => Craft::t('typesense', 'Mapping'),
+            'disabled' => $readOnly,
+        ]);
 
         return $this->renderTemplate('typesense/collections/_mapping', [
             'definition' => $definition,
-            'descriptors' => Typesense::$plugin->getMappingSources()->descriptorsFor($definition),
+            'designerHtml' => $designerHtml,
+            'readOnly' => $readOnly,
         ]);
     }
 
@@ -205,9 +215,9 @@ class CollectionsController extends ProController
     }
 
     /**
-     * Persists the field mapping (keyed by field UID) for a CP-managed
-     * collection to project config. Each `mappings[<uid>]` body param is a JSON
-     * object of the field's chosen options.
+     * Persists the field mapping for a CP-managed collection: the field layout
+     * assembled from the designer post (each element carrying its Typesense
+     * mapping settings) is saved into the collection definition's project config.
      *
      * @return Response|null
      * @throws NotFoundHttpException
@@ -227,20 +237,10 @@ class CollectionsController extends ProController
             throw new NotFoundHttpException('Collection not found.');
         }
 
-        $posted = $this->request->getBodyParam('mappings', []);
-        $mappings = [];
+        $layout = Craft::$app->getFields()->assembleLayoutFromPost();
+        $layout->uid = $definition->fieldLayoutUid ?? StringHelper::UUID();
+        $definition->setFieldLayout($layout);
 
-        if (is_array($posted)) {
-            foreach ($posted as $fieldUid => $json) {
-                $decoded = Json::decodeIfJson((string)$json);
-
-                if (is_array($decoded) && $decoded !== []) {
-                    $mappings[(string)$fieldUid] = $decoded;
-                }
-            }
-        }
-
-        $definition->mappings = $mappings;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/mapping');
@@ -253,7 +253,7 @@ class CollectionsController extends ProController
      * Splits a source select value ("<elementType>:<source>") into its parts.
      *
      * @param string $value
-     * @return array{0: class-string|null, 1: string|null}
+     * @return array{0: class-string<ElementInterface>|null, 1: string|null}
      * @author CraftPulse
      */
     private function _parseSource(string $value): array
@@ -264,11 +264,10 @@ class CollectionsController extends ProController
 
         [$elementType, $source] = explode(':', $value, 2);
 
-        if (!class_exists($elementType)) {
+        if (!is_subclass_of($elementType, ElementInterface::class)) {
             return [null, null];
         }
 
-        /** @var class-string $elementType */
         return [$elementType, $source === '' ? null : $source];
     }
 

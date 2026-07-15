@@ -41,15 +41,15 @@ it('validates and produces the project-config shape for a well-formed definition
     $definition->source = 'blog';
     $definition->multisite = 'sharedWithSiteFilter';
     $definition->enabled = true;
-    $definition->mappings = ['abc-uid' => ['indexable' => true]];
 
     expect($definition->validate())->toBeTrue();
 
     $config = $definition->getConfig();
 
-    expect($config)->toHaveKeys(['name', 'elementType', 'source', 'multisite', 'enabled', 'mappings', 'metadata'])
+    // The mapping lives in a real field layout now, not a mappings array.
+    expect($config)->toHaveKeys(['name', 'elementType', 'source', 'multisite', 'enabled', 'metadata'])
         ->and($config)->not->toHaveKey('uid')
+        ->and($config)->not->toHaveKey('mappings')
         ->and($config['name'])->toBe('products')
-        ->and($config['elementType'])->toBe(Entry::class)
-        ->and($config['mappings'])->toBe(['abc-uid' => ['indexable' => true]]);
+        ->and($config['elementType'])->toBe(Entry::class);
 });

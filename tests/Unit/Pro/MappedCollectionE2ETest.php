@@ -15,7 +15,10 @@
  */
 
 use craft\elements\Entry;
+use craft\models\FieldLayoutTab;
 use craftpulse\typesense\events\RegisterComputedFieldsEvent;
+use craftpulse\typesense\fieldlayoutelements\MappingField;
+use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\models\ComputedField;
 use craftpulse\typesense\services\Schema;
@@ -38,23 +41,32 @@ it('compiles a CP-managed collection and syncs matching documents to the server'
     $definition->source = 'heroes';
     $definition->multisite = 'sharedWithSiteFilter';
 
-    // Map a string content field (faceted + weighted) and the computed field.
-    $descriptors = Typesense::$plugin->getMappingSources()->descriptorsFor($definition);
+    // Build the mapping field layout: a string content field (faceted +
+    // weighted) and the computed field, each as a layout element.
     $stringField = null;
 
-    foreach ($descriptors as $descriptor) {
-        if ($descriptor['kind'] === 'field' && $descriptor['derivedType'] === 'string') {
-            $stringField = $descriptor;
+    foreach (Typesense::$plugin->getMappingSources()->customFieldsFor($definition) as $field) {
+        if (Typesense::$plugin->getSchema()->typesenseTypeForField($field) === 'string') {
+            $stringField = $field;
             break;
         }
     }
 
     expect($stringField)->not->toBeNull();
 
-    $definition->mappings = [
-        $stringField['uid'] => ['indexable' => true, 'facet' => true, 'sortable' => false, 'weight' => 5],
-        'computed:popularity' => ['indexable' => true],
-    ];
+    $layout = $definition->getFieldLayout();
+    $fieldElement = MappingField::forField($stringField, 'field');
+    $fieldElement->facet = true;
+    $fieldElement->weight = '5';
+    $computedElement = new NativeMappingField([
+        'handle' => 'popularity',
+        'label' => 'popularity',
+        'derivedType' => 'int32',
+        'kind' => 'computed',
+    ]);
+    $tab = new FieldLayoutTab(['layout' => $layout, 'name' => 'Mapping']);
+    $tab->setElements([$fieldElement, $computedElement]);
+    $layout->setTabs([$tab]);
 
     Typesense::$plugin->getManagedCollections()->save($definition);
 
@@ -94,8 +106,8 @@ it('compiles a CP-managed collection and syncs matching documents to the server'
             $fields[$field['name']] = $field;
         }
 
-        expect($fields)->toHaveKey($stringField['handle'])
-            ->and($fields[$stringField['handle']]['facet'])->toBeTrue()
+        expect($fields)->toHaveKey($stringField->handle)
+            ->and($fields[$stringField->handle]['facet'])->toBeTrue()
             ->and($fields)->toHaveKey('popularity')
             ->and($fields['popularity']['type'])->toBe('int32')
             ->and($fields)->toHaveKey('elementId')

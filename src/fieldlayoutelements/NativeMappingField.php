@@ -26,7 +26,7 @@ use craftpulse\typesense\models\CollectionDefinition;
  * @package   Typesense
  * @since     5.9.0
  */
-class NativeMappingField extends BaseField
+class NativeMappingField extends BaseField implements MappingElementInterface
 {
     use MappingSettings;
 

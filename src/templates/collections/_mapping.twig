@@ -1,105 +1,43 @@
 {# =========================================================================
    Typesense Pro - field mapping (the flagship)
    =========================================================================
-   One read-only card per mappable field of the collection's element source,
-   plus asset file pseudo-fields, Commerce variant fields, and registered
-   computed fields. Each card opens a disclosure HUD (built by the Garnish
-   component from the card's server-rendered control template) that edits the
-   field's Typesense mapping. The server derives the type and the allowed
-   controls; the UI only proposes what the server allows. Mappings persist to
-   the collection definition in project config, keyed by field UID.
+   The collection's mapping is a real Craft field layout: drag the source's
+   fields (and the asset pseudo, Commerce variant, and computed fields from the
+   palette) into the layout to index them, and open a field's slideout to tune
+   its Typesense mapping (facet, sort, search weight, infix, stemming, locale, a
+   bounded type override, and a natural-language description). The control set is
+   server-authoritative, derived from each field's Typesense type. The layout
+   serialises into the collection definition in project config, exactly like an
+   entry type.
 
-   @var definition  CollectionDefinition
-   @var descriptors array
+   @var definition   CollectionDefinition
+   @var designerHtml string  the rendered Craft.FieldLayoutDesigner
+   @var readOnly     bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 
 {% set title = definition.name ~ ' ' ~ ('mapping'|t('typesense')) %}
 {% set selectedSubnavItem = 'collections' %}
-{% set fullPageForm = true %}
+{% set fullPageForm = not readOnly %}
 {% set crumbs = [
     { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
     { label: definition.name, url: url('typesense/collections/' ~ definition.uid) },
 ] %}
 
-{% macro control(ctrl, mapping) %}
-    {% set key = ctrl.key %}
-    {% set value = mapping[key] ?? null %}
-    {% if ctrl.type == 'checkbox' %}
-        <div class="field">
-            <div class="input">
-                <label>
-                    <input type="checkbox" data-map-key="{{ key }}" data-map-label="{{ ctrl.label }}" {{ value ? 'checked' }}>
-                    {{ ctrl.label }}
-                </label>
-            </div>
-        </div>
-    {% elseif ctrl.type == 'select' %}
-        <div class="field">
-            <div class="heading"><label>{{ ctrl.label }}</label></div>
-            <div class="input">
-                <div class="select">
-                    <select data-map-key="{{ key }}">
-                        {% for opt in ctrl.options %}
-                            <option value="{{ opt }}" {{ value == opt ? 'selected' }}>{{ opt }}</option>
-                        {% endfor %}
-                    </select>
-                </div>
-            </div>
-        </div>
-    {% else %}
-        <div class="field">
-            <div class="heading"><label>{{ ctrl.label }}</label></div>
-            <div class="input">
-                <input class="text fullwidth" type="{{ ctrl.type == 'number' ? 'number' : 'text' }}" data-map-key="{{ key }}" value="{{ value }}">
-            </div>
-        </div>
-    {% endif %}
-{% endmacro %}
-
-{% from _self import control %}
-
 {% block content %}
+    {% if readOnly %}
+        <div class="readable">
+            <blockquote class="note">{{ 'The mapping is read-only because allowAdminChanges is disabled in this environment.'|t('typesense') }}</blockquote>
+        </div>
+        <hr>
+    {% endif %}
+
     {{ actionInput('typesense/collections/save-mapping') }}
     {{ hiddenInput('uid', definition.uid) }}
 
     <p class="light">
-        {{ 'Map each field to Typesense. The type and the available options are derived by the server; the panel only offers what applies to each field.'|t('typesense') }}
+        {{ 'Place a field in the layout to index it, then open its slideout to tune the Typesense mapping. The type and the available options are derived by the server; the slideout only offers what applies to each field.'|t('typesense') }}
     </p>
 
-    {% if descriptors is empty %}
-        <p class="light">{{ 'This source has no mappable fields.'|t('typesense') }}</p>
-    {% else %}
-        <div id="ts-map-{{ definition.uid }}" class="ts-map">
-            <div class="ts-map__grid">
-                {% for descriptor in descriptors %}
-                    {% set mapping = definition.mappings[descriptor.uid] ?? {} %}
-                    <div class="ts-map-card">
-                        <button type="button" class="ts-map-card__trigger" aria-label="{{ 'Configure {field}'|t('typesense', { field: descriptor.label }) }}">
-                            <span class="ts-map-card__name">{{ descriptor.label }}</span>
-                            <span class="ts-map-card__type"><code>{{ descriptor.derivedType }}</code></span>
-                            {% if descriptor.kind != 'field' %}
-                                <span class="ts-map-card__kind">{{ descriptor.kind }}</span>
-                            {% endif %}
-                            <span class="ts-map-card__summary">
-                                {{ mapping.indexable ?? false ? 'Indexed'|t('typesense') : 'Not indexed'|t('typesense') }}
-                            </span>
-                        </button>
-
-                        <input type="hidden" class="ts-map-card__value" name="mappings[{{ descriptor.uid }}]" value="{{ mapping ? (mapping|json_encode) : '' }}">
-
-                        <div class="ts-map-card__controls">
-                            {% for ctrl in descriptor.controls %}
-                                {{ control(ctrl, mapping) }}
-                            {% endfor %}
-                        </div>
-                    </div>
-                {% endfor %}
-            </div>
-        </div>
-
-        {% js %}
-            new Craft.Typesense.MappingDesigner('#ts-map-{{ definition.uid }}');
-        {% endjs %}
-    {% endif %}
+    {{ designerHtml|raw }}
 {% endblock %}

@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\models;
 
+use craft\base\ElementInterface;
 use craft\base\FieldLayoutProviderInterface;
 use craft\base\Model;
 use craft\elements\Entry;
@@ -59,7 +60,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     public string $name = '';
 
     /**
-     * @var class-string The element type the collection indexes.
+     * @var class-string<ElementInterface> The element type the collection indexes.
      */
     public string $elementType = Entry::class;
 
@@ -149,7 +150,6 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
             'multisite' => $this->multisite,
             'enabled' => $this->enabled,
             'searchable' => $this->searchable,
-            'mappings' => $this->mappings,
             'metadata' => $this->metadata,
             'relevance' => $this->relevance,
             'embedding' => $this->embedding,
@@ -173,6 +173,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         if ($this->_fieldLayout === null) {
             $this->fieldLayoutUid ??= StringHelper::UUID();
             $this->_fieldLayout = new FieldLayout();
+            $this->_fieldLayout->type = $this->elementType;
             $this->_fieldLayout->uid = $this->fieldLayoutUid;
             $this->_fieldLayout->provider = $this;
         }
@@ -198,6 +199,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
      */
     public function setFieldLayout(FieldLayout $fieldLayout): void
     {
+        $fieldLayout->type = $this->elementType;
         $fieldLayout->provider = $this;
         $this->fieldLayoutUid = $fieldLayout->uid ?? null;
         $this->_fieldLayout = $fieldLayout;

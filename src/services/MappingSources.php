@@ -20,6 +20,9 @@ use craft\elements\GlobalSet;
 use craft\elements\Tag;
 use craft\elements\User;
 use craft\models\FieldLayout;
+use craft\models\FieldLayoutTab;
+use craftpulse\typesense\fieldlayoutelements\MappingField;
+use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
 
@@ -126,6 +129,42 @@ class MappingSources extends Component
     }
 
     /**
+     * Builds a mapping field layout from a definition's legacy `mappings` array
+     * (keyed by field UID): every indexed descriptor becomes a layout element
+     * carrying the legacy settings. Used by the migration to the real-layout
+     * architecture.
+     *
+     * @param CollectionDefinition $definition
+     * @return FieldLayout
+     * @author CraftPulse
+     */
+    public function layoutFromLegacyMappings(CollectionDefinition $definition): FieldLayout
+    {
+        $elements = [];
+
+        foreach ($this->descriptorsFor($definition) as $descriptor) {
+            $legacy = $definition->mappings[$descriptor['uid']] ?? null;
+
+            if (!is_array($legacy) || empty($legacy['indexable'])) {
+                continue;
+            }
+
+            $element = $this->_legacyElement($descriptor, $legacy);
+
+            if ($element !== null) {
+                $elements[] = $element;
+            }
+        }
+
+        $layout = $definition->getFieldLayout();
+        $tab = new FieldLayoutTab(['layout' => $layout, 'name' => Craft::t('typesense', 'Mapping')]);
+        $tab->setElements($elements);
+        $layout->setTabs([$tab]);
+
+        return $layout;
+    }
+
+    /**
      * The Commerce variant fields for a product-type source, when installed.
      *
      * @param CollectionDefinition $definition
@@ -219,6 +258,50 @@ class MappingSources extends Component
         $controls[] = ['key' => 'description', 'type' => 'text', 'label' => Craft::t('typesense', 'Description (for natural-language search)')];
 
         return $controls;
+    }
+
+    /**
+     * Builds a mapping-layout element from a legacy descriptor and its legacy
+     * settings array.
+     *
+     * @param array<string, mixed> $descriptor
+     * @param array<string, mixed> $legacy
+     * @return MappingField|NativeMappingField|null
+     * @author CraftPulse
+     */
+    private function _legacyElement(array $descriptor, array $legacy): MappingField|NativeMappingField|null
+    {
+        $kind = (string)$descriptor['kind'];
+
+        if ($kind === 'field' || $kind === 'variant') {
+            $field = Craft::$app->getFields()->getFieldByUid((string)$descriptor['uid']);
+
+            if ($field === null) {
+                return null;
+            }
+
+            $element = MappingField::forField($field, $kind);
+        } else {
+            $element = new NativeMappingField([
+                'handle' => (string)$descriptor['handle'],
+                'label' => (string)$descriptor['label'],
+                'derivedType' => (string)$descriptor['derivedType'],
+                'kind' => $kind,
+            ]);
+        }
+
+        $element->facet = (bool)($legacy['facet'] ?? false);
+        $element->sortable = (bool)($legacy['sortable'] ?? false);
+        $element->infix = (bool)($legacy['infix'] ?? false);
+        $element->stem = (bool)($legacy['stem'] ?? false);
+        $element->embed = (bool)($legacy['embed'] ?? false);
+        $element->imageEmbed = (bool)($legacy['imageEmbed'] ?? false);
+        $element->weight = isset($legacy['weight']) ? (string)$legacy['weight'] : null;
+        $element->locale = isset($legacy['locale']) ? (string)$legacy['locale'] : null;
+        $element->typeOverride = isset($legacy['type']) ? (string)$legacy['type'] : null;
+        $element->description = isset($legacy['description']) ? (string)$legacy['description'] : null;
+
+        return $element;
     }
 
     /**

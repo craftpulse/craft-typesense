@@ -12,6 +12,7 @@
  */
 
 use craft\elements\Entry;
+use craft\helpers\Cp;
 use craft\models\FieldLayout;
 use craft\models\FieldLayoutTab;
 use craftpulse\typesense\fieldlayoutelements\MappingField;
@@ -71,6 +72,20 @@ it('scopes the designer palette to the collection source as mapping elements', f
     foreach ($custom as $element) {
         expect($element)->toBeInstanceOf(MappingField::class);
     }
+});
+
+it('renders the real field layout designer for a collection mapping', function() {
+    $definition = aMappedDefinition();
+
+    $html = Cp::fieldLayoutDesignerHtml($definition->getFieldLayout(), [
+        'customizableTabs' => false,
+        'customizableUi' => false,
+    ]);
+
+    // The core field layout designer renders with its field library (the
+    // palette-scoping test proves the library holds our mapping elements).
+    expect($html)->toContain('layoutdesigner')
+        ->toContain('fld-library');
 });
 
 it('leaves an ordinary entry type field layout untouched', function() {
