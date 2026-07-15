@@ -108,9 +108,9 @@ class Curation extends Component
     public function upsert(Collection $collection, string $id, array $rule): void
     {
         if ($this->_useSets()) {
-            // curation_sets do not auto-create on a per-item PUT (unlike synonym
-            // sets), so upsert reads the whole set, replaces the target item, and
-            // writes it back, which also creates the set when it is absent.
+            // curation_sets do not auto-create on a per-item PUT, so upsert reads
+            // the whole set, replaces the target item, and writes it back, which
+            // also creates the set when it is absent.
             $items = array_values(array_filter(
                 $this->all($collection),
                 static fn(array $item): bool => (string)($item['id'] ?? '') !== $id,

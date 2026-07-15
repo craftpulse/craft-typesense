@@ -195,6 +195,7 @@ class Typesense extends Plugin
         $this->_registerVariable();
         $this->_registerSiteTemplateRoots();
         $this->_registerCurationSidebar();
+        $this->_registerInspectorSidebar();
 
         // Add in our console commands
         if (Craft::$app instanceof ConsoleApplication) {
@@ -263,6 +264,14 @@ class Typesense extends Plugin
                 $subNavs['playground'] = [
                     'label' => Craft::t('typesense', 'Playground'),
                     'url' => 'typesense/playground',
+                ];
+                $subNavs['synonyms'] = [
+                    'label' => Craft::t('typesense', 'Synonyms'),
+                    'url' => 'typesense/synonyms',
+                ];
+                $subNavs['dictionaries'] = [
+                    'label' => Craft::t('typesense', 'Dictionaries'),
+                    'url' => 'typesense/dictionaries',
                 ];
             }
 
@@ -435,6 +444,13 @@ class Typesense extends Plugin
             $routes['typesense/curation/<collection:[\w\-]+>/new'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
             $routes['typesense/curation/<collection:[\w\-]+>'] = 'typesense/curation/rules';
+            $routes['typesense/synonyms'] = 'typesense/synonyms/index';
+            $routes['typesense/synonyms/<collection:[\w\-]+>/new'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/synonyms/<collection:[\w\-]+>/synonym/<synonymId:[\w\-]+>'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/synonyms/<collection:[\w\-]+>'] = 'typesense/synonyms/synonyms';
+            $routes['typesense/dictionaries'] = 'typesense/dictionaries/index';
+            $routes['typesense/dictionaries/stemming'] = 'typesense/dictionaries/stemming';
+            $routes['typesense/dictionaries/<collection:[\w\-]+>'] = 'typesense/dictionaries/stopwords';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
         }
 
@@ -564,6 +580,49 @@ class Typesense extends Plugin
                     'element' => $element,
                     'collections' => $collections,
                     'pins' => $this->getCurationIndex()->forElement((int)$element->id),
+                ]);
+            }
+        );
+    }
+
+    /**
+     * Registers the entry-edit inspector sidebar panel (Pro + manageCollections):
+     * read-only diagnostics for the element, per collection (membership state,
+     * last-indexed timestamp, live document JSON, skip reasons), from the
+     * inspector service. Renders nothing for Free, for users without the
+     * permission, or for elements that match no collection.
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    private function _registerInspectorSidebar(): void
+    {
+        Event::on(
+            Element::class,
+            Element::EVENT_DEFINE_SIDEBAR_HTML,
+            function(DefineHtmlEvent $event) {
+                if (!$this->getIsPro()) {
+                    return;
+                }
+
+                if (!Craft::$app->getUser()->checkPermission(CollectionsController::PERMISSION_MANAGE_COLLECTIONS)) {
+                    return;
+                }
+
+                $element = $event->sender;
+
+                if (!$element instanceof ElementInterface || $element->id === null) {
+                    return;
+                }
+
+                $inspection = $this->getInspector()->inspectElement($element);
+
+                if ($inspection['collections'] === []) {
+                    return;
+                }
+
+                $event->html .= Craft::$app->getView()->renderTemplate('typesense/_sidebar/inspector', [
+                    'inspection' => $inspection,
                 ]);
             }
         );

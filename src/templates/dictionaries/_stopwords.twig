@@ -1,0 +1,50 @@
+{# =========================================================================
+   Typesense Pro - dictionaries manager (stopwords for a collection)
+   =========================================================================
+   @var handle    string
+   @var stopwords array
+   @var locale    string
+   @var editable  bool   whether this collection's stopwords are CP-managed
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = handle ~ ' ' ~ ('stopwords'|t('typesense')) %}
+{% set selectedSubnavItem = 'dictionaries' %}
+{% set fullPageForm = editable %}
+{% set crumbs = [{ label: 'Dictionaries'|t('typesense'), url: url('typesense/dictionaries') }] %}
+
+{% block content %}
+    {% if not editable %}
+        <blockquote class="note">
+            {{ 'This collection declares its stopwords in config. They are read-only here.'|t('typesense') }}
+        </blockquote>
+
+        <p><strong>{{ 'Stopwords'|t('typesense') }}:</strong></p>
+        {% if stopwords is empty %}
+            <p class="light">{{ 'None.'|t('typesense') }}</p>
+        {% else %}
+            <p>{% for word in stopwords %}<code>{{ word }}</code>{{ not loop.last ? ' ' }}{% endfor %}</p>
+        {% endif %}
+    {% else %}
+        {{ actionInput('typesense/dictionaries/save-stopwords') }}
+        {{ hiddenInput('collection', handle) }}
+
+        {{ forms.textareaField({
+            first: true,
+            label: 'Stopwords'|t('typesense'),
+            instructions: 'One per line (or comma-separated). These words are dropped from queries against this collection.'|t('typesense'),
+            id: 'stopwords',
+            name: 'stopwords',
+            value: stopwords|join("\n"),
+            rows: 6,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Locale'|t('typesense'),
+            instructions: 'Optional language code (for example, en).'|t('typesense'),
+            id: 'locale',
+            name: 'locale',
+            value: locale,
+        }) }}
+    {% endif %}
+{% endblock %}

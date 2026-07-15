@@ -1,0 +1,75 @@
+{# =========================================================================
+   Typesense Pro - synonyms manager (synonyms for a collection)
+   =========================================================================
+   @var handle     string
+   @var synonyms   array
+   @var editable   bool   whether this collection's synonyms are CP-managed
+   @var overridden bool   whether a per-collection config override is in force
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = handle ~ ' ' ~ ('synonyms'|t('typesense')) %}
+{% set selectedSubnavItem = 'synonyms' %}
+{% set crumbs = [{ label: 'Synonyms'|t('typesense'), url: url('typesense/synonyms') }] %}
+
+{% block actionButton %}
+    {% if editable %}
+        <a class="btn submit add icon" href="{{ url('typesense/synonyms/' ~ handle ~ '/new') }}">{{ 'New synonym'|t('typesense') }}</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% if not editable %}
+        <blockquote class="note">
+            {% if overridden %}
+                {{ 'This collection’s synonyms are managed by the config file (overridden). They are read-only here.'|t('typesense') }}
+            {% else %}
+                {{ 'This collection’s synonyms are managed by config. They are read-only here.'|t('typesense') }}
+            {% endif %}
+        </blockquote>
+    {% endif %}
+
+    {% if synonyms is empty %}
+        <p class="light">{{ 'No synonyms yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Synonym'|t('typesense') }}</th>
+                    <th>{{ 'Type'|t('typesense') }}</th>
+                    <th>{{ 'Terms'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for synonym in synonyms %}
+                    <tr>
+                        <td>
+                            {% if editable %}
+                                <a href="{{ url('typesense/synonyms/' ~ handle ~ '/synonym/' ~ synonym.id) }}"><code>{{ synonym.id }}</code></a>
+                            {% else %}
+                                <code>{{ synonym.id }}</code>
+                            {% endif %}
+                        </td>
+                        <td>{{ synonym.root is defined and synonym.root ? 'One-way'|t('typesense') : 'Multi-way'|t('typesense') }}</td>
+                        <td>
+                            {% if synonym.root is defined and synonym.root %}<code>{{ synonym.root }}</code> &rarr; {% endif %}
+                            {{ (synonym.synonyms ?? [])|join(', ') }}
+                        </td>
+                        <td class="thin">
+                            {% if editable %}
+                                <form method="post" accept-charset="UTF-8">
+                                    {{ csrfInput() }}
+                                    {{ actionInput('typesense/synonyms/delete-synonym') }}
+                                    {{ hiddenInput('collection', handle) }}
+                                    {{ hiddenInput('id', synonym.id) }}
+                                    {{ redirectInput('typesense/synonyms/' ~ handle) }}
+                                    <button type="submit" class="btn small delete icon" title="{{ 'Delete'|t('typesense') }}"></button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

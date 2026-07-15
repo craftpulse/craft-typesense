@@ -115,7 +115,16 @@ class Synonyms extends Component
     public function upsert(Collection $collection, string $id, array $data): void
     {
         if ($this->_useSets()) {
-            $this->_setRequest('PUT', $this->_setName($collection) . '/items/' . $id, $data + ['id' => $id]);
+            // A per-item PUT does not auto-create the set on 30.2, so upsert
+            // reads the whole set, replaces the target item, and writes it back,
+            // which also creates the set when it is absent.
+            $items = array_values(array_filter(
+                $this->all($collection),
+                static fn(array $item): bool => (string)($item['id'] ?? '') !== $id,
+            ));
+            $items[] = $data + ['id' => $id];
+
+            $this->_setRequest('PUT', $this->_setName($collection), ['items' => $items]);
 
             return;
         }
@@ -130,6 +139,35 @@ class Synonyms extends Component
             $client->collections[$this->_target($collection)]->synonyms->upsert($id, $data);
         } catch (Throwable $e) {
             Craft::error("Could not upsert synonym {$id} on {$collection->getName()}: {$e->getMessage()}", 'typesense');
+        }
+    }
+
+    /**
+     * Deletes one synonym from a collection (dual-shape).
+     *
+     * @param Collection $collection
+     * @param string $id
+     * @return void
+     * @author CraftPulse
+     */
+    public function deleteOne(Collection $collection, string $id): void
+    {
+        if ($this->_useSets()) {
+            $this->_setRequest('DELETE', $this->_setName($collection) . '/items/' . $id);
+
+            return;
+        }
+
+        $client = Typesense::$plugin->getClient()->client();
+
+        if ($client === null) {
+            return;
+        }
+
+        try {
+            $client->collections[$this->_target($collection)]->synonyms[$id]->delete();
+        } catch (Throwable) {
+            // already gone
         }
     }
 

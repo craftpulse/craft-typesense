@@ -1,0 +1,59 @@
+{# =========================================================================
+   Typesense Pro - synonyms manager (synonym editor)
+   =========================================================================
+   @var handle  string
+   @var synonym array|null
+   @var isNew   bool
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = isNew ? 'New synonym'|t('typesense') : (synonym.id ?? '') %}
+{% set selectedSubnavItem = 'synonyms' %}
+{% set fullPageForm = true %}
+{% set crumbs = [
+    { label: 'Synonyms'|t('typesense'), url: url('typesense/synonyms') },
+    { label: handle, url: url('typesense/synonyms/' ~ handle) },
+] %}
+
+{% block content %}
+    {{ actionInput('typesense/synonyms/save-synonym') }}
+    {{ hiddenInput('collection', handle) }}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Synonym id'|t('typesense'),
+        instructions: 'A stable identifier for this synonym.'|t('typesense'),
+        id: 'id',
+        name: 'id',
+        value: synonym.id ?? '',
+        disabled: not isNew,
+        required: true,
+    }) }}
+    {% if not isNew %}{{ hiddenInput('id', synonym.id) }}{% endif %}
+
+    {{ forms.textareaField({
+        label: 'Terms'|t('typesense'),
+        instructions: 'The interchangeable terms, one per line (or comma-separated).'|t('typesense'),
+        id: 'synonyms',
+        name: 'synonyms',
+        value: (synonym.synonyms ?? [])|join("\n"),
+        rows: 4,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Root (one-way)'|t('typesense'),
+        instructions: 'Optional. When set, the terms above map one-way to this root query. Leave blank for a multi-way synonym.'|t('typesense'),
+        id: 'root',
+        name: 'root',
+        value: synonym.root ?? '',
+    }) }}
+
+    {{ forms.textField({
+        label: 'Locale'|t('typesense'),
+        instructions: 'Optional language code that scopes this synonym (for example, en).'|t('typesense'),
+        id: 'locale',
+        name: 'locale',
+        value: synonym.locale ?? '',
+    }) }}
+{% endblock %}

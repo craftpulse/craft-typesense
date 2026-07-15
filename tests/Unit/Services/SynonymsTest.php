@@ -98,6 +98,29 @@ it('seeds, lists and clears config-declared synonyms against the real server', f
     });
 });
 
+it('upserts one-way and multi-way synonyms and deletes one (the manager round-trip)', function() {
+    $declared = Collection::make(SYNONYMS_TEST_COLLECTION)
+        ->multisite(MultisiteStrategy::SharedWithSiteFilter)
+        ->synonyms(Settings::MANAGED_BY_CP);
+
+    withSynonyms($declared, function() use ($declared) {
+        $synonyms = Typesense::$plugin->getSynonyms();
+
+        $synonyms->upsert($declared, 'outerwear', ['synonyms' => ['blazer', 'coat', 'jacket']]);
+        $synonyms->upsert($declared, 'shoe-root', ['root' => 'shoe', 'synonyms' => ['sneaker', 'trainer']]);
+
+        $all = $synonyms->all($declared);
+        $byId = array_column($all, null, 'id');
+        expect($all)->toHaveCount(2)
+            ->and($byId['outerwear']['synonyms'])->toContain('coat')
+            ->and($byId['shoe-root']['root'] ?? '')->toBe('shoe');
+
+        $synonyms->deleteOne($declared, 'outerwear');
+        $remaining = array_column($synonyms->all($declared), 'id');
+        expect($remaining)->toBe(['shoe-root']);
+    });
+});
+
 it('does not seed synonyms for a cp-managed collection', function() {
     $declared = Collection::make(SYNONYMS_TEST_COLLECTION)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)

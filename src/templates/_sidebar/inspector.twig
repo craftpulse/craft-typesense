@@ -1,0 +1,54 @@
+{# =========================================================================
+   Typesense Pro - entry-edit inspector sidebar (read-only diagnostics)
+   =========================================================================
+   Appended to the element edit sidebar. Shows, per collection this element
+   could belong to, its membership state, last-indexed timestamp, skip reason,
+   and the live document currently in Typesense.
+
+   @var inspection array  the payload from Inspector::inspectElement
+   ========================================================================= #}
+
+<div class="meta read-only ts-inspector-sidebar">
+    <div class="data">
+        <h5 class="heading">{{ 'Typesense'|t('typesense') }}</h5>
+        <div class="value">
+            {% if not inspection.configured %}
+                <span class="error">{{ 'Not configured.'|t('typesense') }}</span>
+            {% elseif inspection.suspended %}
+                <span class="warning">{{ 'Sync suspended.'|t('typesense') }}</span>
+            {% else %}
+                {{ 'Connected.'|t('typesense') }}
+            {% endif %}
+        </div>
+    </div>
+
+    {% for collection in inspection.collections %}
+        {% set label = {
+            indexed: 'Indexed'|t('typesense'),
+            notMember: 'Not a member'|t('typesense'),
+            inactive: 'Inactive'|t('typesense'),
+            noDocument: 'No document'|t('typesense'),
+        } %}
+        <div class="data">
+            <h5 class="heading"><code>{{ collection.name }}</code></h5>
+            <div class="value">
+                <span class="status {{ collection.state == 'indexed' ? 'green' : (collection.state == 'notMember' ? 'grey' : 'orange') }}"></span>
+                {{ label[collection.state] ?? collection.state }}
+                {% if collection.reason is defined %}
+                    <p class="light">{{ collection.reason }}</p>
+                {% endif %}
+                {% if collection.lastSyncedAt %}
+                    <p class="light">{{ 'Last synced {when}'|t('typesense', { when: collection.lastSyncedAt|datetime('short') }) }}</p>
+                {% endif %}
+                {% if collection.liveDocument %}
+                    <details>
+                        <summary>{{ 'Live document'|t('typesense') }}</summary>
+                        <pre class="ts-inspector-sidebar__json">{{ collection.liveDocument|json_encode(constant('JSON_PRETTY_PRINT')) }}</pre>
+                    </details>
+                {% elseif collection.state == 'indexed' %}
+                    <p class="light">{{ 'Built, but no live document found on the server.'|t('typesense') }}</p>
+                {% endif %}
+            </div>
+        </div>
+    {% endfor %}
+</div>

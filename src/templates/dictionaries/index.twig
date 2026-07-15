@@ -1,0 +1,37 @@
+{# =========================================================================
+   Typesense Pro - dictionaries manager (stopwords collection picker)
+   =========================================================================
+   @var collections array
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = 'Dictionaries'|t('typesense') %}
+{% set selectedSubnavItem = 'dictionaries' %}
+
+{% block content %}
+    <p class="light">{{ 'Manage each collection’s stopwords, and the stemming dictionaries shared across collections.'|t('typesense') }}</p>
+
+    <p><a class="btn" href="{{ url('typesense/dictionaries/stemming') }}">{{ 'Stemming dictionaries'|t('typesense') }}</a></p>
+
+    <h2>{{ 'Stopwords'|t('typesense') }}</h2>
+
+    {% if collections is empty %}
+        <p class="light">{{ 'No collections are declared yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Collection'|t('typesense') }}</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle in collections %}
+                    <tr>
+                        <td><code>{{ handle }}</code></td>
+                        <td class="thin"><a class="btn small" href="{{ url('typesense/dictionaries/' ~ handle) }}">{{ 'Manage stopwords'|t('typesense') }}</a></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+{% endblock %}

@@ -1,0 +1,64 @@
+{# =========================================================================
+   Typesense Pro - dictionaries manager (stemming dictionaries)
+   =========================================================================
+   @var dictionaries array
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = 'Stemming dictionaries'|t('typesense') %}
+{% set selectedSubnavItem = 'dictionaries' %}
+{% set crumbs = [{ label: 'Dictionaries'|t('typesense'), url: url('typesense/dictionaries') }] %}
+
+{% block content %}
+    <h2>{{ 'Imported dictionaries'|t('typesense') }}</h2>
+
+    {% if dictionaries is empty %}
+        <p class="light">{{ 'No stemming dictionaries imported yet.'|t('typesense') }}</p>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th>{{ 'Dictionary ID'|t('typesense') }}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for id in dictionaries %}
+                    <tr>
+                        <td><code>{{ id }}</code></td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <hr>
+
+    <h2>{{ 'Import a dictionary'|t('typesense') }}</h2>
+
+    <form method="post" accept-charset="UTF-8">
+        {{ csrfInput() }}
+        {{ actionInput('typesense/dictionaries/import-stemming') }}
+
+        {{ forms.textField({
+            first: true,
+            label: 'Dictionary ID'|t('typesense'),
+            instructions: 'The id a field’s stem_dictionary reference resolves to.'|t('typesense'),
+            id: 'id',
+            name: 'id',
+            required: true,
+        }) }}
+
+        {{ forms.textareaField({
+            label: 'Entries'|t('typesense'),
+            instructions: 'One pair per line, as word,root (or a JSONL object per line).'|t('typesense'),
+            id: 'entries',
+            name: 'entries',
+            rows: 8,
+            required: true,
+        }) }}
+
+        <div class="buttons">
+            <button type="submit" class="btn submit">{{ 'Import'|t('typesense') }}</button>
+        </div>
+    </form>
+{% endblock %}

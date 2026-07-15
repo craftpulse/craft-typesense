@@ -148,6 +148,31 @@ it('returns real hits from a search on the 30.2 server', function() {
     });
 })->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
 
+it('upserts, lists, and deletes a synonym through the global synonym_sets path', function() {
+    withV302(function() {
+        $collection = Collection::make(V302_TEST_COLLECTION)
+            ->multisite(MultisiteStrategy::SharedWithSiteFilter)
+            ->synonyms(Settings::MANAGED_BY_CP);
+        $synonyms = Typesense::$plugin->getSynonyms();
+
+        expect($synonyms->usesSets())->toBeTrue();
+
+        try {
+            $synonyms->upsert($collection, 'outerwear', ['synonyms' => ['blazer', 'coat', 'jacket']]);
+
+            $all = $synonyms->all($collection);
+            expect($all)->toHaveCount(1)
+                ->and($all[0]['id'])->toBe('outerwear')
+                ->and($all[0]['synonyms'])->toContain('coat');
+
+            $synonyms->deleteOne($collection, 'outerwear');
+            expect($synonyms->all($collection))->toBe([]);
+        } finally {
+            $synonyms->clear($collection);
+        }
+    });
+})->skip(getenv('TYPESENSE_V302_HOST') === false && !@fsockopen('ts-v302-gate', 8108), 'Set TYPESENSE_V302_HOST to run the 30.2 parity gate.');
+
 it('upserts, lists, and deletes a curation rule through the global curation_sets path', function() {
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)

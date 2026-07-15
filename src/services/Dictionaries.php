@@ -17,11 +17,12 @@ use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\Typesense;
 
 /**
- * Stopwords and stemming-dictionary seeding.
+ * Stopwords and stemming-dictionary management and seeding.
  *
  * Stopwords are single-shape across supported versions (no v30 set migration).
- * Stemming dictionaries are imported so a field's stem_dictionary reference
- * resolves. Both are config-seeded.
+ * A collection that declares stopwords in config owns them (read-only in the
+ * manager); otherwise the manager owns the set. Stemming dictionaries are
+ * imported so a field's stem_dictionary reference resolves.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -31,6 +32,81 @@ class Dictionaries extends Component
 {
     // Public Methods
     // =========================================================================
+
+    /**
+     * Whether a collection's stopwords are declared in config (and therefore
+     * owned by config, read-only in the manager).
+     *
+     * @param Collection $collection
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isConfigManaged(Collection $collection): bool
+    {
+        return $collection->getStopwords() !== [];
+    }
+
+    /**
+     * Deletes a collection's stopwords set (fail-soft).
+     *
+     * @param Collection $collection
+     * @return void
+     * @author CraftPulse
+     */
+    public function deleteStopwords(Collection $collection): void
+    {
+        Typesense::$plugin->getClient()->request('DELETE', '/stopwords/' . $this->stopwordsName($collection));
+    }
+
+    /**
+     * Reads a collection's stopwords set, normalised to `{stopwords, locale}`.
+     *
+     * @param Collection $collection
+     * @return array{stopwords: array<int, string>, locale: string}
+     * @author CraftPulse
+     */
+    public function getStopwords(Collection $collection): array
+    {
+        $response = Typesense::$plugin->getClient()->request('GET', '/stopwords/' . $this->stopwordsName($collection));
+
+        return [
+            'stopwords' => array_values(array_map('strval', $response['stopwords'] ?? [])),
+            'locale' => (string)($response['locale'] ?? ''),
+        ];
+    }
+
+    /**
+     * Writes a collection's stopwords set from the manager (control-panel-owned).
+     *
+     * @param Collection $collection
+     * @param array<int, string> $stopwords
+     * @param string|null $locale
+     * @return void
+     * @author CraftPulse
+     */
+    public function saveStopwords(Collection $collection, array $stopwords, ?string $locale = null): void
+    {
+        $data = ['stopwords' => array_values($stopwords)];
+
+        if ($locale !== null && $locale !== '') {
+            $data['locale'] = $locale;
+        }
+
+        Typesense::$plugin->getClient()->request('PUT', '/stopwords/' . $this->stopwordsName($collection), $data);
+    }
+
+    /**
+     * Lists the ids of the imported stemming dictionaries (fail-soft).
+     *
+     * @return array<int, string>
+     * @author CraftPulse
+     */
+    public function stemmingDictionaries(): array
+    {
+        $response = Typesense::$plugin->getClient()->request('GET', '/stemming/dictionaries');
+
+        return array_values(array_map('strval', $response['dictionaries'] ?? []));
+    }
 
     /**
      * The stopwords set name for a collection.

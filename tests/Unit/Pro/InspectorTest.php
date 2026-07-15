@@ -36,6 +36,22 @@ it('reports an element as indexed in the collection it belongs to', function() {
         ->and($heroes)->toHaveKey('lastSyncedAt');
 });
 
+it('exposes the diagnostics the sidebar renders (state, timestamp, live document)', function() {
+    $entry = Entry::find()->section('heroes')->status('live')->siteId(1)->one();
+    $report = Typesense::$plugin->getInspector()->inspectElement($entry);
+
+    $names = array_column($report['collections'], 'name');
+    $heroes = $report['collections'][array_search('heroes', $names, true)];
+
+    // The sidebar reads exactly these keys; assert their shape rather than
+    // rendering the CP template (that activates the SEOmatic deprecation
+    // cascade — the screen render lives in the smoke walk instead).
+    expect($heroes['state'])->toBe(Inspector::STATE_INDEXED)
+        ->and($heroes['liveDocument'])->toBeArray()
+        ->and($heroes['liveDocument'])->toHaveKey('id')
+        ->and($heroes)->toHaveKey('lastSyncedAt');
+});
+
 it('excludes collections whose element type does not match', function() {
     $entry = Entry::find()->section('heroes')->siteId(1)->one();
 
