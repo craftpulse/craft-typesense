@@ -310,6 +310,10 @@ class Field
     public function stemDictionary(string $dictionary): self
     {
         $this->_schema['stem_dictionary'] = $dictionary;
+        // A stem dictionary implies stemming (Typesense sets stem: true
+        // automatically); reflect that in the schema we send and store.
+        // https://typesense.org/docs/30.2/api/stemming.html
+        $this->_schema['stem'] = true;
 
         return $this;
     }

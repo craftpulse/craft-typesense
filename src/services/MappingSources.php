@@ -44,6 +44,15 @@ use craftpulse\typesense\Typesense;
  */
 class MappingSources extends Component
 {
+    // Private Properties
+    // =========================================================================
+
+    /**
+     * @var array<int, array{label: string, value: string}>|null Memoised
+     * stemming-dictionary options for the mapping slideout.
+     */
+    private ?array $_stemmingDictionaryOptions = null;
+
     // Public Methods
     // =========================================================================
 
@@ -270,6 +279,13 @@ class MappingSources extends Component
                 'instructions' => Craft::t('typesense', 'Match different forms of the same word.') . $info(Craft::t('typesense', 'Applies the language’s stemmer so "running" also matches "run". Stemming is language-dependent, so set the Locale below to the field’s language.')),
             ];
             $controls[] = [
+                'key' => 'stemDictionary',
+                'type' => 'optionsSelect',
+                'label' => Craft::t('typesense', 'Stemming dictionary'),
+                'options' => $this->_stemmingDictionaryOptions(),
+                'instructions' => Craft::t('typesense', 'Use a server stemming dictionary for precise word-to-root mappings.') . $info(Craft::t('typesense', 'Selecting a dictionary sets the field’s <code>stem_dictionary</code> and turns on stemming automatically. Import dictionaries from Typesense, then Dictionaries.')),
+            ];
+            $controls[] = [
                 'key' => 'locale',
                 'type' => 'language',
                 'label' => Craft::t('typesense', 'Locale'),
@@ -448,6 +464,39 @@ class MappingSources extends Component
      * rendered as PHP field HTML (not a Twig template), so it uses a select of
      * languages rather than the forms.languageMenuField macro the Twig editors use.
      *
+     * @return array<int, array{label: string, value: string}>
+     * @author CraftPulse
+     */
+    /**
+     * The stemming-dictionary options for the mapping slideout: a blank "none"
+     * plus the server's imported stemming dictionaries. Fail-soft, so an
+     * unreachable server leaves just the "none" option rather than breaking the
+     * mapping screen; memoised so the slideout's per-field render hits the server
+     * once. https://typesense.org/docs/30.2/api/stemming.html
+     *
+     * @return array<int, array{label: string, value: string}>
+     * @author CraftPulse
+     */
+    private function _stemmingDictionaryOptions(): array
+    {
+        if ($this->_stemmingDictionaryOptions !== null) {
+            return $this->_stemmingDictionaryOptions;
+        }
+
+        $options = [['label' => Craft::t('typesense', 'None'), 'value' => '']];
+
+        try {
+            foreach (Typesense::$plugin->getDictionaries()->stemmingDictionaries() as $id) {
+                $options[] = ['label' => $id, 'value' => $id];
+            }
+        } catch (\Throwable) {
+            // Fail-soft: an unreachable server just yields the "none" option.
+        }
+
+        return $this->_stemmingDictionaryOptions = $options;
+    }
+
+    /**
      * @return array<int, array{label: string, value: string}>
      * @author CraftPulse
      */

@@ -75,6 +75,12 @@ trait MappingSettings
     public bool $stem = false;
 
     /**
+     * @var string|null A server stemming dictionary applied to this field (text
+     * types only). Setting one turns on stemming (Typesense implies stem: true).
+     */
+    public ?string $stemDictionary = null;
+
+    /**
      * @var string|null A bounded Typesense type override; empty uses the
      * server-derived type.
      */
@@ -140,6 +146,7 @@ trait MappingSettings
             'sortable' => $this->sortable,
             'infix' => $this->infix,
             'stem' => $this->stem,
+            'stemDictionary' => $this->stemDictionary,
             'locale' => $this->locale,
             'weight' => $this->weight,
             'description' => $this->description,
@@ -243,7 +250,7 @@ trait MappingSettings
                 'name' => $prop,
                 'value' => $this->{$prop},
             ]),
-            'language' => Cp::selectFieldHtml([
+            'language', 'optionsSelect' => Cp::selectFieldHtml([
                 'label' => $label,
                 'instructions' => $instructions,
                 'id' => $prop,

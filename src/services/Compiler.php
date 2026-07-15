@@ -227,6 +227,11 @@ class Compiler extends Component
             $field->stem();
         }
 
+        // A stemming dictionary implies stemming (Field::stemDictionary sets stem).
+        if (!empty($settings['stemDictionary'])) {
+            $field->stemDictionary((string)$settings['stemDictionary']);
+        }
+
         $locale = Locale::toTypesense((string)($settings['locale'] ?? ''));
 
         if ($locale !== null) {
