@@ -7,17 +7,19 @@
    core delete affordance. A collection that declares its curation in config is
    read-only with the config notice.
 
-   @var definition craftpulse\typesense\models\CollectionDefinition
    @var rules      array
    @var editable   bool   whether this collection's curation is control-panel-owned
-   @var navItems   array  the collection edit screen's permission-filtered nav
+   @var editBase   string the section URL base (managed uid or config/<name>)
+   @var editKey    string the post/row-id key for this collection
+   @var screenName string the collection display name
+   @var navItems   array  the collection screen's permission-filtered nav
    ========================================================================= #}
 {% extends 'typesense/collections/_layout' %}
 {% set selectedNavItem = 'curation' %}
 
 {% block actionButton %}
     {% if editable %}
-        <a class="btn submit add icon" href="{{ url('typesense/collections/' ~ definition.uid ~ '/curation/new') }}">{{ 'New rule'|t('typesense') }}</a>
+        <a class="btn submit add icon" href="{{ url(editBase ~ '/curation/new') }}">{{ 'New rule'|t('typesense') }}</a>
     {% endif %}
 {% endblock %}
 
@@ -34,9 +36,9 @@
     {% set tableData = [] %}
     {% for rule in rules %}
         {% set tableData = tableData|merge([{
-            id: definition.uid ~ '|' ~ rule.id,
+            id: editKey ~ '|' ~ rule.id,
             title: rule.id,
-            url: editable ? url('typesense/collections/' ~ definition.uid ~ '/curation/rule/' ~ rule.id) : null,
+            url: editable ? url(editBase ~ '/curation/rule/' ~ rule.id) : null,
             query: rule.rule.query ?? '',
             match: rule.rule.match ?? 'exact',
             pins: (rule.includes ?? [])|length,

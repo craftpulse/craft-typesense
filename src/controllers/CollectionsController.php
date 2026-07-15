@@ -22,6 +22,7 @@ use craft\helpers\Cp;
 use craft\helpers\StringHelper;
 use craft\helpers\UrlHelper;
 use craft\web\assets\cp\CpAsset;
+use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
@@ -116,6 +117,120 @@ class CollectionsController extends ProController
         return $items;
     }
 
+    /**
+     * The inner-sidebar nav items for a config-file collection's screen, keyed by
+     * name (config collections have no project-config uid). Their schema, mapping,
+     * relevance, and vector settings live in the config file (read-only), so the
+     * screen offers a read-only Overview plus the Synonyms and Curation sections,
+     * which stay control-panel-editable whenever the config file is silent about
+     * that domain (presence-based ownership, per Fix 5).
+     *
+     * @param string $name
+     * @return array<string, array{label: string, url: string}>
+     * @author CraftPulse
+     */
+    public static function configScreenNavItems(string $name): array
+    {
+        $user = Craft::$app->getUser();
+        $items = [
+            'overview' => [
+                'label' => Craft::t('typesense', 'Overview'),
+                'url' => UrlHelper::cpUrl("typesense/collections/config/{$name}"),
+            ],
+        ];
+
+        if ($user->checkPermission(SynonymsController::PERMISSION_MANAGE_SYNONYMS)) {
+            $items['synonyms'] = [
+                'label' => Craft::t('typesense', 'Synonyms'),
+                'url' => UrlHelper::cpUrl("typesense/collections/config/{$name}/synonyms"),
+            ];
+        }
+
+        if ($user->checkPermission(CurationController::PERMISSION_MANAGE_CURATION)) {
+            $items['curation'] = [
+                'label' => Craft::t('typesense', 'Curation'),
+                'url' => UrlHelper::cpUrl("typesense/collections/config/{$name}/curation"),
+            ];
+        }
+
+        return $items;
+    }
+
+    /**
+     * Resolves a collection-section screen from its route identity: a
+     * control-panel-managed definition uid, or a config-file collection name.
+     * Returns the runtime collection (null when a managed collection is disabled),
+     * the section URL base and post key, the display name, the sidebar nav items,
+     * and whether the screen is the disabled shell.
+     *
+     * @param string|null $uid
+     * @param string|null $name
+     * @return array{collection: ?Collection, editBase: string, editKey: string, screenName: string, navItems: array<string, array{label: string, url: string}>, disabled: bool}
+     * @throws NotFoundHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public static function resolveSectionScreen(?string $uid, ?string $name): array
+    {
+        $registry = Typesense::$plugin->getCollectionRegistry();
+
+        if ($name !== null) {
+            $collection = $registry->get($name);
+
+            if ($collection === null) {
+                throw new NotFoundHttpException('Collection not found.');
+            }
+
+            return [
+                'collection' => $collection,
+                'editBase' => "typesense/collections/config/{$name}",
+                'editKey' => "config:{$name}",
+                'screenName' => $name,
+                'navItems' => self::configScreenNavItems($name),
+                'disabled' => false,
+            ];
+        }
+
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid((string)$uid);
+
+        if ($definition === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        $collection = $registry->get($definition->name);
+
+        return [
+            'collection' => $collection,
+            'editBase' => "typesense/collections/{$uid}",
+            'editKey' => (string)$uid,
+            'screenName' => $definition->name,
+            'navItems' => self::editScreenNavItems($definition),
+            'disabled' => !$definition->enabled || $collection === null,
+        ];
+    }
+
+    /**
+     * Resolves the runtime collection for a section post key: a managed
+     * definition uid, or a "config:<name>" config-collection key.
+     *
+     * @param string $key
+     * @return Collection|null
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public static function collectionForScreenKey(string $key): ?Collection
+    {
+        $registry = Typesense::$plugin->getCollectionRegistry();
+
+        if (str_starts_with($key, 'config:')) {
+            return $registry->get(substr($key, 7));
+        }
+
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid($key);
+
+        return $definition !== null ? $registry->get($definition->name) : null;
+    }
+
     // Public Methods
     // =========================================================================
 
@@ -133,10 +248,11 @@ class CollectionsController extends ProController
             return false;
         }
 
-        // The index picker is the shared entry point for the collection edit
-        // screen's tabs, so it admits either collection-screen permission; every
-        // other action keeps its own manageCollections gate.
-        if ($action->id === 'index') {
+        // The index picker and the read-only config-collection overview are the
+        // shared entry points for the collection screens, so they admit any
+        // collection-screen permission; every other action keeps its own
+        // manageCollections gate.
+        if (in_array($action->id, ['index', 'config-overview'], true)) {
             if ($this->_firstSectionSuffix() === null) {
                 throw new ForbiddenHttpException(Craft::t('typesense', 'User is not permitted to perform this action.'));
             }
@@ -203,6 +319,35 @@ class CollectionsController extends ProController
             'suspended' => $suspend->isCollectionSuspended($definition->name),
             'globallySuspended' => $suspend->isGloballySuspended(),
             'navItems' => self::editScreenNavItems($definition),
+        ]);
+    }
+
+    /**
+     * The read-only Overview section of a config-file collection's screen. The
+     * collection's schema, mapping, relevance, and vector settings are declared
+     * in the config file, so they are shown as read-only facts here; its synonyms
+     * and curation stay control-panel-editable when the config file is silent
+     * about them (the Synonyms and Curation sections in the sidebar nav).
+     *
+     * @param string $name
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionConfigOverview(string $name): Response
+    {
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($name);
+
+        if ($collection === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        return $this->renderTemplate('typesense/collections/_config-overview', [
+            'collection' => $collection,
+            'screenName' => $name,
+            'navItems' => self::configScreenNavItems($name),
         ]);
     }
 

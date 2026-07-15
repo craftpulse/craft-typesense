@@ -52,6 +52,7 @@
     {% for name, collection in configCollections %}
         {% set configData = configData|merge([{
             title: name,
+            url: url('typesense/collections/config/' ~ name),
             elementType: collection.getElementType()|split('\\')|last,
             status: name in overriddenNames ? 'Overridden by the config file'|t('typesense') : 'Read only (config-owned)'|t('typesense'),
         }]) %}
@@ -79,7 +80,7 @@
 
         new Craft.VueAdminTable({
             columns: [
-                { name: 'title', title: Craft.t('typesense', 'Name') },
+                { name: '__slot:title', title: Craft.t('typesense', 'Name') },
                 { name: 'elementType', title: Craft.t('typesense', 'Element type') },
                 { name: 'status', title: Craft.t('typesense', 'Status') },
             ],

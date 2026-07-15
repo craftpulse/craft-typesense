@@ -480,6 +480,13 @@ class Typesense extends Plugin
         if ($this->getIsPro()) {
             $routes['typesense/collections'] = 'typesense/collections/index';
             $routes['typesense/collections/new'] = 'typesense/collections/edit';
+            $routes['typesense/collections/config/<name:[\w\-]+>/synonyms/new'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/collections/config/<name:[\w\-]+>/synonyms/synonym/<synonymId:[\w\-]+>'] = 'typesense/synonyms/edit-synonym';
+            $routes['typesense/collections/config/<name:[\w\-]+>/synonyms'] = 'typesense/synonyms/list';
+            $routes['typesense/collections/config/<name:[\w\-]+>/curation/new'] = 'typesense/curation/edit-rule';
+            $routes['typesense/collections/config/<name:[\w\-]+>/curation/rule/<ruleId:[\w\-]+>'] = 'typesense/curation/edit-rule';
+            $routes['typesense/collections/config/<name:[\w\-]+>/curation'] = 'typesense/curation/list';
+            $routes['typesense/collections/config/<name:[\w\-]+>'] = 'typesense/collections/config-overview';
             $routes['typesense/collections/<uid:[\w\-]+>/mapping'] = 'typesense/collections/mapping';
             $routes['typesense/collections/<uid:[\w\-]+>/relevance'] = 'typesense/relevance/edit';
             $routes['typesense/collections/<uid:[\w\-]+>/vector'] = 'typesense/relevance/vector';

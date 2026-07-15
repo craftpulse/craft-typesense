@@ -1,9 +1,11 @@
 {# =========================================================================
    Typesense Pro - curation manager (rule editor)
    =========================================================================
-   @var definition craftpulse\typesense\models\CollectionDefinition
    @var rule       array|null
    @var isNew      bool
+   @var editBase   string the section URL base (managed uid or config/<name>)
+   @var editKey    string the post key for this collection
+   @var screenName string the collection display name
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% import '_includes/forms.twig' as forms %}
@@ -12,12 +14,13 @@
 {% set fullPageForm = true %}
 {% set crumbs = [
     { label: 'Collections'|t('typesense'), url: url('typesense/collections') },
-    { label: definition.name, url: url('typesense/collections/' ~ definition.uid ~ '/curation') },
+    { label: screenName, url: url(editBase ~ '/curation') },
 ] %}
 
 {% block content %}
     {{ actionInput('typesense/curation/save-rule') }}
-    {{ hiddenInput('uid', definition.uid) }}
+    {{ hiddenInput('screenKey', editKey) }}
+    {{ hiddenInput('editBase', editBase) }}
 
     {{ forms.textField({
         first: true,

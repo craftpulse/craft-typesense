@@ -13,7 +13,6 @@ namespace craftpulse\typesense\controllers;
 use Craft;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
-use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -64,33 +63,42 @@ class CurationController extends ProController
     }
 
     /**
-     * The Curation section of a control-panel-managed collection's edit screen.
+     * The Curation section of a collection screen (control-panel-managed by uid,
+     * or a config-file collection by name).
      *
-     * @param string $uid
+     * @param string|null $uid
+     * @param string|null $name
      * @return Response
      * @throws NotFoundHttpException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionList(string $uid): Response
+    public function actionList(?string $uid = null, ?string $name = null): Response
     {
-        $definition = $this->_requireDefinition($uid);
-        $collection = $this->_collection($definition);
+        $screen = CollectionsController::resolveSectionScreen($uid, $name);
+        $collection = $screen['collection'];
+
+        if ($collection === null) {
+            return $this->_disabledShell($screen);
+        }
+
         $curation = Typesense::$plugin->getCuration();
 
         return $this->renderTemplate('typesense/curation/_rules', [
-            'definition' => $definition,
             'rules' => $curation->all($collection),
             'editable' => !$curation->isConfigOwned($collection),
-            'navItems' => CollectionsController::editScreenNavItems($definition),
+            'editBase' => $screen['editBase'],
+            'editKey' => $screen['editKey'],
+            'screenName' => $screen['screenName'],
+            'navItems' => $screen['navItems'],
         ]);
     }
 
     /**
-     * Deletes a curation rule. The row id is a "<uid>|<ruleId>" pair so the
-     * VueAdminTable delete (which posts only the row id) still carries the
-     * parent-collection context the dual-shape service needs.
+     * Deletes a curation rule. The VueAdminTable row id is a "<screenKey>|<ruleId>"
+     * pair so the delete (which posts only the row id) still carries the parent
+     * collection the dual-shape service needs.
      *
      * @return Response|null
      * @throws NotFoundHttpException
@@ -101,8 +109,8 @@ class CurationController extends ProController
     {
         $this->requirePostRequest();
 
-        [$uid, $ruleId] = $this->_splitRowId((string)$this->request->getRequiredBodyParam('id'));
-        $collection = $this->_editableCollection($uid);
+        [$key, $ruleId] = $this->_splitRowId((string)$this->request->getRequiredBodyParam('id'));
+        $collection = $this->_editableByKey($key);
         Typesense::$plugin->getCuration()->deleteRule($collection, $ruleId);
 
         return $this->asSuccess(Craft::t('typesense', 'Rule deleted.'));
@@ -111,7 +119,8 @@ class CurationController extends ProController
     /**
      * The rule editor, a drill-down from the collection's Curation section.
      *
-     * @param string $uid
+     * @param string|null $uid
+     * @param string|null $name
      * @param string|null $ruleId
      * @return Response
      * @throws NotFoundHttpException
@@ -119,13 +128,13 @@ class CurationController extends ProController
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionEditRule(string $uid, ?string $ruleId = null): Response
+    public function actionEditRule(?string $uid = null, ?string $name = null, ?string $ruleId = null): Response
     {
-        $definition = $this->_requireDefinition($uid);
-        $collection = $this->_collection($definition);
+        $screen = CollectionsController::resolveSectionScreen($uid, $name);
+        $collection = $screen['collection'];
         $rule = null;
 
-        if ($ruleId !== null) {
+        if ($ruleId !== null && $collection !== null) {
             foreach (Typesense::$plugin->getCuration()->all($collection) as $existing) {
                 if ((string)($existing['id'] ?? '') === $ruleId) {
                     $rule = $existing;
@@ -135,9 +144,11 @@ class CurationController extends ProController
         }
 
         return $this->renderTemplate('typesense/curation/_edit', [
-            'definition' => $definition,
             'rule' => $rule,
             'isNew' => $rule === null,
+            'editBase' => $screen['editBase'],
+            'editKey' => $screen['editKey'],
+            'screenName' => $screen['screenName'],
         ]);
     }
 
@@ -189,8 +200,8 @@ class CurationController extends ProController
     {
         $this->requirePostRequest();
 
-        $uid = (string)$this->request->getRequiredBodyParam('uid');
-        $collection = $this->_editableCollection($uid);
+        $key = (string)$this->request->getRequiredBodyParam('screenKey');
+        $collection = $this->_editableByKey($key);
         $id = trim((string)$this->request->getBodyParam('id', ''));
         $query = trim((string)$this->request->getBodyParam('query', ''));
 
@@ -200,45 +211,56 @@ class CurationController extends ProController
 
         Typesense::$plugin->getCuration()->upsert($collection, $id, $this->_ruleBody());
 
-        return $this->asSuccess(Craft::t('typesense', 'Rule saved.'), [], 'typesense/collections/' . $uid . '/curation');
+        return $this->asSuccess(
+            Craft::t('typesense', 'Rule saved.'),
+            [],
+            (string)$this->request->getRequiredBodyParam('editBase') . '/curation',
+        );
     }
 
     // Private Methods
     // =========================================================================
 
     /**
-     * Resolves the runtime collection for a control-panel-managed definition.
+     * Renders the section's disabled shell (nav plus a notice) for a
+     * control-panel collection that is currently disabled and so has no runtime
+     * collection to manage.
      *
-     * @param CollectionDefinition $definition
-     * @return Collection
-     * @throws NotFoundHttpException
+     * @param array{editBase: string, editKey: string, screenName: string, navItems: array<string, mixed>, collection: ?Collection, disabled: bool} $screen
+     * @return Response
+     * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    private function _collection(CollectionDefinition $definition): Collection
+    private function _disabledShell(array $screen): Response
     {
-        $collection = Typesense::$plugin->getCollectionRegistry()->get($definition->name);
-
-        if ($collection === null) {
-            throw new NotFoundHttpException('Collection not found.');
-        }
-
-        return $collection;
+        return $this->renderTemplate('typesense/collections/_disabled', [
+            'screenName' => $screen['screenName'],
+            'navItems' => $screen['navItems'],
+            'selectedNavItem' => 'curation',
+        ]);
     }
 
     /**
-     * Loads a collection by its definition uid and asserts its curation is
+     * Resolves an editable collection from a screen key (a managed definition uid
+     * or a "config:<name>" config-collection key) and asserts its curation is
      * control-panel-owned (editable).
      *
-     * @param string $uid
+     * @param string $key
      * @return Collection
      * @throws NotFoundHttpException when unknown or config-owned (read-only)
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    private function _editableCollection(string $uid): Collection
+    private function _editableByKey(string $key): Collection
     {
-        return $this->_assertEditable($this->_collection($this->_requireDefinition($uid)));
+        $collection = CollectionsController::collectionForScreenKey($key);
+
+        if ($collection === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
+
+        return $this->_assertEditable($collection);
     }
 
     /**
@@ -282,27 +304,7 @@ class CurationController extends ProController
     }
 
     /**
-     * Loads a control-panel-managed collection definition by uid or throws.
-     *
-     * @param string $uid
-     * @return CollectionDefinition
-     * @throws NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    private function _requireDefinition(string $uid): CollectionDefinition
-    {
-        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
-
-        if ($definition === null) {
-            throw new NotFoundHttpException('Collection not found.');
-        }
-
-        return $definition;
-    }
-
-    /**
-     * Splits a "<uid>|<id>" VueAdminTable row id into its parts.
+     * Splits a "<screenKey>|<id>" VueAdminTable row id into its parts.
      *
      * @param string $rowId
      * @return array{0: string, 1: string}

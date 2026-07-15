@@ -1,0 +1,20 @@
+{# =========================================================================
+   Typesense Pro - collection section: disabled shell
+   =========================================================================
+   Shown for a control-panel-managed collection that is currently disabled: the
+   collection has no runtime (compiled) collection to manage, so the section
+   renders its nav plus a notice instead of 404ing.
+
+   @var screenName      string  the collection display name
+   @var navItems        array   the collection screen's permission-filtered nav
+   @var selectedNavItem string  the section the viewer was heading to
+   ========================================================================= #}
+{% extends 'typesense/collections/_layout' %}
+
+{% block content %}
+    <div class="readable">
+        <blockquote class="note">
+            {{ 'This collection is disabled, so it has no live Typesense collection to manage. Enable it from its Settings section, then sync it.'|t('typesense') }}
+        </blockquote>
+    </div>
+{% endblock %}

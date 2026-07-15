@@ -1,0 +1,39 @@
+{# =========================================================================
+   Typesense Pro - config-file collection screen: Overview (read-only)
+   =========================================================================
+   A config-file collection is defined in config/typesense.php, so its schema,
+   mapping, relevance, and vector settings are read-only here and shown as facts.
+   Its synonyms and curation stay control-panel-editable whenever the config file
+   is silent about that domain (the Synonyms and Curation sections in the nav).
+
+   @var collection craftpulse\typesense\builders\Collection
+   @var screenName string  the collection name
+   @var navItems   array   the config-collection screen's permission-filtered nav
+   ========================================================================= #}
+{% extends 'typesense/collections/_layout' %}
+{% set selectedNavItem = 'overview' %}
+
+{% block content %}
+    <div class="readable">
+        <blockquote class="note">
+            {{ 'This collection is defined in config/typesense.php. Its schema, mapping, relevance, and vector settings are managed in the config file and are read-only here. Its synonyms and curation are editable from the sections in the sidebar whenever the config file is silent about them.'|t('typesense') }}
+        </blockquote>
+    </div>
+
+    {{ tag('dl', {
+        class: ['meta', 'read-only'],
+        html:
+            tag('div', { class: 'data', html:
+                tag('dt', { class: 'heading', text: 'Name'|t('typesense') }) ~
+                tag('dd', { class: 'value', html: tag('code', { text: screenName }) })
+            }) ~
+            tag('div', { class: 'data', html:
+                tag('dt', { class: 'heading', text: 'Element type'|t('typesense') }) ~
+                tag('dd', { class: 'value', text: collection.getElementType()|split('\\')|last })
+            }) ~
+            tag('div', { class: 'data', html:
+                tag('dt', { class: 'heading', text: 'Multisite strategy'|t('typesense') }) ~
+                tag('dd', { class: 'value', text: collection.getMultisiteStrategy().value })
+            }),
+    }) }}
+{% endblock %}

@@ -9,13 +9,17 @@
    CollectionsController::editScreenNavItems(), so a section the viewer cannot
    access is not shown.
 
+   For a config-file collection (Fix 10 A0) there is no CollectionDefinition, so
+   the child passes screenName (the collection name) and the config nav items.
+
    @var definition      craftpulse\typesense\models\CollectionDefinition
+   @var screenName      string  the screen title (falls back to definition.name)
    @var navItems        array   the permission-filtered inner-sidebar nav items
    @var selectedNavItem string  the active section key (set by each child screen)
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 
-{% set title = definition.name %}
+{% set title = screenName ?? definition.name %}
 {% set selectedSubnavItem = 'collections' %}
 {% set crumbs = [
     { label: 'Collections'|t('typesense'), url: url('typesense/collections') },

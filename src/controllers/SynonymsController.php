@@ -14,7 +14,6 @@ use Craft;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\helpers\Locale;
-use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -63,33 +62,42 @@ class SynonymsController extends ProController
     }
 
     /**
-     * The Synonyms section of a control-panel-managed collection's edit screen.
+     * The Synonyms section of a collection screen (control-panel-managed by uid,
+     * or a config-file collection by name).
      *
-     * @param string $uid
+     * @param string|null $uid
+     * @param string|null $name
      * @return Response
      * @throws NotFoundHttpException
      * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionList(string $uid): Response
+    public function actionList(?string $uid = null, ?string $name = null): Response
     {
-        $definition = $this->_requireDefinition($uid);
-        $collection = $this->_collection($definition);
+        $screen = CollectionsController::resolveSectionScreen($uid, $name);
+        $collection = $screen['collection'];
+
+        if ($collection === null) {
+            return $this->_disabledShell($screen);
+        }
+
         $synonyms = Typesense::$plugin->getSynonyms();
 
         return $this->renderTemplate('typesense/synonyms/_list', [
-            'definition' => $definition,
             'synonyms' => $synonyms->all($collection),
             'editable' => !$synonyms->isConfigOwned($collection),
-            'navItems' => CollectionsController::editScreenNavItems($definition),
+            'editBase' => $screen['editBase'],
+            'editKey' => $screen['editKey'],
+            'screenName' => $screen['screenName'],
+            'navItems' => $screen['navItems'],
         ]);
     }
 
     /**
-     * Deletes one synonym. The row id is a "<uid>|<synonymId>" pair so the
-     * VueAdminTable delete (which posts only the row id) still carries the
-     * parent-collection context the dual-shape service needs.
+     * Deletes one synonym. The VueAdminTable row id is a "<screenKey>|<synonymId>"
+     * pair so the delete (which posts only the row id) still carries the parent
+     * collection the dual-shape service needs.
      *
      * @return Response|null
      * @throws NotFoundHttpException
@@ -100,8 +108,8 @@ class SynonymsController extends ProController
     {
         $this->requirePostRequest();
 
-        [$uid, $synonymId] = $this->_splitRowId((string)$this->request->getRequiredBodyParam('id'));
-        $collection = $this->_editableCollection($uid);
+        [$key, $synonymId] = $this->_splitRowId((string)$this->request->getRequiredBodyParam('id'));
+        $collection = $this->_editableByKey($key);
         Typesense::$plugin->getSynonyms()->deleteOne($collection, $synonymId);
 
         return $this->asSuccess(Craft::t('typesense', 'Synonym deleted.'));
@@ -110,7 +118,8 @@ class SynonymsController extends ProController
     /**
      * The synonym editor, a drill-down from the collection's Synonyms section.
      *
-     * @param string $uid
+     * @param string|null $uid
+     * @param string|null $name
      * @param string|null $synonymId
      * @return Response
      * @throws NotFoundHttpException
@@ -118,13 +127,13 @@ class SynonymsController extends ProController
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    public function actionEditSynonym(string $uid, ?string $synonymId = null): Response
+    public function actionEditSynonym(?string $uid = null, ?string $name = null, ?string $synonymId = null): Response
     {
-        $definition = $this->_requireDefinition($uid);
-        $collection = $this->_collection($definition);
+        $screen = CollectionsController::resolveSectionScreen($uid, $name);
+        $collection = $screen['collection'];
         $synonym = null;
 
-        if ($synonymId !== null) {
+        if ($synonymId !== null && $collection !== null) {
             foreach (Typesense::$plugin->getSynonyms()->all($collection) as $existing) {
                 if ((string)($existing['id'] ?? '') === $synonymId) {
                     $synonym = $existing;
@@ -134,9 +143,11 @@ class SynonymsController extends ProController
         }
 
         return $this->renderTemplate('typesense/synonyms/_edit', [
-            'definition' => $definition,
             'synonym' => $synonym,
             'isNew' => $synonym === null,
+            'editBase' => $screen['editBase'],
+            'editKey' => $screen['editKey'],
+            'screenName' => $screen['screenName'],
         ]);
     }
 
@@ -152,8 +163,8 @@ class SynonymsController extends ProController
     {
         $this->requirePostRequest();
 
-        $uid = (string)$this->request->getRequiredBodyParam('uid');
-        $collection = $this->_editableCollection($uid);
+        $key = (string)$this->request->getRequiredBodyParam('screenKey');
+        $collection = $this->_editableByKey($key);
         $id = trim((string)$this->request->getBodyParam('id', ''));
         $synonyms = $this->_terms();
 
@@ -163,45 +174,54 @@ class SynonymsController extends ProController
 
         Typesense::$plugin->getSynonyms()->upsert($collection, $id, $this->_synonymBody($synonyms));
 
-        return $this->asSuccess(Craft::t('typesense', 'Synonym saved.'), [], 'typesense/collections/' . $uid . '/synonyms');
+        return $this->asSuccess(
+            Craft::t('typesense', 'Synonym saved.'),
+            [],
+            (string)$this->request->getRequiredBodyParam('editBase') . '/synonyms',
+        );
     }
 
     // Private Methods
     // =========================================================================
 
     /**
-     * Resolves the runtime collection for a control-panel-managed definition.
+     * Renders the section's disabled shell (nav plus a notice) for a
+     * control-panel collection that is currently disabled and so has no runtime
+     * collection to manage.
      *
-     * @param CollectionDefinition $definition
-     * @return Collection
-     * @throws NotFoundHttpException
+     * @param array{editBase: string, editKey: string, screenName: string, navItems: array<string, mixed>, collection: ?Collection, disabled: bool} $screen
+     * @return Response
+     * @throws \yii\base\Exception
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    private function _collection(CollectionDefinition $definition): Collection
+    private function _disabledShell(array $screen): Response
     {
-        $collection = Typesense::$plugin->getCollectionRegistry()->get($definition->name);
-
-        if ($collection === null) {
-            throw new NotFoundHttpException('Collection not found.');
-        }
-
-        return $collection;
+        return $this->renderTemplate('typesense/collections/_disabled', [
+            'screenName' => $screen['screenName'],
+            'navItems' => $screen['navItems'],
+            'selectedNavItem' => 'synonyms',
+        ]);
     }
 
     /**
-     * Loads a collection by its definition uid and asserts its synonyms are
+     * Resolves an editable collection from a screen key (a managed definition uid
+     * or a "config:<name>" config-collection key) and asserts its synonyms are
      * control-panel-owned (editable).
      *
-     * @param string $uid
+     * @param string $key
      * @return Collection
      * @throws NotFoundHttpException when unknown or config-owned (read-only)
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
-    private function _editableCollection(string $uid): Collection
+    private function _editableByKey(string $key): Collection
     {
-        $collection = $this->_collection($this->_requireDefinition($uid));
+        $collection = CollectionsController::collectionForScreenKey($key);
+
+        if ($collection === null) {
+            throw new NotFoundHttpException('Collection not found.');
+        }
 
         if (Typesense::$plugin->getSynonyms()->isConfigOwned($collection)) {
             throw new NotFoundHttpException('This collection’s synonyms are managed by config.');
@@ -211,27 +231,7 @@ class SynonymsController extends ProController
     }
 
     /**
-     * Loads a control-panel-managed collection definition by uid or throws.
-     *
-     * @param string $uid
-     * @return CollectionDefinition
-     * @throws NotFoundHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    private function _requireDefinition(string $uid): CollectionDefinition
-    {
-        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
-
-        if ($definition === null) {
-            throw new NotFoundHttpException('Collection not found.');
-        }
-
-        return $definition;
-    }
-
-    /**
-     * Splits a "<uid>|<id>" VueAdminTable row id into its parts.
+     * Splits a "<screenKey>|<id>" VueAdminTable row id into its parts.
      *
      * @param string $rowId
      * @return array{0: string, 1: string}
