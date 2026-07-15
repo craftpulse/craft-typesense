@@ -10,10 +10,12 @@
 
 namespace craftpulse\typesense\services;
 
+use Craft;
 use craft\base\Component;
 use craft\base\ElementInterface;
 use craft\elements\db\ElementQueryInterface;
 use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\events\IndexDocumentEvent;
 use craftpulse\typesense\models\DocumentBuildResult;
 use craftpulse\typesense\models\FieldMapping;
@@ -68,6 +70,34 @@ class Documents extends Component
     // =========================================================================
 
     /**
+     * The default Typesense document id for an element in a collection, when a
+     * transform has not set one. A sharedWithSiteFilter collection whose scope
+     * spans more than one site uses a composite `{elementId}-{siteId}` id so the
+     * per-site documents do not collide; every other case (a single-site scope,
+     * or collectionPerSite where each site has its own collection) keeps the
+     * bare element id, since no collision is possible and existing document
+     * identity must not churn.
+     *
+     * @param Collection $collection
+     * @param int $elementId
+     * @param int $siteId
+     * @param array<int, int> $collectionSiteIds
+     * @return string
+     * @author CraftPulse
+     */
+    public function defaultDocumentId(Collection $collection, int $elementId, int $siteId, array $collectionSiteIds): string
+    {
+        if (
+            $collection->getMultisiteStrategy() === MultisiteStrategy::SharedWithSiteFilter
+            && count($collectionSiteIds) > 1
+        ) {
+            return $elementId . '-' . $siteId;
+        }
+
+        return (string)$elementId;
+    }
+
+    /**
      * Builds the documents for an element in a collection and site.
      *
      * @param Collection $collection
@@ -100,8 +130,15 @@ class Documents extends Component
         }
 
         $documents = [];
+        $collectionSiteIds = $this->_syncSiteIds($collection);
 
         foreach ($this->_normalizeDocuments($raw, $element) as $document) {
+            // A transform may set its own document id; otherwise derive one that
+            // stays collision-free across the collection's site scope.
+            if (!isset($document['id']) || (string)$document['id'] === '') {
+                $document['id'] = $this->defaultDocumentId($collection, (int)$element->id, $siteId, $collectionSiteIds);
+            }
+
             $document = $this->_injectReservedFields($document, $element, $siteId);
             $documents[] = $this->_beforeIndexDocument($collection, $element, $siteId, $document);
         }
@@ -192,6 +229,25 @@ class Documents extends Component
     // =========================================================================
 
     /**
+     * The site ids a collection's documents span, used to decide the default
+     * document id shape. A sharedWithSiteFilter collection spans every site;
+     * collectionPerSite keeps a collection per site, so its ids never collide
+     * and the scope is irrelevant.
+     *
+     * @param Collection $collection
+     * @return array<int, int>
+     * @author CraftPulse
+     */
+    private function _syncSiteIds(Collection $collection): array
+    {
+        if ($collection->getMultisiteStrategy() === MultisiteStrategy::SharedWithSiteFilter) {
+            return Craft::$app->getSites()->getAllSiteIds();
+        }
+
+        return [];
+    }
+
+    /**
      * Normalizes a transform result to a list of documents, each with an id.
      *
      * @param mixed $raw
@@ -213,9 +269,9 @@ class Documents extends Component
                 continue;
             }
 
-            if (!isset($document['id'])) {
-                $document['id'] = (string)$element->id;
-            } else {
+            // The default id is derived in build(), which knows the collection's
+            // multisite scope; here we only normalise an explicitly-set id.
+            if (isset($document['id'])) {
                 $document['id'] = (string)$document['id'];
             }
 

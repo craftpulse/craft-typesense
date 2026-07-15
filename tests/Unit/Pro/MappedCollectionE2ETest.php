@@ -107,7 +107,9 @@ it('compiles a CP-managed collection and syncs matching documents to the server'
 
         expect($client->collections[$target]->retrieve()['num_documents'])->toBeGreaterThan(0);
 
-        $document = $client->collections[$target]->documents[(string)$ids[0]]->retrieve();
+        // The playground is multi-site, so this shared collection uses composite
+        // document ids ({elementId}-{siteId}).
+        $document = $client->collections[$target]->documents[$ids[0] . '-' . $primarySiteId]->retrieve();
         expect((int)$document['popularity'])->toBe(7)
             ->and((int)$document['elementId'])->toBe((int)$ids[0]);
     } finally {
