@@ -4,7 +4,6 @@
    @var handle     string
    @var synonyms   array
    @var editable   bool   whether this collection's synonyms are CP-managed
-   @var overridden bool   whether a per-collection config override is in force
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = handle ~ ' ' ~ ('synonyms'|t('typesense')) %}
@@ -20,11 +19,7 @@
 {% block content %}
     {% if not editable %}
         <blockquote class="note">
-            {% if overridden %}
-                {{ 'This collection’s synonyms are managed by the config file (overridden). They are read-only here.'|t('typesense') }}
-            {% else %}
-                {{ 'This collection’s synonyms are managed by config. They are read-only here.'|t('typesense') }}
-            {% endif %}
+            {{ 'This collection declares its synonyms in config. They are read-only here.'|t('typesense') }}
         </blockquote>
     {% endif %}
 

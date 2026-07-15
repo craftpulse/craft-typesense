@@ -48,11 +48,18 @@ utility (global and per-collection) and on each collection's edit screen, and
 works even when `allowAdminChanges` is disabled. See
 [the sync engine](sync-engine.md#suspend).
 
-## Ownership
+## Feature ownership
 
-Each of synonyms, curation, and presets can default to being owned by the config
-file or the control panel. A config-file override always wins and is shown as a
-read-only, overridden setting.
+There is no ownership setting. Two independent questions decide each relevance
+feature (synonyms, curation, presets, stopwords):
+
+- **Who can edit it?** A permission. See the permissions table in
+  [collections](pro-collections.md#editions-and-permissions).
+- **What is config-owned?** Config presence. If a collection declares the feature
+  in its fluent config, that feature is config-owned and read-only in the control
+  panel; if the config is silent, the feature is control-panel-owned and editable
+  by anyone holding the matching permission. See
+  [synonyms, curation and presets](synonyms.md#ownership).
 
 ## Analytics
 

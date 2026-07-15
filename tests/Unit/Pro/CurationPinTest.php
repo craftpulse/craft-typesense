@@ -17,7 +17,6 @@ use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\enums\MultisiteStrategy;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 
 const PIN_TEST_COLLECTION = 'ts_pin_test';
@@ -30,10 +29,11 @@ it('pins an element from the sidebar path: include on the rule, lookup row, and 
     $admin->email = "ts_pin_{$suffix}@example.test";
     Craft::$app->getElements()->saveElement($admin);
 
+    // No config curation rules declared, so the collection is control-panel-owned
+    // (editable), which the sidebar quick-pin requires.
     $collection = Collection::make(PIN_TEST_COLLECTION)
         ->elementType(Entry::class)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-        ->curation(Settings::MANAGED_BY_CP)
         ->fields(Field::string('title'))
         ->elementQuery(fn($query) => $query->section('heroes'))
         ->transform(fn(Entry $entry) => ['title' => (string)$entry->title]);

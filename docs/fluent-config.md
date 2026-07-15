@@ -100,8 +100,8 @@ a gap.
 | `pageSize($n)` | Batch page size. |
 | `autoSync(false)` | Turn off event-driven sync for this collection. |
 | `multisite($strategy)` | `MultisiteStrategy::CollectionPerSite` or `SharedWithSiteFilter`. |
-| `synonyms($managedBy)` / `curation($managedBy)` | Per-collection ownership override (`config` or `cp`). |
-| `preset([...])` | Per-collection search preset. |
+| `synonymDefinitions([...])` / `curationRules([...])` / `stopwords([...])` | Declare synonyms, curation rules, or stopwords. Declaring a feature makes it config-owned (seeded and read-only in the control panel); omitting it leaves the feature control-panel-owned. |
+| `preset([...])` | Per-collection search preset (config-owned when declared). |
 | `computedFields('name', ...)` | Attach registered computed fields by name. |
 | `raw($key, $value)` | Any future top-level key. |
 

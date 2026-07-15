@@ -2,8 +2,9 @@
 /**
  * Typesense plugin for Craft CMS 5.x
  *
- * The synonyms dual-shape gate. managedBy resolution and the config-override
- * notice are pure logic. The seed/list/clear lifecycle runs against the real
+ * The synonyms dual-shape gate. Presence-based ownership (declaring synonyms in
+ * config marks config-ownership) is pure logic. The seed/list/clear lifecycle
+ * runs against the real
  * Typesense server: on v28/v29 through the per-collection SDK path, on v30.2+
  * through the global synonym-sets path (exercised by the dual-container gate).
  * Callers see identical behaviour either way.
@@ -14,7 +15,6 @@
 
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\enums\MultisiteStrategy;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 
 const SYNONYMS_TEST_COLLECTION = 'ts_synonyms_test';
@@ -57,30 +57,19 @@ function withSynonyms(Collection $declared, callable $test): void
     }
 }
 
-it('resolves managedBy from the settings default when no override is declared', function() {
-    $collection = Collection::make(SYNONYMS_TEST_COLLECTION);
-    Typesense::$plugin->getSettings()->synonymsManagedBy = Settings::MANAGED_BY_CP;
+it('treats a collection as config-owned only when it declares synonyms (presence-based)', function() {
+    $synonyms = Typesense::$plugin->getSynonyms();
+    $cpOwned = Collection::make(SYNONYMS_TEST_COLLECTION);
+    $configOwned = Collection::make(SYNONYMS_TEST_COLLECTION)
+        ->synonymDefinitions([['id' => 'outerwear', 'synonyms' => ['blazer', 'coat']]]);
 
-    expect(Typesense::$plugin->getSynonyms()->getManagedBy($collection))->toBe(Settings::MANAGED_BY_CP)
-        ->and(Typesense::$plugin->getSynonyms()->isConfigOverridden($collection))->toBeFalse();
-
-    Typesense::$plugin->getSettings()->synonymsManagedBy = Settings::MANAGED_BY_CONFIG;
-});
-
-it('lets a per-collection override win over the settings default (config-override notice)', function() {
-    Typesense::$plugin->getSettings()->synonymsManagedBy = Settings::MANAGED_BY_CP;
-    $collection = Collection::make(SYNONYMS_TEST_COLLECTION)->synonyms(Settings::MANAGED_BY_CONFIG);
-
-    expect(Typesense::$plugin->getSynonyms()->getManagedBy($collection))->toBe(Settings::MANAGED_BY_CONFIG)
-        ->and(Typesense::$plugin->getSynonyms()->isConfigOverridden($collection))->toBeTrue();
-
-    Typesense::$plugin->getSettings()->synonymsManagedBy = Settings::MANAGED_BY_CONFIG;
+    expect($synonyms->isConfigOwned($cpOwned))->toBeFalse()
+        ->and($synonyms->isConfigOwned($configOwned))->toBeTrue();
 });
 
 it('seeds, lists and clears config-declared synonyms against the real server', function() {
     $declared = Collection::make(SYNONYMS_TEST_COLLECTION)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-        ->synonyms(Settings::MANAGED_BY_CONFIG)
         ->synonymDefinitions([
             ['id' => 'outerwear', 'synonyms' => ['blazer', 'coat', 'jacket']],
         ]);
@@ -100,8 +89,7 @@ it('seeds, lists and clears config-declared synonyms against the real server', f
 
 it('upserts one-way and multi-way synonyms and deletes one (the manager round-trip)', function() {
     $declared = Collection::make(SYNONYMS_TEST_COLLECTION)
-        ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-        ->synonyms(Settings::MANAGED_BY_CP);
+        ->multisite(MultisiteStrategy::SharedWithSiteFilter);
 
     withSynonyms($declared, function() use ($declared) {
         $synonyms = Typesense::$plugin->getSynonyms();
@@ -121,13 +109,9 @@ it('upserts one-way and multi-way synonyms and deletes one (the manager round-tr
     });
 });
 
-it('does not seed synonyms for a cp-managed collection', function() {
+it('does not seed a collection that declares no synonyms in config (cp-owned)', function() {
     $declared = Collection::make(SYNONYMS_TEST_COLLECTION)
-        ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-        ->synonyms(Settings::MANAGED_BY_CP)
-        ->synonymDefinitions([
-            ['id' => 'outerwear', 'synonyms' => ['blazer', 'coat']],
-        ]);
+        ->multisite(MultisiteStrategy::SharedWithSiteFilter);
 
     withSynonyms($declared, function() use ($declared) {
         $synonyms = Typesense::$plugin->getSynonyms();

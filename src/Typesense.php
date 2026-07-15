@@ -131,7 +131,7 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public string $schemaVersion = '5.9.3';
+    public string $schemaVersion = '5.9.4';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
@@ -850,7 +850,7 @@ class Typesense extends Plugin
                 continue;
             }
 
-            if ($curation->getManagedBy($collection) !== Settings::MANAGED_BY_CP) {
+            if ($curation->isConfigOwned($collection)) {
                 continue;
             }
 

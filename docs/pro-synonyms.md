@@ -12,9 +12,10 @@ levers, and the shared ownership model, see `docs/synonyms.md`.
 
 ## Editions and permissions
 
-These managers are Pro features, gated by `typesense:manageCollections`. In the
-Free edition the plugin renders none of the Pro control panel. Every Pro action
-is edition-checked server-side.
+These managers are Pro features, each gated by its own permission: the synonyms
+manager by `typesense:manageSynonyms`, and the stopwords and stemming-dictionary
+managers by `typesense:manageDictionaries`. In the Free edition the plugin renders
+none of the Pro control panel. Every Pro action is edition-checked server-side.
 
 ## Synonyms
 
@@ -28,8 +29,9 @@ synonym carries:
 | Root (one-way) | Optional. When set, the terms map one-way to this root query; leave blank for a multi-way synonym. |
 | Locale | Optional language code that scopes the synonym (for example, `en`). |
 
-Control-panel-managed collections are editable; config-managed collections render
-read-only with the override notice.
+A collection that declares `synonymDefinitions()` in config owns its synonyms and
+renders read-only with the "declared in config" notice; a collection that is
+silent is control-panel-owned and editable.
 
 ## Stopwords
 

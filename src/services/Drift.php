@@ -14,7 +14,6 @@ use Craft;
 use craft\base\Component;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\enums\MultisiteStrategy;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use Throwable;
 use Typesense\Exceptions\ObjectNotFound;
@@ -212,7 +211,7 @@ class Drift extends Component
         $synonyms = Typesense::$plugin->getSynonyms();
         $curation = Typesense::$plugin->getCuration();
 
-        if ($synonyms->getManagedBy($collection) === Settings::MANAGED_BY_CONFIG) {
+        if ($synonyms->isConfigOwned($collection)) {
             $findings[] = $this->_ruleFinding(
                 $collection,
                 'synonyms',
@@ -221,7 +220,7 @@ class Drift extends Component
             );
         }
 
-        if ($curation->getManagedBy($collection) === Settings::MANAGED_BY_CONFIG) {
+        if ($curation->isConfigOwned($collection)) {
             $findings[] = $this->_ruleFinding(
                 $collection,
                 'curation',

@@ -22,7 +22,8 @@ use craftpulse\typesense\models\ServerCapabilities;
  * array via toSchema(), and holds the runtime concerns that never serialize:
  * the element type, one or more element-query callables, the document transform
  * closure, active statuses, batch page size, auto-sync flag, multisite strategy,
- * per-feature managedBy defaults, a search preset, and attached computed-field
+ * config-declared synonyms/curation/stopwords (presence marks config ownership),
+ * a search preset, and attached computed-field
  * names. The collection name is the logical name; the environment prefix is
  * applied by the registry's resolver, never here.
  *
@@ -84,16 +85,6 @@ class Collection
      * @var string|null The default sorting field.
      */
     private ?string $_defaultSortingField = null;
-
-    /**
-     * @var string|null The synonyms managedBy override (config|cp), or null to inherit.
-     */
-    private ?string $_synonymsManagedBy = null;
-
-    /**
-     * @var string|null The curation managedBy override (config|cp), or null to inherit.
-     */
-    private ?string $_curationManagedBy = null;
 
     /**
      * @var array<string, mixed>|null The per-collection search preset.
@@ -390,30 +381,6 @@ class Collection
     }
 
     /**
-     * @param string $managedBy
-     * @return self
-     * @author CraftPulse
-     */
-    public function synonyms(string $managedBy): self
-    {
-        $this->_synonymsManagedBy = $managedBy;
-
-        return $this;
-    }
-
-    /**
-     * @param string $managedBy
-     * @return self
-     * @author CraftPulse
-     */
-    public function curation(string $managedBy): self
-    {
-        $this->_curationManagedBy = $managedBy;
-
-        return $this;
-    }
-
-    /**
      * @param array<string, mixed> $preset
      * @return self
      * @author CraftPulse
@@ -630,24 +597,6 @@ class Collection
     public function getMultisiteStrategy(): MultisiteStrategy
     {
         return $this->_multisite;
-    }
-
-    /**
-     * @return string|null
-     * @author CraftPulse
-     */
-    public function getSynonymsManagedBy(): ?string
-    {
-        return $this->_synonymsManagedBy;
-    }
-
-    /**
-     * @return string|null
-     * @author CraftPulse
-     */
-    public function getCurationManagedBy(): ?string
-    {
-        return $this->_curationManagedBy;
     }
 
     /**

@@ -13,7 +13,6 @@ namespace craftpulse\typesense\services;
 use Craft;
 use craft\base\Component;
 use craftpulse\typesense\builders\Collection;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use Throwable;
 
@@ -23,10 +22,10 @@ use Throwable;
  * On v28/v29 synonyms are per-collection (via the SDK). On v30.2+ they are global
  * synonym sets (via raw HTTP, since the bundled SDK predates them); the search
  * path passes `synonym_sets=<name>`. The shape is chosen from ServerCapabilities,
- * so callers see identical behavior on both. managedBy resolves from the settings
- * default, overridable per collection in fluent config (config wins, surfacing the
- * override-notice state); config-managed synonyms are seeded, CP-managed are left
- * to the control panel.
+ * so callers see identical behavior on both. Ownership is presence-based: a
+ * collection that declares synonyms in fluent config owns them (seeded, read-only
+ * in the control panel, with the config notice); a silent collection is
+ * control-panel-owned and editable.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -38,33 +37,22 @@ class Synonyms extends Component
     // =========================================================================
 
     /**
-     * Resolves who owns a collection's synonyms: the per-collection override, or
-     * the settings default.
-     *
-     * @param Collection $collection
-     * @return string
-     * @author CraftPulse
-     */
-    public function getManagedBy(Collection $collection): string
-    {
-        return $collection->getSynonymsManagedBy() ?? $this->_settings()->synonymsManagedBy;
-    }
-
-    /**
-     * Whether the collection explicitly overrides the managedBy default in config
-     * (the "overridden by the config file" notice state).
+     * Whether a collection's synonyms are owned by the config file: ownership is
+     * presence-based, so a collection that declares synonyms in fluent config
+     * owns them (read-only in the control panel), and a collection that is silent
+     * is control-panel-owned (editable).
      *
      * @param Collection $collection
      * @return bool
      * @author CraftPulse
      */
-    public function isConfigOverridden(Collection $collection): bool
+    public function isConfigOwned(Collection $collection): bool
     {
-        return $collection->getSynonymsManagedBy() !== null;
+        return $collection->getSynonymDefinitions() !== [];
     }
 
     /**
-     * Seeds a collection's config-declared synonyms, when it is config-managed.
+     * Seeds a collection's config-declared synonyms, when config owns them.
      *
      * @param Collection $collection
      * @return void
@@ -72,10 +60,6 @@ class Synonyms extends Component
      */
     public function seedFromConfig(Collection $collection): void
     {
-        if ($this->getManagedBy($collection) !== Settings::MANAGED_BY_CONFIG) {
-            return;
-        }
-
         $definitions = $collection->getSynonymDefinitions();
 
         if ($definitions === []) {
@@ -256,18 +240,6 @@ class Synonyms extends Component
 
     // Private Methods
     // =========================================================================
-
-    /**
-     * @return Settings
-     * @author CraftPulse
-     */
-    private function _settings(): Settings
-    {
-        /** @var Settings $settings */
-        $settings = Typesense::$plugin->getSettings();
-
-        return $settings;
-    }
 
     /**
      * @return bool

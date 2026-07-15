@@ -13,7 +13,6 @@ namespace craftpulse\typesense\services;
 use Craft;
 use craft\base\Component;
 use craftpulse\typesense\builders\Collection;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use Throwable;
 
@@ -22,9 +21,10 @@ use Throwable;
  *
  * On v28/v29 curation is per-collection overrides (via the SDK). On v30.2+ it is
  * global curation sets (via raw HTTP). The shape is chosen from ServerCapabilities,
- * so callers see identical behavior. managedBy resolves from the settings default,
- * overridable per collection (config wins); config-managed rules are seeded, CP-
- * managed rules are left to the control panel (the manager UI arrives in P9).
+ * so callers see identical behavior. Ownership is presence-based: a collection
+ * that declares curation rules in fluent config owns them (seeded, read-only in
+ * the control panel, with the config notice); a silent collection is
+ * control-panel-owned and editable.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -36,27 +36,22 @@ class Curation extends Component
     // =========================================================================
 
     /**
-     * @param Collection $collection
-     * @return string
-     * @author CraftPulse
-     */
-    public function getManagedBy(Collection $collection): string
-    {
-        return $collection->getCurationManagedBy() ?? $this->_settings()->curationManagedBy;
-    }
-
-    /**
+     * Whether a collection's curation is owned by the config file: ownership is
+     * presence-based, so a collection that declares curation rules in fluent
+     * config owns them (read-only in the control panel), and a collection that is
+     * silent is control-panel-owned (editable).
+     *
      * @param Collection $collection
      * @return bool
      * @author CraftPulse
      */
-    public function isConfigOverridden(Collection $collection): bool
+    public function isConfigOwned(Collection $collection): bool
     {
-        return $collection->getCurationManagedBy() !== null;
+        return $collection->getCurationRules() !== [];
     }
 
     /**
-     * Seeds a collection's config-declared curation rules, when config-managed.
+     * Seeds a collection's config-declared curation rules, when config owns them.
      *
      * @param Collection $collection
      * @return void
@@ -64,10 +59,6 @@ class Curation extends Component
      */
     public function seedFromConfig(Collection $collection): void
     {
-        if ($this->getManagedBy($collection) !== Settings::MANAGED_BY_CONFIG) {
-            return;
-        }
-
         $rules = $collection->getCurationRules();
 
         if ($rules === []) {
@@ -302,18 +293,6 @@ class Curation extends Component
         } catch (Throwable $e) {
             Craft::error("Could not rebuild curation index for {$collection->getName()}: {$e->getMessage()}", 'typesense');
         }
-    }
-
-    /**
-     * @return Settings
-     * @author CraftPulse
-     */
-    private function _settings(): Settings
-    {
-        /** @var Settings $settings */
-        $settings = Typesense::$plugin->getSettings();
-
-        return $settings;
     }
 
     /**

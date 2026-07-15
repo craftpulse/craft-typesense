@@ -19,12 +19,13 @@ crafted request cannot reach a Pro action on Free.
 
 ## Ownership
 
-Curation has an owner per collection: the config file or the control panel. The
-default comes from the `curationManagedBy` setting, and a collection can override
-it in fluent config (config always wins). A control-panel-managed collection is
-editable in the manager; a config-managed one renders read-only with the
-"managed by the config file" notice. See `docs/synonyms.md` for the shared
-ownership model.
+Ownership is presence-based. A collection that declares `curationRules()` in its
+fluent config owns its curation: the plugin seeds those rules on collection
+creation and the manager renders them read-only with a "declared in config"
+notice. A collection that is silent about curation is control-panel-owned and
+editable by anyone holding `typesense:manageCuration`. There is no ownership
+setting. See `docs/synonyms.md` for the shared ownership model and the seeding
+workflow.
 
 ## The rule editor
 
@@ -60,7 +61,7 @@ The panel is shown only when all of these hold:
 
 - the plugin is running the Pro edition;
 - the current user holds `typesense:manageCuration`;
-- the element is a member of at least one control-panel-managed curation
-  collection.
+- the element is a member of at least one control-panel-owned curation collection
+  (one that does not declare its curation in config).
 
 Otherwise it renders nothing (including in Free).

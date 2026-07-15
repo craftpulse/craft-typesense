@@ -72,7 +72,7 @@ it('forbids ops actions on the Free edition (server-side edition gate)', functio
     });
 });
 
-it('forbids ops actions for a user without manageCollections', function() {
+it('forbids ops actions for a user without manageOps', function() {
     $suffix = bin2hex(random_bytes(4));
     $user = new User();
     $user->username = "ts_noops_{$suffix}";

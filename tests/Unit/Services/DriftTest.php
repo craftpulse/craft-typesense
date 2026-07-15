@@ -113,7 +113,6 @@ it('reports in sync when declared and live schemas match', function() {
 it('detects synonyms drift for a config-managed collection, then clears once seeded', function() {
     $declared = Collection::make(DRIFT_TEST_COLLECTION)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-        ->synonyms(\craftpulse\typesense\models\Settings::MANAGED_BY_CONFIG)
         ->synonymDefinitions([['id' => 'outerwear', 'synonyms' => ['coat', 'jacket']]])
         ->fields(Field::string('title'));
 

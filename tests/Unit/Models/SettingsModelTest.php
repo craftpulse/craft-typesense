@@ -3,7 +3,7 @@
  * Typesense plugin for Craft CMS 5.x
  *
  * Covers the settings model: required-attribute rules, the single-node and
- * cluster/cloud conditional requirements, the server-type and managedBy range
+ * cluster/cloud conditional requirements, the server-type range
  * checks, the numeric-or-env validator for resilience settings, and the
  * environment-placeholder parsing wired through EnvAttributeParserBehavior.
  *
@@ -49,14 +49,6 @@ it('rejects an unknown server type', function() {
 
     expect($settings->validate(['serverType']))->toBeFalse()
         ->and($settings->hasErrors('serverType'))->toBeTrue();
-});
-
-it('rejects an unknown managedBy value', function() {
-    $settings = new Settings();
-    $settings->synonymsManagedBy = 'whoever';
-
-    expect($settings->validate(['synonymsManagedBy']))->toBeFalse()
-        ->and($settings->hasErrors('synonymsManagedBy'))->toBeTrue();
 });
 
 it('accepts numeric and env values for resilience settings but rejects garbage', function() {

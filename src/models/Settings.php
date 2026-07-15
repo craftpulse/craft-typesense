@@ -18,8 +18,8 @@ use craft\behaviors\EnvAttributeParserBehavior;
  * Typesense settings model.
  *
  * Backs the plugin's project-config settings: connection (single node, cluster,
- * or Typesense Cloud), client resilience, queue options, per-feature managedBy
- * defaults, analytics opt-in, and the collection
+ * or Typesense Cloud), client resilience, queue options, analytics opt-in, and
+ * the collection
  * name prefix. Connection and numeric values support environment variables via
  * EnvAttributeParserBehavior and resolve through craft\helpers\App::parseEnv().
  *
@@ -46,16 +46,6 @@ class Settings extends Model
      * @var string Typesense Cloud connection.
      */
     public const SERVER_TYPE_CLOUD = 'cloud';
-
-    /**
-     * @var string A feature's state is owned by the config file (seed and enforce).
-     */
-    public const MANAGED_BY_CONFIG = 'config';
-
-    /**
-     * @var string A feature's state is owned by the control panel (seed then CP owns).
-     */
-    public const MANAGED_BY_CP = 'cp';
 
     // Public Properties
     // =========================================================================
@@ -136,21 +126,6 @@ class Settings extends Model
     public int $queuePriority = 1024;
 
     /**
-     * @var string The default owner of synonym state.
-     */
-    public string $synonymsManagedBy = self::MANAGED_BY_CONFIG;
-
-    /**
-     * @var string The default owner of curation state.
-     */
-    public string $curationManagedBy = self::MANAGED_BY_CONFIG;
-
-    /**
-     * @var string The default owner of search-preset state.
-     */
-    public string $presetsManagedBy = self::MANAGED_BY_CONFIG;
-
-    /**
      * @var bool Whether search analytics collection is opted into by default.
      */
     public bool $analyticsEnabled = false;
@@ -223,20 +198,6 @@ class Settings extends Model
             self::SERVER_TYPE_SINGLE,
             self::SERVER_TYPE_CLUSTER,
             self::SERVER_TYPE_CLOUD,
-        ];
-    }
-
-    /**
-     * Returns the list of managedBy options.
-     *
-     * @return array<int, string>
-     * @author CraftPulse
-     */
-    public static function managedByOptions(): array
-    {
-        return [
-            self::MANAGED_BY_CONFIG,
-            self::MANAGED_BY_CP,
         ];
     }
 
@@ -318,11 +279,6 @@ class Settings extends Model
         $rules[] = [['syncAlertsEnabled'], 'boolean'];
         $rules[] = [['apiKey', 'serverType'], 'required'];
         $rules[] = [['serverType'], 'in', 'range' => self::serverTypeOptions()];
-        $rules[] = [
-            ['synonymsManagedBy', 'curationManagedBy', 'presetsManagedBy'],
-            'in',
-            'range' => self::managedByOptions(),
-        ];
         $rules[] = [['analyticsEnabled', 'analyticsUserIdEnabled'], 'boolean'];
         $rules[] = [['queuePriority', 'analyticsRetentionDays'], 'integer', 'min' => 0];
         $rules[] = [

@@ -14,9 +14,9 @@ The Drift service reports it so you are never guessing.
 - **Schema**: declared fields versus the live collection's fields, per resolved
   target. It reports missing fields (declared but not live), extra fields (a
   manual server-side edit), and type mismatches.
-- **Synonyms and curation**: for config-managed collections, declared rule IDs
-  versus the live set. A live-only rule and a missing declared rule are both
-  drift.
+- **Synonyms and curation**: for collections that own those features in config,
+  declared rule IDs versus the live set. A live-only rule and a missing declared
+  rule are both drift.
 - **Preset**: the declared preset value versus the live preset.
 
 ## Statuses

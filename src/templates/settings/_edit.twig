@@ -16,16 +16,10 @@
     (settings.SERVER_TYPE_CLOUD): 'Typesense Cloud'|t('typesense'),
 } %}
 
-{% set managedByOptions = {
-    (settings.MANAGED_BY_CONFIG): 'Config file'|t('typesense'),
-    (settings.MANAGED_BY_CP): 'Control panel'|t('typesense'),
-} %}
-
 {% set tabs = {
     connection: { label: 'Connection'|t('typesense'), url: '#connection' },
     resilience: { label: 'Resilience'|t('typesense'), url: '#resilience' },
     syncQueue: { label: 'Sync and queue'|t('typesense'), url: '#syncQueue' },
-    ownership: { label: 'Ownership'|t('typesense'), url: '#ownership' },
     analytics: { label: 'Analytics'|t('typesense'), url: '#analytics' },
 } %}
 {% set selectedTab = 'connection' %}
@@ -249,41 +243,6 @@
             type: 'number',
             value: settings.queuePriority,
             errors: settings.getErrors('queuePriority'),
-            disabled: readOnly,
-        }) }}
-    </div>
-
-    <div id="ownership" class="hidden">
-        {{ forms.selectField({
-            label: 'Synonyms managed by'|t('typesense'),
-            instructions: 'Who owns synonym state by default. A config-file override always wins.'|t('typesense'),
-            id: 'synonymsManagedBy',
-            name: 'settings[synonymsManagedBy]',
-            options: managedByOptions,
-            value: settings.synonymsManagedBy,
-            errors: settings.getErrors('synonymsManagedBy'),
-            disabled: readOnly,
-        }) }}
-
-        {{ forms.selectField({
-            label: 'Curation managed by'|t('typesense'),
-            instructions: 'Who owns curation state by default. A config-file override always wins.'|t('typesense'),
-            id: 'curationManagedBy',
-            name: 'settings[curationManagedBy]',
-            options: managedByOptions,
-            value: settings.curationManagedBy,
-            errors: settings.getErrors('curationManagedBy'),
-            disabled: readOnly,
-        }) }}
-
-        {{ forms.selectField({
-            label: 'Presets managed by'|t('typesense'),
-            instructions: 'Who owns search-preset state by default. A config-file override always wins.'|t('typesense'),
-            id: 'presetsManagedBy',
-            name: 'settings[presetsManagedBy]',
-            options: managedByOptions,
-            value: settings.presetsManagedBy,
-            errors: settings.getErrors('presetsManagedBy'),
             disabled: readOnly,
         }) }}
     </div>

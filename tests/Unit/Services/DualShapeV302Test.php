@@ -16,7 +16,6 @@
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\enums\MultisiteStrategy;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\Typesense;
 
@@ -63,7 +62,6 @@ it('seeds, lists and clears synonyms through the global synonym_sets path', func
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)
             ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-            ->synonyms(Settings::MANAGED_BY_CONFIG)
             ->synonymDefinitions([['id' => 'outerwear', 'synonyms' => ['blazer', 'coat', 'jacket']]]);
         $synonyms = Typesense::$plugin->getSynonyms();
 
@@ -85,7 +83,6 @@ it('seeds, lists and clears curation through the global curation_sets path', fun
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)
             ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-            ->curation(Settings::MANAGED_BY_CONFIG)
             ->curationRules([
                 [
                     'id' => 'pin-coat',
@@ -209,8 +206,7 @@ it('clones a collection schema via src_name on the 30.2 server', function() {
 it('upserts, lists, and deletes a synonym through the global synonym_sets path', function() {
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)
-            ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-            ->synonyms(Settings::MANAGED_BY_CP);
+            ->multisite(MultisiteStrategy::SharedWithSiteFilter);
         $synonyms = Typesense::$plugin->getSynonyms();
 
         expect($synonyms->usesSets())->toBeTrue();
@@ -234,8 +230,7 @@ it('upserts, lists, and deletes a synonym through the global synonym_sets path',
 it('upserts, lists, and deletes a curation rule through the global curation_sets path', function() {
     withV302(function() {
         $collection = Collection::make(V302_TEST_COLLECTION)
-            ->multisite(MultisiteStrategy::SharedWithSiteFilter)
-            ->curation(\craftpulse\typesense\models\Settings::MANAGED_BY_CP);
+            ->multisite(MultisiteStrategy::SharedWithSiteFilter);
         $curation = Typesense::$plugin->getCuration();
 
         expect($curation->usesSets())->toBeTrue();

@@ -13,7 +13,6 @@ namespace craftpulse\typesense\controllers;
 use Craft;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -169,8 +168,7 @@ class SynonymsController extends ProController
         return $this->renderTemplate('typesense/synonyms/_list', [
             'handle' => $collection,
             'synonyms' => $synonyms->all($model),
-            'editable' => $synonyms->getManagedBy($model) === Settings::MANAGED_BY_CP,
-            'overridden' => $synonyms->isConfigOverridden($model),
+            'editable' => !$synonyms->isConfigOwned($model),
         ]);
     }
 
@@ -190,7 +188,7 @@ class SynonymsController extends ProController
     {
         $collection = $this->_requireCollection($handle);
 
-        if (Typesense::$plugin->getSynonyms()->getManagedBy($collection) !== Settings::MANAGED_BY_CP) {
+        if (Typesense::$plugin->getSynonyms()->isConfigOwned($collection)) {
             throw new NotFoundHttpException('This collection’s synonyms are managed by config.');
         }
 

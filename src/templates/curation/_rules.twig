@@ -4,7 +4,6 @@
    @var handle     string
    @var rules      array
    @var editable   bool   whether this collection's curation is CP-managed
-   @var overridden bool   whether a per-collection config override is in force
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 {% set title = handle ~ ' ' ~ ('curation'|t('typesense')) %}
@@ -20,11 +19,7 @@
 {% block content %}
     {% if not editable %}
         <blockquote class="note">
-            {% if overridden %}
-                {{ 'This collection’s curation is managed by the config file (overridden). It is read-only here.'|t('typesense') }}
-            {% else %}
-                {{ 'This collection’s curation is managed by config. It is read-only here.'|t('typesense') }}
-            {% endif %}
+            {{ 'This collection declares its curation rules in config. They are read-only here.'|t('typesense') }}
         </blockquote>
     {% endif %}
 

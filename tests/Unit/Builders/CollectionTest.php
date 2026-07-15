@@ -101,16 +101,12 @@ it('holds sync options and defaults', function() {
         ->and($collection->getActiveStatuses())->toBe(['live']);
 });
 
-it('holds managedBy overrides, preset, and computed fields', function() {
+it('holds a preset and computed fields', function() {
     $collection = Collection::make('heroes')
-        ->synonyms('cp')
-        ->curation('config')
         ->preset(['per_page' => 20])
         ->computedFields('readingTime', 'popularity');
 
-    expect($collection->getSynonymsManagedBy())->toBe('cp')
-        ->and($collection->getCurationManagedBy())->toBe('config')
-        ->and($collection->getPreset())->toBe(['per_page' => 20])
+    expect($collection->getPreset())->toBe(['per_page' => 20])
         ->and($collection->getComputedFieldNames())->toBe(['readingTime', 'popularity']);
 });
 

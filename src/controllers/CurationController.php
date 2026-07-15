@@ -13,7 +13,6 @@ namespace craftpulse\typesense\controllers;
 use Craft;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
-use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -178,8 +177,7 @@ class CurationController extends ProController
         return $this->renderTemplate('typesense/curation/_rules', [
             'handle' => $collection,
             'rules' => $curation->all($model),
-            'editable' => $curation->getManagedBy($model) === Settings::MANAGED_BY_CP,
-            'overridden' => $curation->isConfigOverridden($model),
+            'editable' => !$curation->isConfigOwned($model),
         ]);
     }
 
@@ -225,7 +223,7 @@ class CurationController extends ProController
     {
         $collection = $this->_requireCollection($handle);
 
-        if (Typesense::$plugin->getCuration()->getManagedBy($collection) !== Settings::MANAGED_BY_CP) {
+        if (Typesense::$plugin->getCuration()->isConfigOwned($collection)) {
             throw new NotFoundHttpException('This collection’s curation is managed by config.');
         }
 
