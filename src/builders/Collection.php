@@ -57,10 +57,12 @@ class Collection
     private array $_elementQueries = [];
 
     /**
-     * @var array<int, array{handle: string, elementType: class-string, query: callable}>
+     * @var array<int, array{handle: string, elementType: class-string, query: callable, mapping: FieldMapping[]}>
      * The union member sources. Empty for a regular collection. Each member has a
-     * unique handle (the `_elementType` discriminator value), an element type, and
-     * an element-query callable. Read through [[getMembers()]].
+     * unique handle (the `_elementType` discriminator value), an element type, an
+     * element-query callable, and its own generated-path field mappings (the
+     * document keys the compiler resolved for that member, merged or namespaced
+     * against the other members). Read through [[getMembers()]].
      */
     private array $_members = [];
 
@@ -220,14 +222,15 @@ class Collection
      * @param class-string $elementType
      * @param callable $query the element-query callable, as in [[elementQuery()]]
      * @param string|null $handle
+     * @param FieldMapping[] $mapping the member's generated-path field mappings
      * @return self
      * @author CraftPulse
      */
-    public function addMember(string $elementType, callable $query, ?string $handle = null): self
+    public function addMember(string $elementType, callable $query, ?string $handle = null, array $mapping = []): self
     {
         $parts = explode('\\', $elementType);
         $handle ??= lcfirst((string)end($parts)) . (string)(count($this->_members) + 1);
-        $this->_members[] = ['handle' => $handle, 'elementType' => $elementType, 'query' => $query];
+        $this->_members[] = ['handle' => $handle, 'elementType' => $elementType, 'query' => $query, 'mapping' => array_values($mapping)];
 
         return $this;
     }
@@ -236,7 +239,7 @@ class Collection
      * Sets all union members at once. Each entry is a map of `handle`,
      * `elementType`, and `query` (the element-query callable).
      *
-     * @param array<int, array{handle: string, elementType: class-string, query: callable}> $members
+     * @param array<int, array{handle: string, elementType: class-string, query: callable, mapping: FieldMapping[]}> $members
      * @return self
      * @author CraftPulse
      */
@@ -652,10 +655,10 @@ class Collection
     }
 
     /**
-     * The union member sources, each a map of `handle`, `elementType`, and
-     * `query` (the element-query callable).
+     * The union member sources, each a map of `handle`, `elementType`, `query`
+     * (the element-query callable), and `mapping` (the member's field mappings).
      *
-     * @return array<int, array{handle: string, elementType: class-string, query: callable}>
+     * @return array<int, array{handle: string, elementType: class-string, query: callable, mapping: FieldMapping[]}>
      * @author CraftPulse
      */
     public function getMembers(): array

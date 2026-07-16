@@ -175,9 +175,7 @@ class Sync extends Component
         $suspend = Typesense::$plugin->getSyncSuspend();
 
         foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
-            $type = $collection->getElementType();
-
-            if (!$element instanceof $type) {
+            if (!$this->_matchesCollectionType($collection, $element)) {
                 continue;
             }
 
@@ -213,9 +211,7 @@ class Sync extends Component
         $suspend = Typesense::$plugin->getSyncSuspend();
 
         foreach (Typesense::$plugin->getCollectionRegistry()->getAll() as $collection) {
-            $type = $collection->getElementType();
-
-            if (!$element instanceof $type) {
+            if (!$this->_matchesCollectionType($collection, $element)) {
                 continue;
             }
 
@@ -524,8 +520,7 @@ class Sync extends Component
         }
 
         $documents = Typesense::$plugin->getDocuments();
-        $type = $collection->getElementType();
-        $elements = $type::find()->id($elementIds)->siteId($siteId)->status(null)->indexBy('id')->all();
+        $elements = $this->_loadElements($collection, $elementIds, $siteId);
 
         $upserts = [];
         $deletes = [];
@@ -714,6 +709,24 @@ class Sync extends Component
      */
     public function buildQueriesForSite(Collection $collection, int $siteId): array
     {
+        // A union collection scopes one query per member (each member's element
+        // type and its query), so membership and full-sync span all members.
+        if ($collection->isUnion()) {
+            $queries = [];
+
+            foreach ($collection->getMembers() as $member) {
+                $memberType = $member['elementType'];
+                $query = ($member['query'])($memberType::find()->siteId($siteId)->status(null));
+
+                if ($query instanceof ElementQueryInterface) {
+                    $query->orderBy(['elements.id' => SORT_ASC]);
+                    $queries[] = $query;
+                }
+            }
+
+            return $queries;
+        }
+
         $type = $collection->getElementType();
         $queries = [];
 
@@ -746,6 +759,70 @@ class Sync extends Component
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Whether an element's type is one this collection indexes: the collection's
+     * element type for a regular collection, or any member's type for a union.
+     *
+     * @param Collection $collection
+     * @param ElementInterface $element
+     * @return bool
+     * @author CraftPulse
+     */
+    private function _matchesCollectionType(Collection $collection, ElementInterface $element): bool
+    {
+        if (!$collection->isUnion()) {
+            $type = $collection->getElementType();
+
+            return $element instanceof $type;
+        }
+
+        foreach ($collection->getMembers() as $member) {
+            $type = $member['elementType'];
+
+            if ($element instanceof $type) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * Loads elements by id for indexing, keyed by id. A regular collection loads
+     * its single element type in one query; a union collection may span several
+     * element types, so it resolves each element by id, type-agnostically.
+     *
+     * @param Collection $collection
+     * @param array<int, int> $elementIds
+     * @param int $siteId
+     * @return array<int, ElementInterface>
+     * @author CraftPulse
+     */
+    private function _loadElements(Collection $collection, array $elementIds, int $siteId): array
+    {
+        if (!$collection->isUnion()) {
+            $type = $collection->getElementType();
+
+            return $type::find()->id($elementIds)->siteId($siteId)->status(null)->indexBy('id')->all();
+        }
+
+        // A union may span several element types. Query each distinct member type
+        // for the id set (an id only matches its own type's query), and merge.
+        $elements = [];
+        $types = array_unique(array_map(
+            static fn(array $member): string => $member['elementType'],
+            $collection->getMembers(),
+        ));
+
+        foreach ($types as $type) {
+            foreach ($type::find()->id($elementIds)->siteId($siteId)->status(null)->indexBy('id')->all() as $id => $element) {
+                $elements[$id] = $element;
+            }
+        }
+
+        return $elements;
+    }
 
     /**
      * @return Settings

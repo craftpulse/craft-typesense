@@ -60,45 +60,38 @@ class Compiler extends Component
             ->searchable($definition->searchable)
             ->multisite(MultisiteStrategy::tryFrom($definition->multisite) ?? MultisiteStrategy::SharedWithSiteFilter);
 
-        $query = $this->_elementQuery($definition);
-
-        if ($query !== null) {
-            $collection->elementQuery($query);
-        }
-
         $fields = [];
         $mappings = [];
         $queryBy = [];
         $weights = [];
         $descriptions = [];
 
-        // Every element placed in the mapping layout is an indexed field; the
-        // element carries its own resolved type and per-field settings.
-        foreach ($definition->getFieldLayout()->getTabs() as $tab) {
-            foreach ($tab->getElements() as $element) {
-                if (!$element instanceof MappingElementInterface) {
-                    continue;
+        if ($definition->isUnion()) {
+            // A union compiles each member's field set, resolves collisions across
+            // members (merge same handle+type, namespace on a type mismatch), and
+            // attaches per-member queries and mappings. The document path selects
+            // the matching member's mapping and stamps the discriminator.
+            [$fields, $queryBy, $weights, $descriptions] = $this->_compileUnion($definition, $collection);
+        } else {
+            $query = $this->_elementQuery($definition);
+
+            if ($query !== null) {
+                $collection->elementQuery($query);
+            }
+
+            // Every element placed in the mapping layout is an indexed field; the
+            // element carries its own resolved type and per-field settings.
+            foreach ($this->_layoutItems($definition->getFieldLayout()) as $item) {
+                $fields[] = $this->_field($item['key'], $item['type'], $item['settings']);
+                $mappings[] = $this->_mapping($item['key'], $item['type'], $item['kind']);
+
+                if (in_array($item['type'], ['string', 'string[]'], true) && (int)($item['settings']['weight'] ?? 0) > 0) {
+                    $queryBy[] = $item['key'];
+                    $weights[] = (int)$item['settings']['weight'];
                 }
 
-                $key = $element->tsHandle();
-
-                if ($key === '') {
-                    continue;
-                }
-
-                $type = $element->tsResolvedType();
-                $settings = $element->tsFieldSettings();
-
-                $fields[] = $this->_field($key, $type, $settings);
-                $mappings[] = $this->_mapping($key, $type, $element->tsKind());
-
-                if (in_array($type, ['string', 'string[]'], true) && (int)($settings['weight'] ?? 0) > 0) {
-                    $queryBy[] = $key;
-                    $weights[] = (int)$settings['weight'];
-                }
-
-                if (!empty($settings['description'])) {
-                    $descriptions[$key] = (string)$settings['description'];
+                if (!empty($item['settings']['description'])) {
+                    $descriptions[$item['key']] = (string)$item['settings']['description'];
                 }
             }
         }
@@ -175,6 +168,106 @@ class Compiler extends Component
     // =========================================================================
 
     /**
+     * Compiles a union collection's members onto the collection (per-member query
+     * and mapping) and returns the resolved union schema field set plus the shared
+     * query-by, weights, and descriptions. Field collisions across members merge
+     * when the document key and type match, and namespace (memberHandle_key) on a
+     * type mismatch; the explicit output handle already comes from each mapping
+     * element's tsHandle. Adds the reserved discriminator fields.
+     *
+     * @param CollectionDefinition $definition
+     * @param Collection $collection
+     * @return array{0: Field[], 1: array<int, string>, 2: array<int, int>, 3: array<string, string>}
+     * @author CraftPulse
+     */
+    private function _compileUnion(CollectionDefinition $definition, Collection $collection): array
+    {
+        $fields = [];
+        $queryBy = [];
+        $weights = [];
+        $descriptions = [];
+        $unionTypes = [];
+
+        foreach ($definition->getMemberModels() as $member) {
+            $memberMappings = [];
+
+            foreach ($this->_layoutItems($member->getFieldLayout()) as $item) {
+                $key = $item['key'];
+                $type = $item['type'];
+
+                // Type mismatch on an already-claimed key: namespace this member's
+                // field. Same key and type merges into one shared field.
+                if (isset($unionTypes[$key]) && $unionTypes[$key] !== $type) {
+                    $key = $member->handle . '_' . $item['key'];
+                }
+
+                if (!isset($unionTypes[$key])) {
+                    $unionTypes[$key] = $type;
+                    $fields[] = $this->_field($key, $type, $item['settings']);
+
+                    if (in_array($type, ['string', 'string[]'], true) && (int)($item['settings']['weight'] ?? 0) > 0) {
+                        $queryBy[] = $key;
+                        $weights[] = (int)$item['settings']['weight'];
+                    }
+
+                    if (!empty($item['settings']['description'])) {
+                        $descriptions[$key] = (string)$item['settings']['description'];
+                    }
+                }
+
+                $memberMappings[] = $this->_mapping($key, $type, $item['kind']);
+            }
+
+            $query = $this->_memberQuery($member->elementType, $member->source, $member->sourceType)
+                ?? static fn($q) => $q;
+            $collection->addMember($member->elementType, $query, $member->handle, $memberMappings);
+        }
+
+        // The reserved discriminator fields a union filters and facets by.
+        $fields[] = Field::make(Documents::FIELD_ELEMENT_TYPE, 'string')->facet()->optional();
+        $fields[] = Field::make(Documents::FIELD_ELEMENT_CLASS, 'string')->facet()->optional();
+
+        return [$fields, $queryBy, $weights, $descriptions];
+    }
+
+    /**
+     * The indexed mapping items of a field layout: the document key, resolved
+     * Typesense type, per-field settings, and mapping kind for each placed
+     * mapping element.
+     *
+     * @param \craft\models\FieldLayout $layout
+     * @return array<int, array{key: string, type: string, settings: array<string, mixed>, kind: string}>
+     * @author CraftPulse
+     */
+    private function _layoutItems(\craft\models\FieldLayout $layout): array
+    {
+        $items = [];
+
+        foreach ($layout->getTabs() as $tab) {
+            foreach ($tab->getElements() as $element) {
+                if (!$element instanceof MappingElementInterface) {
+                    continue;
+                }
+
+                $key = $element->tsHandle();
+
+                if ($key === '') {
+                    continue;
+                }
+
+                $items[] = [
+                    'key' => $key,
+                    'type' => $element->tsResolvedType(),
+                    'settings' => $element->tsFieldSettings(),
+                    'kind' => $element->tsKind(),
+                ];
+            }
+        }
+
+        return $items;
+    }
+
+    /**
      * Builds the element query callable that scopes a definition to its source.
      *
      * @param CollectionDefinition $definition
@@ -183,19 +276,30 @@ class Compiler extends Component
      */
     private function _elementQuery(CollectionDefinition $definition): ?callable
     {
-        $source = $definition->source;
+        return $this->_memberQuery($definition->elementType, $definition->source, $definition->sourceType);
+    }
 
+    /**
+     * Builds the element query callable that scopes an element type and source to
+     * its members. Shared by regular collections and union members.
+     *
+     * @param class-string $type
+     * @param string|null $source
+     * @param string $sourceType
+     * @return callable|null
+     * @author CraftPulse
+     */
+    private function _memberQuery(string $type, ?string $source, string $sourceType): ?callable
+    {
         if ($source === null || $source === '') {
             return null;
         }
-
-        $type = $definition->elementType;
 
         // An entry-type source indexes a single entry type directly, including a
         // sectionless (nested Matrix / CKEditor) entry type. A plain type() query
         // returns nested entries without any owner or field scoping (verified
         // against the playground: ->type(nestedHandle) returns the nested rows).
-        if (is_a($type, Entry::class, true) && $definition->sourceType === CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE) {
+        if (is_a($type, Entry::class, true) && $sourceType === CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE) {
             return static fn($query) => $query->type($source);
         }
 

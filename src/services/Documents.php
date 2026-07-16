@@ -64,6 +64,18 @@ class Documents extends Component
     public const FIELD_SITE_ID = 'siteId';
 
     /**
+     * @var string The reserved document key carrying a union member's handle (the
+     * discriminator a union collection filters and facets by). Union only.
+     */
+    public const FIELD_ELEMENT_TYPE = '_elementType';
+
+    /**
+     * @var string The reserved document key carrying the source element's class
+     * short name, an informational sibling to the member handle. Union only.
+     */
+    public const FIELD_ELEMENT_CLASS = '_elementClass';
+
+    /**
      * @var array<int, string> The element statuses treated as indexable by default.
      */
     public const DEFAULT_ACTIVE_STATUSES = ['live', 'enabled'];
@@ -127,6 +139,19 @@ class Documents extends Component
 
         if ($transform !== null) {
             $raw = $transform($element, $registerDependency);
+        } elseif ($collection->isUnion()) {
+            // A union document is built from the matching member's mapping only
+            // (another member's namespaced key would otherwise resolve from this
+            // element), then stamped with the member handle and element class.
+            $member = $this->_matchUnionMember($collection, $element, $siteId);
+
+            if ($member === null) {
+                return new DocumentBuildResult();
+            }
+
+            $raw = $this->buildFromMapping($collection, $element, $member['mapping']);
+            $raw[self::FIELD_ELEMENT_TYPE] = $member['handle'];
+            $raw[self::FIELD_ELEMENT_CLASS] = (new \ReflectionClass($element))->getShortName();
         } else {
             $raw = $this->buildFromMapping($collection, $element);
         }
@@ -154,14 +179,16 @@ class Documents extends Component
      *
      * @param Collection $collection
      * @param ElementInterface $element
+     * @param FieldMapping[]|null $mappingOverride the mapping set to use (a union
+     * member's mappings); null uses the collection's own mappings.
      * @return array<string, mixed>
      * @author CraftPulse
      */
-    public function buildFromMapping(Collection $collection, ElementInterface $element): array
+    public function buildFromMapping(Collection $collection, ElementInterface $element, ?array $mappingOverride = null): array
     {
         $document = [];
 
-        foreach ($collection->getMapping() as $mapping) {
+        foreach ($mappingOverride ?? $collection->getMapping() as $mapping) {
             if (!$mapping->indexed) {
                 continue;
             }
@@ -206,6 +233,45 @@ class Documents extends Component
         }
 
         return $document;
+    }
+
+    /**
+     * The union member an element belongs to: the sole member of the element's
+     * type, or (when members share a type) the first whose query matches the
+     * element. Returns null when no member matches.
+     *
+     * @param Collection $collection
+     * @param ElementInterface $element
+     * @param int $siteId
+     * @return array{handle: string, elementType: class-string, query: callable, mapping: FieldMapping[]}|null
+     * @author CraftPulse
+     */
+    private function _matchUnionMember(Collection $collection, ElementInterface $element, int $siteId): ?array
+    {
+        $candidates = array_values(array_filter(
+            $collection->getMembers(),
+            static fn(array $member): bool => $element instanceof $member['elementType'],
+        ));
+
+        if ($candidates === []) {
+            return null;
+        }
+
+        if (count($candidates) === 1) {
+            return $candidates[0];
+        }
+
+        // Members sharing an element type are disambiguated by their query.
+        foreach ($candidates as $member) {
+            $type = $member['elementType'];
+            $query = ($member['query'])($type::find()->siteId($siteId)->status(null));
+
+            if ($query instanceof ElementQueryInterface && $query->id($element->id)->exists()) {
+                return $member;
+            }
+        }
+
+        return null;
     }
 
     /**
