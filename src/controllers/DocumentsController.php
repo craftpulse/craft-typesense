@@ -84,7 +84,9 @@ class DocumentsController extends Controller
                         foreach($element->getSupportedSites() as $site) {
                             if ($site['siteId'] ?? null) {
                                 $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
-                                $this->handleSave($entry);
+                                if ($entry) {
+                                    $this->handleSave($entry);
+                                }
                             }
                         }
                     }
