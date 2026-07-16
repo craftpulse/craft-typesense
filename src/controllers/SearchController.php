@@ -11,11 +11,17 @@
 namespace craftpulse\typesense\controllers;
 
 use Craft;
+use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use craft\web\View;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\Typesense;
+use starfederation\datastar\Consts;
+use starfederation\datastar\enums\ElementPatchMode;
+use starfederation\datastar\events\PatchElements;
+use starfederation\datastar\events\PatchSignals;
+use starfederation\datastar\ServerSentEventGenerator;
 use yii\web\BadRequestHttpException;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -122,11 +128,23 @@ class SearchController extends Controller
     /**
      * Renders the results, facets, and pagination fragments for a search.
      *
+     * Two transports share this action. A Datastar request (its fetch sends the
+     * `Datastar-Request` header and nests the client signals under a `datastar`
+     * query param) gets an SSE response: one `datastar-patch-elements` frame per
+     * region morphed in place, plus a `datastar-patch-signals` frame carrying the
+     * found count, timing, and the searching flag, so counts update without a DOM
+     * morph. Any other request (a no-JS form GET, a crawler, a direct hit) gets
+     * the plain `text/html` concatenation it always did, reading top-level query
+     * params. The two paths return identical result data; only the wrapper
+     * differs.
+     *
      * @return Response
      * @throws \Twig\Error\LoaderError
      * @throws \Twig\Error\RuntimeError
      * @throws \Twig\Error\SyntaxError
      * @throws \yii\base\Exception
+     * @throws NotFoundHttpException
+     * @throws BadRequestHttpException
      * @author CraftPulse
      */
     public function actionResults(): Response
@@ -143,16 +161,26 @@ class SearchController extends Controller
             throw new NotFoundHttpException('Collection not found.');
         }
 
-        $facets = $request->getParam('facets', []);
-        $facetBy = (string)$request->getParam('facetBy', '');
+        // Datastar nests the client signals (q, page, facets) under a single
+        // `datastar` param; readSignals() decodes it (query param on GET, JSON
+        // body otherwise). It is only read when a Datastar payload is actually
+        // present (readSignals() reads $_GET['datastar'] unguarded, which would
+        // trip Craft's error handler on a plain request). The no-JS path sends no
+        // signals, so each value falls back to its top-level query param. The
+        // collection and the fixed config (queryBy, facetBy, perPage) always
+        // travel as top-level params baked into the endpoint URL, never as
+        // user-controlled signals.
+        $isDatastar = $this->_isDatastarRequest();
+        $signals = ($isDatastar && $this->_hasSignalPayload()) ? ServerSentEventGenerator::readSignals() : [];
+        $facets = $signals['facets'] ?? $request->getParam('facets', []);
 
         $options = [
-            'q' => (string)$request->getParam('q', ''),
-            'facetBy' => $facetBy,
-            'facets' => is_array($facets) ? $facets : [$facets],
+            'q' => (string)($signals['q'] ?? $request->getParam('q', '')),
+            'facetBy' => (string)$request->getParam('facetBy', ''),
+            'facets' => is_array($facets) ? array_values(array_filter($facets, 'is_scalar')) : [$facets],
             'sort' => (string)$request->getParam('sort', ''),
             'queryBy' => (string)$request->getParam('queryBy', ''),
-            'page' => (int)$request->getParam('page', 1),
+            'page' => max(1, (int)($signals['page'] ?? $request->getParam('page', 1))),
             'perPage' => (int)$request->getParam('perPage', 20),
         ];
 
@@ -161,28 +189,120 @@ class SearchController extends Controller
         // sanitisation). Anything else is rejected.
         $this->_assertDeclaredFields($collection, $options);
 
+        $startedAt = microtime(true);
         $result = Typesense::$plugin->getSearch()->frontendSearch($handle, $options);
+        $elapsedMs = (int)round((microtime(true) - $startedAt) * 1000);
 
         $variables = [
             'collection' => $handle,
             'options' => $options,
             'result' => $result,
             'urls' => $this->_resolveUrls($collection, $result),
-            'endpoint' => UrlHelper::actionUrl('typesense/search/results'),
+            'endpoint' => $this->_endpointUrl($handle, $options),
             'trackEndpoint' => UrlHelper::actionUrl('typesense/search/track-event'),
             'csrfToken' => $request->getCsrfToken(),
         ];
 
         $view = Craft::$app->getView();
-        $html = $view->renderTemplate('_typesense/results', $variables, View::TEMPLATE_MODE_SITE)
-            . $view->renderTemplate('_typesense/facets', $variables, View::TEMPLATE_MODE_SITE)
-            . $view->renderTemplate('_typesense/pagination', $variables, View::TEMPLATE_MODE_SITE);
+        $results = $view->renderTemplate('_typesense/results', $variables, View::TEMPLATE_MODE_SITE);
+        $facetsHtml = $view->renderTemplate('_typesense/facets', $variables, View::TEMPLATE_MODE_SITE);
+        $pagination = $view->renderTemplate('_typesense/pagination', $variables, View::TEMPLATE_MODE_SITE);
 
-        return $this->asRaw($html);
+        if ($isDatastar) {
+            return $this->_streamFragments($results, $facetsHtml, $pagination, (int)($result['found'] ?? 0), $elapsedMs);
+        }
+
+        return $this->asRaw($results . $facetsHtml . $pagination);
     }
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Builds the fragment endpoint URL with the fixed search config baked in as
+     * query params. The collection and the queryBy/facetBy/perPage config are
+     * not user-controlled signals, so they travel on the URL; Datastar appends
+     * the client signals (q, page, facets) under its own `datastar` param.
+     *
+     * @param string $handle
+     * @param array<string, mixed> $options
+     * @return string
+     * @author CraftPulse
+     */
+    private function _endpointUrl(string $handle, array $options): string
+    {
+        return UrlHelper::actionUrl('typesense/search/results', array_filter([
+            'collection' => $handle,
+            'queryBy' => (string)$options['queryBy'],
+            'facetBy' => (string)$options['facetBy'],
+            'perPage' => (string)$options['perPage'],
+        ], static fn(string $value): bool => $value !== ''));
+    }
+
+    /**
+     * Whether the request carries a Datastar signal payload to decode: the
+     * `datastar` query param on a GET or DELETE, or a request body otherwise.
+     * Guards the SDK's readSignals(), which reads $_GET['datastar'] unguarded.
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    private function _hasSignalPayload(): bool
+    {
+        if ($this->request->getIsGet() || $this->request->getIsDelete()) {
+            return $this->request->getQueryParam(Consts::DATASTAR_KEY) !== null;
+        }
+
+        return $this->request->getRawBody() !== '';
+    }
+
+    /**
+     * Whether this is a Datastar fetch (its client sends the `Datastar-Request`
+     * header on every request), which selects the SSE transport.
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    private function _isDatastarRequest(): bool
+    {
+        return $this->request->getHeaders()->has('Datastar-Request');
+    }
+
+    /**
+     * Streams the three region fragments as Datastar SSE patch-elements events
+     * (each morphed in place by its stable id) plus a patch-signals event
+     * carrying the found count, elapsed milliseconds, and the cleared searching
+     * flag. The body is assembled and returned as one text/event-stream response
+     * (a search morph is a short, one-shot patch, not a long-lived stream), so
+     * Craft sends the SSE headers and body through its normal response pipeline.
+     *
+     * @param string $results
+     * @param string $facets
+     * @param string $pagination
+     * @param int $found
+     * @param int $elapsedMs
+     * @return Response
+     * @author CraftPulse
+     */
+    private function _streamFragments(string $results, string $facets, string $pagination, int $found, int $elapsedMs): Response
+    {
+        $body = (new PatchElements($results, ['selector' => '#ts-results', 'mode' => ElementPatchMode::Outer]))->getOutput()
+            . (new PatchElements($facets, ['selector' => '#ts-facets', 'mode' => ElementPatchMode::Outer]))->getOutput()
+            . (new PatchElements($pagination, ['selector' => '#ts-pagination', 'mode' => ElementPatchMode::Outer]))->getOutput()
+            . (new PatchSignals(Json::encode([
+                'tsFound' => $found,
+                'tsMs' => $elapsedMs,
+                'tsSearching' => false,
+            ])))->getOutput();
+
+        $headers = $this->response->getHeaders();
+
+        foreach (ServerSentEventGenerator::headers() as $name => $value) {
+            $headers->set($name, $value);
+        }
+
+        return $this->asRaw($body);
+    }
 
     /**
      * Resolves the element URL for each hit, batched into one element query per

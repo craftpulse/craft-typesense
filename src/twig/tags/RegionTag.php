@@ -127,7 +127,16 @@ class RegionTag extends BaseTag
         ];
 
         $collection = (string)($this->config['collection'] ?? '');
-        $endpoint = UrlHelper::actionUrl('typesense/search/results');
+
+        // The fixed search config rides the endpoint URL, not the client
+        // signals; Datastar appends q, page, and facets under its `datastar`
+        // param when it fetches this region.
+        $endpoint = UrlHelper::actionUrl('typesense/search/results', array_filter([
+            'collection' => $collection,
+            'queryBy' => $options['queryBy'],
+            'facetBy' => $options['facetBy'],
+            'perPage' => (string)$options['perPage'],
+        ], static fn(string $value): bool => $value !== ''));
         $result = $collection !== '' ? Typesense::$plugin->getSearch()->frontendSearch($collection, $options) : [];
         $variables = compact('collection', 'endpoint', 'options', 'result');
 

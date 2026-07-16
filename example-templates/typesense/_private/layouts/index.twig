@@ -5,12 +5,17 @@
    skip link, a small header nav, flash notices, and the two CDN scripts the
    demos need.
 
-   Styling is Tailwind from its Play CDN, the same throwaway-demo approach Craft
-   Commerce's example templates take: utility classes on the markup, one script
-   below. Interactivity is Datastar (pinned to v1.0.2), a ~10kb hypermedia
-   library that drives requests from data-* attributes and morphs the HTML
-   fragments the plugin's search endpoint returns. Neither is a build step;
-   swap both for your own pipeline when you integrate.
+   Styling is Tailwind CSS from a CDN, the same approach as Craft Commerce's
+   example templates: utility classes on the markup, one stylesheet link below.
+   Swap the link for your own build (or replace this layout entirely with your
+   site's) when you integrate. A static stylesheet (not the Play CDN JS runtime)
+   means the pages are styled even with JavaScript disabled.
+
+   Interactivity is Datastar (pinned to v1.0.2), a ~10kb hypermedia library that
+   drives requests from data-* attributes and applies the SSE patches the
+   plugin's search endpoint streams back (patch-elements per region, plus a
+   patch-signals for the count and timing). It is not a build step; swap it for
+   your own pipeline when you integrate.
 
    The bundle assumes it lives at templates/typesense/. Every path and URL in it
    starts with typesense/. Renaming the folder on install rewrites those.
@@ -35,7 +40,7 @@
     <meta name="csrf-token" content="{{ craft.app.request.csrfToken }}">
     <title>{{ (title ?? 'Search'|t('typesense')) ~ ' - ' ~ siteName }}</title>
 
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://unpkg.com/tailwindcss@^2/dist/tailwind.min.css" rel="stylesheet">
     <script type="module" src="https://cdn.jsdelivr.net/gh/starfederation/datastar@v1.0.2/bundles/datastar.js"></script>
 
     {% if extraHead is defined %}

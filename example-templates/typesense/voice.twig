@@ -16,7 +16,7 @@
 {% extends 'typesense/_private/layouts/index' %}
 
 {% set title = 'Voice search'|t('typesense') %}
-{% set endpoint = craft.typesense.searchEndpoint() %}
+{% set endpoint = craft.typesense.searchEndpoint({ collection: 'heroes', queryBy: 'title,slug', perPage: 10 }) %}
 
 {% block main %}
     <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Voice search'|t('typesense') }}</h1>

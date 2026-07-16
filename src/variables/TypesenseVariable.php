@@ -207,16 +207,29 @@ class TypesenseVariable
     }
 
     /**
-     * Returns the fragment endpoint URL for hand-rolled Datastar forms. Using
-     * this instead of writing the action path as a literal keeps the example
-     * templates safe to install under a renamed folder.
+     * Returns the fragment endpoint URL for hand-rolled Datastar forms. Pass the
+     * fixed search config (collection, queryBy, facetBy, perPage) so it rides the
+     * URL as query params; Datastar appends the client signals (q, page, facets)
+     * under its own `datastar` param when it fetches. Using this instead of
+     * writing the action path as a literal keeps the example templates safe to
+     * install under a renamed folder.
      *
+     * {{ craft.typesense.searchEndpoint({ collection: 'products', queryBy: 'title', perPage: 6 }) }}
+     *
+     * @param array<string, mixed> $config
      * @return string
      * @author CraftPulse
      */
-    public function searchEndpoint(): string
+    public function searchEndpoint(array $config = []): string
     {
-        return UrlHelper::actionUrl('typesense/search/results');
+        $params = array_filter([
+            'collection' => (string)($config['collection'] ?? ''),
+            'queryBy' => (string)($config['queryBy'] ?? ''),
+            'facetBy' => (string)($config['facetBy'] ?? ''),
+            'perPage' => isset($config['perPage']) ? (string)$config['perPage'] : '',
+        ], static fn(string $value): bool => $value !== '');
+
+        return UrlHelper::actionUrl('typesense/search/results', $params);
     }
 
     /**

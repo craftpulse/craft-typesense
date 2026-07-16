@@ -143,13 +143,28 @@ class SearchFormTag extends BaseTag
         ];
 
         $collection = (string)($this->config['collection'] ?? '');
-        $endpoint = UrlHelper::actionUrl('typesense/search/results');
         $result = $collection !== '' ? Typesense::$plugin->getSearch()->frontendSearch($collection, $options) : [];
 
+        // The fixed search config (collection, queryBy, facetBy, perPage) rides
+        // the endpoint URL, not the client signals; Datastar appends q, page, and
+        // facets under its own `datastar` param when it fetches.
+        $endpoint = UrlHelper::actionUrl('typesense/search/results', array_filter([
+            'collection' => $collection,
+            'queryBy' => $options['queryBy'],
+            'facetBy' => $options['facetBy'],
+            'perPage' => (string)$options['perPage'],
+        ], static fn(string $value): bool => $value !== ''));
+
+        // tsFound and tsMs are patched by the SSE response so the status line
+        // updates without morphing a region; tsSearching is toggled by the
+        // input's data-indicator during the fetch.
         $signals = Json::encode([
             'q' => $options['q'],
             'page' => $options['page'],
             'facets' => $options['facets'],
+            'tsFound' => (int)($result['found'] ?? 0),
+            'tsMs' => 0,
+            'tsSearching' => false,
         ]);
 
         $formAttrs = Html::renderTagAttributes([
@@ -161,9 +176,10 @@ class SearchFormTag extends BaseTag
         ]);
 
         $input = $this->_inputHtml($collection, $endpoint, $options);
+        $status = $this->_statusHtml($result);
         $regions = $this->_regionsHtml($collection, $endpoint, $options, $result);
 
-        return "<form{$formAttrs}>{$input}{$regions}</form>";
+        return "<form{$formAttrs}>{$input}{$status}{$regions}</form>";
     }
 
     // Private Methods
@@ -204,6 +220,33 @@ class SearchFormTag extends BaseTag
         return Html::tag('div', $label . "<input{$inputAttrs}>" . Html::hiddenInput('collection', $collection), [
             'class' => 'ts-search__field mb-4',
         ]);
+    }
+
+    /**
+     * Renders the signal-driven status line: the found count and elapsed
+     * milliseconds (patched by the SSE patch-signals event, so they update
+     * without morphing a region) and a searching indicator. The numbers are
+     * server-rendered too, so the no-JS path shows the real count and Datastar
+     * only swaps the live signal in once it boots.
+     *
+     * @param array<string, mixed> $result
+     * @return string
+     * @author CraftPulse
+     */
+    private function _statusHtml(array $result): string
+    {
+        $found = (int)($result['found'] ?? 0);
+        $countSpan = Html::tag('span', (string)$found, ['data-text' => '$tsFound']);
+        $msSpan = Html::tag('span', '0', ['data-text' => '$tsMs']);
+        $searching = Html::tag('span', Craft::t('typesense', '(searching...)'), [
+            'class' => 'ts-search__searching text-gray-400',
+            'data-show' => '$tsSearching',
+        ]);
+
+        $text = Craft::t('typesense', 'Found') . ' ' . $countSpan . ' ' . Craft::t('typesense', 'results')
+            . ' (' . $msSpan . ' ' . Craft::t('typesense', 'ms') . ') ' . $searching;
+
+        return Html::tag('p', $text, ['class' => 'ts-search__status text-sm text-gray-500 mb-4']);
     }
 
     /**

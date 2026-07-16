@@ -32,7 +32,7 @@
             placeholder="{{ 'Start typing...'|t('typesense') }}"
             class="w-full rounded border border-gray-300 px-3 py-2"
             data-bind:q
-            data-on:input__debounce.250ms="@get('{{ craft.typesense.searchEndpoint() }}')"
+            data-on:input__debounce.250ms="@get('{{ craft.typesense.searchEndpoint({ collection: 'heroes', queryBy: 'title,slug', perPage: 6 }) }}')"
         >
         <input type="hidden" name="collection" value="heroes">
 
