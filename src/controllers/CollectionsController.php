@@ -474,7 +474,8 @@ class CollectionsController extends ProController
         $this->requirePermission(self::PERMISSION_MANAGE_COLLECTIONS);
 
         $uid = $this->request->getBodyParam('uid');
-        $definition = $uid !== null
+        $isNew = $uid === null;
+        $definition = !$isNew
             ? (Typesense::$plugin->getManagedCollections()->getByUid((string)$uid) ?? new CollectionDefinition())
             : new CollectionDefinition();
 
@@ -483,12 +484,25 @@ class CollectionsController extends ProController
         $definition->multisite = (string)$this->request->getBodyParam('multisite', $definition->multisite);
         $definition->enabled = (bool)$this->request->getBodyParam('enabled', $definition->enabled);
 
-        [$elementType, $source, $sourceType] = $this->_parseSource((string)$this->request->getBodyParam('source', ''));
+        // The collection type is chosen once, on creation, and locked afterwards
+        // (the schema shape differs fundamentally); an edit keeps the stored type.
+        if ($isNew) {
+            $type = (string)$this->request->getBodyParam('collectionType', CollectionDefinition::COLLECTION_TYPE_REGULAR);
+            $definition->collectionType = in_array($type, [CollectionDefinition::COLLECTION_TYPE_REGULAR, CollectionDefinition::COLLECTION_TYPE_UNION], true)
+                ? $type
+                : CollectionDefinition::COLLECTION_TYPE_REGULAR;
+        }
 
-        if ($elementType !== null) {
-            $definition->elementType = $elementType;
-            $definition->source = $source;
-            $definition->sourceType = $sourceType;
+        // A union collection's sources are its members (managed on the Members
+        // section), not the single element-source picker.
+        if (!$definition->isUnion()) {
+            [$elementType, $source, $sourceType] = $this->_parseSource((string)$this->request->getBodyParam('source', ''));
+
+            if ($elementType !== null) {
+                $definition->elementType = $elementType;
+                $definition->source = $source;
+                $definition->sourceType = $sourceType;
+            }
         }
 
         if (!Typesense::$plugin->getManagedCollections()->save($definition)) {

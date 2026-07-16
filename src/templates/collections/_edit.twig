@@ -57,14 +57,40 @@
         {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
     {% endif %}
 
+    {% set isUnion = definition.collectionType == 'union' %}
+
     {{ forms.selectField({
-        label: 'Element source'|t('typesense'),
-        instructions: 'The element type and source this collection indexes.'|t('typesense'),
-        id: 'source',
-        name: 'source',
-        options: sourceOptions,
-        value: definition.elementType ~ ':' ~ (definition.sourceType == 'entryType' ? 'type:' : '') ~ (definition.source ?? ''),
+        label: 'Collection type'|t('typesense'),
+        instructions: 'A regular collection indexes one element source. A union collection indexes several member sources into one collection, distinguished by an _elementType field.'|t('typesense'),
+        warning: not isNew ? 'The collection type is locked once the collection is created.'|t('typesense') : null,
+        id: 'collectionType',
+        name: 'collectionType',
+        options: [
+            { label: 'Regular'|t('typesense'), value: 'regular' },
+            { label: 'Union'|t('typesense'), value: 'union' },
+        ],
+        value: definition.collectionType,
+        disabled: not isNew,
+        toggle: true,
+        targetPrefix: '.type-',
     }) }}
+
+    <div class="type-regular{% if isUnion %} hidden{% endif %}">
+        {{ forms.selectField({
+            label: 'Element source'|t('typesense'),
+            instructions: 'The element type and source this collection indexes.'|t('typesense'),
+            id: 'source',
+            name: 'source',
+            options: sourceOptions,
+            value: definition.elementType ~ ':' ~ (definition.sourceType == 'entryType' ? 'type:' : '') ~ (definition.source ?? ''),
+        }) }}
+    </div>
+
+    <div class="type-union{% if not isUnion %} hidden{% endif %}">
+        <blockquote class="note">
+            {{ 'Save the collection, then add member sources and map each member from the Members section.'|t('typesense') }}
+        </blockquote>
+    </div>
 
     {{ forms.selectField({
         label: 'Multisite strategy'|t('typesense'),
