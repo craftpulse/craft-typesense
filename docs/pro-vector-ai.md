@@ -10,31 +10,41 @@ experimental AI features.
 
 ## Editions and permissions
 
-Vector configuration lives on the Vector / AI tab of a control-panel-managed
-collection's edit screen (Typesense, then Collections, then a collection, then
-the Vector / AI tab), gated by `typesense:manageRelevance`. The search helpers
-are Free-callable from Twig once a collection has an embedding field.
+Vector and conversation configuration lives on the **Vector / AI** section of a
+control-panel-managed collection's edit screen (Typesense, then Collections, then
+a collection, then Vector / AI), gated by `typesense:manageRelevance`. It has two
+anchor panes: **Embedding** and **Conversation**. The credentials the panes draw
+on are authored separately on the **AI providers** screen (see the
+[AI providers guide](ai-providers.md)), gated by `typesense:manageAiProviders`.
+The search helpers are Free-callable from Twig once a collection has an embedding
+field.
 
 ## Auto-embedding
 
-Turn on auto-embedding for a control-panel-managed collection and pick a model
-and the source fields. Typesense generates the vectors server-side at index time,
-so you index plain text and get semantic search for free.
+On the Embedding pane, turn on auto-embedding, choose the model source, and set
+the source fields. Typesense generates the vectors server-side at index time, so
+you index plain text and get semantic search for free.
 
 Changing the model or the source fields **re-embeds every document**: re-sync the
 collection after saving. The editor surfaces this, and the cost, honestly.
 
-### Models
+### Model source: built-in or provider
 
-| Kind | Examples | Notes |
+The Embedding pane has two branches:
+
+| Branch | What you set | Notes |
 | --- | --- | --- |
-| Built-in (`ts/*`) | `ts/all-MiniLM-L12-v2` (English), `ts/e5-small` (multilingual), `ts/clip-vit-b-p32` (image) | Local ONNX inference on the server CPU, no API key. Downloaded on first use. |
-| Remote | `openai/text-embedding-3-small`, `azure/...`, `google/...`, `gcp/...`, `cloudflare/...`, custom OpenAI-compatible | An API call per document at index time (cost). |
+| Built-in | A `ts/*` model | Local ONNX inference on the server CPU, no API key. `ts/all-MiniLM-L12-v2` (English), `ts/e5-small` (multilingual), `ts/clip-vit-b-p32` (image). Downloaded on first use. |
+| Provider | An embedding provider + the remote model name + output dimensions | An API call per document at index time (cost). The provider supplies the credentials and endpoint. |
 
-Remote credentials are read from **environment variables**: enter the environment
-reference (for example `$OPENAI_API_KEY`) in the editor, never the raw key. The
-plugin validates the config's shape and that the referenced variable resolves,
-but never makes a live call from the control panel.
+For the provider branch, first create an embedding provider on the AI providers
+screen (OpenAI, Azure, Google, GCP Vertex, Cloudflare, or an OpenAI-compatible
+endpoint). Its credentials are environment references, never raw keys, resolved
+only when the collection rebuilds. Then, on the Embedding pane, select the
+provider, type the remote model name Typesense expects (for example
+`openai/text-embedding-3-small`), and set the output dimensions the model
+produces (for example 1536). Optional indexing and query prefixes are available
+for models that expect them (for example E5's `passage: ` / `query: `).
 
 ## Hybrid search
 
@@ -71,38 +81,44 @@ images by a text description, or find visually similar images. Like all
 embeddings, CLIP runs on the server CPU and a large image set takes time to
 embed.
 
-## Experimental AI features
+## Conversational RAG
 
-These are shown in the editor only when the server supports them, each with its
-honest trade-off. They are opt-in.
+On the Conversation pane, opt the collection into the conversational ask endpoint
+by selecting a **conversation model instance**. Conversation models are authored
+on the AI providers screen: create a conversation provider (OpenAI, Cloudflare,
+vLLM, an OpenAI-compatible endpoint, or the Anthropic gateway preset), then a
+conversation model that references it. Push the model to the server to make it
+answerable, then choose it here and save.
+
+Every question is a paid per-question LLM call, so the endpoint is off unless a
+collection opts in. Set your abuse policy at the edge (a CDN or WAF rate rule);
+the plugin ships a per-IP throttle knob (see settings), not a policy.
+
+```twig
+{% set answer = craft.typesense.ask('products', 'red running shoes under 100', 'shopAdvisor', { query_by: 'title,embedding' }) %}
+{# answer.conversation.answer holds the generated reply #}
+```
+
+The third argument is the conversation model instance handle. In fluent config a
+collection opts in with `->ask('handle')`, referencing a `conversationModels`
+declaration.
+
+### Anthropic
+
+Typesense has no native Anthropic conversation provider. Answer with an Anthropic
+model by putting an OpenAI-compatible gateway in front of it and using the
+Anthropic gateway preset. See the
+[AI providers guide](ai-providers.md#anthropic-gateway).
+
+## Other experimental AI features
 
 | Feature | Availability | The honest reason |
 | --- | --- | --- |
-| Conversational RAG | Any server with a conversation model | Each conversational query makes a per-search LLM call (cost). |
 | Natural-language search | v29+ | The model can emit invalid filter syntax that is retried, adding latency. |
 | Native personalization | v30.2+ | Undocumented upstream and driven by analytics log rules; treat as unstable. |
 | User-level BYO re-ranking | Any (external) | Requires a re-ranking model you host and operate. |
 
-### Conversational RAG
-
-Configure a conversation model (env-keyed) via the `AiModels` service, then ask:
-
-```twig
-{% set answer = craft.typesense.ask('products', 'red running shoes under 100', 'shop-advisor', { query_by: 'title,embedding' }) %}
-{# answer.conversation.answer holds the generated reply #}
-```
-
-The api key is read from an environment variable and never stored raw; the config
-is validated without a live call.
-
-### Natural-language search
-
 `Search::naturalLanguageSearch()` passes `nl_query` on a v29+ server and falls
-back to a plain search elsewhere (hide, never badge).
-
-### Personalization and BYO re-ranking
-
-Native personalization (v30.2+) wires into analytics log rules and is treated as
-unstable; user-level BYO re-ranking requires an external model. Both are surfaced
-as experimental where the server supports them and are documented rather than
-enabled by default.
+back to a plain search elsewhere (hide, never badge). Native personalization
+(v30.2+) wires into analytics log rules via `Analytics::configurePersonalizationLog()`
+and is treated as unstable; user-level BYO re-ranking requires an external model.

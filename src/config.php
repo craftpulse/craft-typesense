@@ -47,4 +47,38 @@ return [
                 'post_date_timestamp' => (int)($entry->postDate?->format('U') ?? 0),
             ]),
     ],
+
+    // Config-owned AI providers. Declaring a provider here makes it read-only in
+    // the control panel (presence-based ownership). Credentials are environment
+    // variable references, never raw secrets, resolved only when a config is sent
+    // to Typesense. Keyed by handle.
+    'aiProviders' => [
+        // 'openaiEmbed' => [
+        //     'name' => 'OpenAI embeddings',
+        //     'kind' => 'embedding',           // embedding | conversation
+        //     'type' => 'openai',              // see AiProviders::TYPES
+        //     'credentials' => ['api_key' => '$OPENAI_API_KEY'],
+        // ],
+        // 'anthropicChat' => [
+        //     'name' => 'Anthropic (gateway)',
+        //     'kind' => 'conversation',
+        //     'type' => 'anthropic-gateway',   // OpenAI-compatible gateway preset
+        //     'endpoint' => '$ANTHROPIC_GATEWAY_URL',
+        //     'credentials' => ['api_key' => '$ANTHROPIC_GATEWAY_KEY'],
+        // ],
+    ],
+
+    // Config-owned conversation model instances. A searchable collection opts in
+    // with ->ask('handle'). Read-only in the control panel. Keyed by handle.
+    'conversationModels' => [
+        // 'shopAdvisor' => [
+        //     'name' => 'Shop advisor',
+        //     'providerHandle' => 'anthropicChat',
+        //     'modelName' => 'claude-3-5-sonnet',
+        //     'systemPrompt' => 'Answer only from the provided products.',
+        //     'historyCollection' => 'conversation_store',
+        //     'ttl' => 0,
+        //     'maxBytes' => 0,
+        // ],
+    ],
 ];
