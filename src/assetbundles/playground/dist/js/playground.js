@@ -96,6 +96,14 @@ Craft.Typesense.Playground = Garnish.Base.extend({
 
         this.loadSchema();
         this.loadDocuments();
+
+        // Deep link: #diff opens the Diff drawer on load (the relevance editor
+        // links here so a pending weight/preset change previews straight away).
+        // Same class the toggle button flips; the collection is already
+        // preselected via the URL.
+        if (window.location.hash === '#diff') {
+            this.$container.find('.ts-pg-diff-drawer').removeClass('hidden');
+        }
     },
 
     syncGutter: function ($editor) {

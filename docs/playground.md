@@ -38,7 +38,8 @@ drawer under the editor, enter an overlay of proposed parameters, and Run diff:
 the console runs the query twice (current versus the current request merged with
 the overlay) and renders the two ranked lists side by side, plus a summary of
 which hits entered, dropped, or moved rank. Nothing is saved. The relevance
-section links here with the collection preselected.
+section links here with the collection preselected and a `#diff` fragment, so
+arriving from that link opens the Diff drawer for you automatically.
 
 ## From an element index
 

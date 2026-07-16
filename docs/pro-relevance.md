@@ -67,9 +67,11 @@ them, so a downgraded server never receives a parameter it would reject.
 
 ## Previewing before you commit
 
-The editor links into the search playground's diff mode, which previews a pending
-overlay of weight and preset changes against the current ranking (entered,
-dropped, moved) before anything is saved. See `docs/playground.md`.
+The editor links into the search playground's diff mode (the link carries a
+`#diff` fragment, so the Diff drawer opens automatically on arrival with the
+collection already selected). It previews a pending overlay of weight and preset
+changes against the current ranking (entered, dropped, moved) before anything is
+saved. See `docs/playground.md`.
 
 ## Stopword set
 
