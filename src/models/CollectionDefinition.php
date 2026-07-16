@@ -32,6 +32,23 @@ use craftpulse\typesense\enums\MultisiteStrategy;
  */
 class CollectionDefinition extends Model implements FieldLayoutProviderInterface
 {
+    // Constants
+    // =========================================================================
+
+    /**
+     * @var string A section-shaped source (a section, category group, volume, tag
+     * group, global set, or the users source): the collection indexes every entry
+     * type of the source.
+     */
+    public const SOURCE_TYPE_SECTION = 'section';
+
+    /**
+     * @var string An entry-type-shaped source: the collection indexes a single
+     * entry type directly, including a sectionless (nested Matrix / CKEditor)
+     * entry type. See Gap 2.
+     */
+    public const SOURCE_TYPE_ENTRY_TYPE = 'entryType';
+
     // Private Properties
     // =========================================================================
 
@@ -77,9 +94,18 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     /**
      * @var string|null The element source the collection indexes (a section,
      * category group, volume, or user group handle), or null for every source
-     * of the element type.
+     * of the element type. For an entry-type source (see [[sourceType]]) this is
+     * the entry type handle.
      */
     public ?string $source = null;
+
+    /**
+     * @var string The source shape (a SOURCE_TYPE_* value): a section-shaped
+     * source (the default, and the only shape for non-entry element types) or an
+     * entry-type-shaped source that indexes a single, possibly nested, entry type.
+     * Backfilled to `section` on read for definitions saved before this existed.
+     */
+    public string $sourceType = self::SOURCE_TYPE_SECTION;
 
     /**
      * @var string The multisite strategy (a MultisiteStrategy value).
@@ -146,6 +172,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     {
         $rules = parent::defineRules();
         $rules[] = [['name', 'elementType', 'multisite'], 'required'];
+        $rules[] = [['sourceType'], 'in', 'range' => [self::SOURCE_TYPE_SECTION, self::SOURCE_TYPE_ENTRY_TYPE]];
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
         // displayName is not hard-required: it falls back to the index name (see
         // getDisplayName()), so a programmatic save without it is graceful. The
@@ -172,6 +199,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
             'displayName' => $this->getDisplayName(),
             'elementType' => $this->elementType,
             'source' => $this->source,
+            'sourceType' => $this->sourceType,
             'multisite' => $this->multisite,
             'enabled' => $this->enabled,
             'searchable' => $this->searchable,
@@ -225,6 +253,27 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     public function getHandle(): ?string
     {
         return $this->name !== '' ? $this->name : null;
+    }
+
+    /**
+     * The collection's source members, each a descriptor of one element source to
+     * index: `elementType`, `sourceType` (a SOURCE_TYPE_* value), and `source`
+     * (the source handle, or null for every source of the type).
+     *
+     * A collection has exactly one member today. This accessor is the seam a
+     * union collection (Gap 1) extends to N members without the compiler, sync,
+     * and mapping layers having to change how they read the source set.
+     *
+     * @return array<int, array{elementType: class-string<ElementInterface>, sourceType: string, source: string|null}>
+     * @author CraftPulse
+     */
+    public function getMembers(): array
+    {
+        return [[
+            'elementType' => $this->elementType,
+            'sourceType' => $this->sourceType,
+            'source' => $this->source,
+        ]];
     }
 
     /**

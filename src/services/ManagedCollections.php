@@ -154,6 +154,9 @@ class ManagedCollections extends Component
         $elementType = (string)($config['elementType'] ?? '');
         $definition->elementType = $elementType;
         $definition->source = isset($config['source']) ? (string)$config['source'] : null;
+        // Backfill on read: a config saved before entry-type sources existed has
+        // no sourceType key, so it is a section-shaped source.
+        $definition->sourceType = (string)($config['sourceType'] ?? '') ?: CollectionDefinition::SOURCE_TYPE_SECTION;
         $definition->multisite = (string)($config['multisite'] ?? '');
         $definition->enabled = (bool)($config['enabled'] ?? true);
         $definition->searchable = (bool)($config['searchable'] ?? false);

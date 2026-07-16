@@ -63,7 +63,7 @@
         id: 'source',
         name: 'source',
         options: sourceOptions,
-        value: definition.elementType ~ ':' ~ (definition.source ?? ''),
+        value: definition.elementType ~ ':' ~ (definition.sourceType == 'entryType' ? 'type:' : '') ~ (definition.source ?? ''),
     }) }}
 
     {{ forms.selectField({

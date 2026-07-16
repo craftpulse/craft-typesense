@@ -483,11 +483,12 @@ class CollectionsController extends ProController
         $definition->multisite = (string)$this->request->getBodyParam('multisite', $definition->multisite);
         $definition->enabled = (bool)$this->request->getBodyParam('enabled', $definition->enabled);
 
-        [$elementType, $source] = $this->_parseSource((string)$this->request->getBodyParam('source', ''));
+        [$elementType, $source, $sourceType] = $this->_parseSource((string)$this->request->getBodyParam('source', ''));
 
         if ($elementType !== null) {
             $definition->elementType = $elementType;
             $definition->source = $source;
+            $definition->sourceType = $sourceType;
         }
 
         if (!Typesense::$plugin->getManagedCollections()->save($definition)) {
@@ -579,25 +580,33 @@ class CollectionsController extends ProController
     }
 
     /**
-     * Splits a source select value ("<elementType>:<source>") into its parts.
+     * Splits a source select value into its parts. A section-shaped source is
+     * encoded "<elementType>:<sourceHandle>"; an entry-type-shaped source (a
+     * single, possibly nested, entry type) is encoded "<elementType>:type:<handle>".
      *
      * @param string $value
-     * @return array{0: class-string<ElementInterface>|null, 1: string|null}
+     * @return array{0: class-string<ElementInterface>|null, 1: string|null, 2: string}
      * @author CraftPulse
      */
     private function _parseSource(string $value): array
     {
         if ($value === '' || !str_contains($value, ':')) {
-            return [null, null];
+            return [null, null, CollectionDefinition::SOURCE_TYPE_SECTION];
         }
 
         [$elementType, $source] = explode(':', $value, 2);
 
         if (!is_subclass_of($elementType, ElementInterface::class)) {
-            return [null, null];
+            return [null, null, CollectionDefinition::SOURCE_TYPE_SECTION];
         }
 
-        return [$elementType, $source === '' ? null : $source];
+        if (str_starts_with((string)$source, 'type:')) {
+            $handle = substr((string)$source, strlen('type:'));
+
+            return [$elementType, $handle === '' ? null : $handle, CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE];
+        }
+
+        return [$elementType, $source === '' ? null : $source, CollectionDefinition::SOURCE_TYPE_SECTION];
     }
 
     /**
@@ -614,6 +623,12 @@ class CollectionsController extends ProController
 
         foreach (Craft::$app->getEntries()->getAllSections() as $section) {
             $options[] = ['label' => Craft::t('typesense', 'Entries') . ': ' . $section->name, 'value' => Entry::class . ':' . $section->handle];
+        }
+
+        // Sectionless entry types (nested Matrix / CKEditor entry types) as their
+        // own source: index the nested entries directly (see Gap 2).
+        foreach ($this->_nestedEntryTypes() as $entryType) {
+            $options[] = ['label' => Craft::t('typesense', 'Nested entry types') . ': ' . $entryType->name, 'value' => Entry::class . ':type:' . $entryType->handle];
         }
 
         foreach (Craft::$app->getCategories()->getAllGroups() as $group) {
@@ -635,5 +650,30 @@ class CollectionsController extends ProController
         $options[] = ['label' => Craft::t('typesense', 'Users'), 'value' => User::class . ':'];
 
         return $options;
+    }
+
+    /**
+     * The sectionless entry types: entry types bound to no section, so they are
+     * used only as nested Matrix / CKEditor entry types. These are offered as
+     * their own collection source (see Gap 2).
+     *
+     * @return array<int, \craft\models\EntryType>
+     * @author CraftPulse
+     */
+    private function _nestedEntryTypes(): array
+    {
+        $entriesService = Craft::$app->getEntries();
+        $sectionBound = [];
+
+        foreach ($entriesService->getAllSections() as $section) {
+            foreach ($section->getEntryTypes() as $entryType) {
+                $sectionBound[$entryType->id] = true;
+            }
+        }
+
+        return array_values(array_filter(
+            $entriesService->getAllEntryTypes(),
+            static fn(\craft\models\EntryType $entryType): bool => !isset($sectionBound[$entryType->id]),
+        ));
     }
 }
