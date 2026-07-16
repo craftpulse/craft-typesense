@@ -9,6 +9,13 @@
    until you point this at a collection with a `geopoint` field (see
    Field::geopoint() in the fluent config). The constructed filter is shown so
    the mechanism is clear. Server-rendered, no JavaScript required.
+
+   Performance note: this demo renders no map, so there is no heavy asset to
+   load. If you add one (Mapbox, Leaflet, Google Maps), defer its script and
+   tiles until the map nears the viewport (an IntersectionObserver) or until an
+   explicit "Show map" tap on mobile, rather than loading it on every page view.
+   The result list stays server-rendered either way, so the page is useful
+   before any map loads.
    ========================================================================= #}
 {% extends 'typesense/_private/layouts/index' %}
 

@@ -51,7 +51,8 @@
 
     <main class="flex-1 w-full max-w-5xl mx-auto px-6 py-10" id="main-content" tabindex="-1">
         {% if flashError %}
-            <div class="mb-6 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert">
+            <div class="mb-6 rounded border border-red-300 bg-red-50 px-4 py-3 text-red-800" role="alert" id="ts-flash-error" tabindex="-1">
+                <strong class="font-semibold">{{ 'Error'|t('typesense') }}:</strong>
                 {{ flashError }}
             </div>
         {% endif %}
@@ -68,5 +69,18 @@
     <footer class="w-full max-w-5xl mx-auto px-6 py-6 text-sm text-gray-400">
         {{ 'Powered by Typesense'|t('typesense') }}
     </footer>
+
+    {% if flashError %}
+        {# Move focus to the error so assistive tech announces it on load
+           (the notice uses role="status" and does not steal focus). #}
+        <script>
+            (function () {
+                var flash = document.getElementById('ts-flash-error');
+                if (flash) {
+                    flash.focus();
+                }
+            })();
+        </script>
+    {% endif %}
 </body>
 </html>

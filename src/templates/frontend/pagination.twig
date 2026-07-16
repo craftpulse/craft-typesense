@@ -4,9 +4,11 @@
    Rendered on the initial page load and by the fragment endpoint. Keeps its
    `ts-pagination` id for the Datastar morph.
 
-   Progressive enhancement: the prev/next controls are real submit buttons that
-   carry `page` with no JS, and set the `$page` signal and refetch when Datastar
-   is present.
+   Progressive enhancement and crawlability: the prev/next controls are real
+   <a href> links carrying the full query (q, facets, page), so a crawler
+   follows them and a no-JS visitor navigates normally. Datastar layers
+   click__prevent on top to set the `$page` signal and morph in place. A boundary
+   (first/last page) renders as an inert <span>, not a dead link.
 
    Override by creating templates/_typesense/pagination.twig in your project.
    The default markup assumes Tailwind utility classes purely as a starting
@@ -14,7 +16,7 @@
 
    Variables:
    - result:   the Typesense response (reads result.found)
-   - options:  the normalised request (options.page, options.perPage)
+   - options:  the normalised request (options.page, options.perPage, q, facets)
    - endpoint: the fragment endpoint URL for the Datastar refetch
    ========================================================================= #}
 {%- set found = result.found ?? 0 -%}
@@ -22,30 +24,46 @@
 {%- set page = options.page ?? 1 -%}
 {%- set totalPages = perPage > 0 ? max(1, (found / perPage)|round(0, 'ceil')) : 1 -%}
 
+{# Build a relative href that preserves the current query (q + facets) and swaps
+   the page, so each pagination link is a real, crawlable, shareable URL. #}
+{%- set facetQs = '' -%}
+{%- for facet in (options.facets ?? []) -%}
+    {%- set facetQs = facetQs ~ '&facets[]=' ~ facet|url_encode -%}
+{%- endfor -%}
+{%- set baseQs = 'q=' ~ (options.q ?? '')|url_encode ~ facetQs -%}
+
 <nav id="ts-pagination" class="ts-pagination mt-6 flex items-center justify-between" aria-label="{{ 'Search pagination'|t('typesense') }}">
-    <button
-        type="submit"
-        name="page"
-        value="{{ page - 1 }}"
-        class="ts-pagination__prev rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
-        {{ page <= 1 ? 'disabled' }}
-        data-on:click__prevent="$page = {{ page - 1 }}; @get('{{ endpoint }}')"
-    >
-        {{ 'Previous'|t('typesense') }}
-    </button>
+    {%- if page > 1 -%}
+        <a
+            href="?{{ baseQs }}&page={{ page - 1 }}"
+            rel="prev"
+            class="ts-pagination__prev rounded border border-gray-300 px-3 py-1 text-sm"
+            data-on:click__prevent="$page = {{ page - 1 }}; @get('{{ endpoint }}')"
+        >
+            {{ 'Previous'|t('typesense') }}
+        </a>
+    {%- else -%}
+        <span class="ts-pagination__prev rounded border border-gray-200 px-3 py-1 text-sm text-gray-300" aria-disabled="true">
+            {{ 'Previous'|t('typesense') }}
+        </span>
+    {%- endif -%}
 
     <span class="ts-pagination__status text-sm text-gray-500">
         {{ 'Page {page} of {total}'|t('typesense', { page: page, total: totalPages }) }}
     </span>
 
-    <button
-        type="submit"
-        name="page"
-        value="{{ page + 1 }}"
-        class="ts-pagination__next rounded border border-gray-300 px-3 py-1 text-sm disabled:opacity-40"
-        {{ page >= totalPages ? 'disabled' }}
-        data-on:click__prevent="$page = {{ page + 1 }}; @get('{{ endpoint }}')"
-    >
-        {{ 'Next'|t('typesense') }}
-    </button>
+    {%- if page < totalPages -%}
+        <a
+            href="?{{ baseQs }}&page={{ page + 1 }}"
+            rel="next"
+            class="ts-pagination__next rounded border border-gray-300 px-3 py-1 text-sm"
+            data-on:click__prevent="$page = {{ page + 1 }}; @get('{{ endpoint }}')"
+        >
+            {{ 'Next'|t('typesense') }}
+        </a>
+    {%- else -%}
+        <span class="ts-pagination__next rounded border border-gray-200 px-3 py-1 text-sm text-gray-300" aria-disabled="true">
+            {{ 'Next'|t('typesense') }}
+        </span>
+    {%- endif -%}
 </nav>

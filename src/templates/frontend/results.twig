@@ -47,7 +47,11 @@
                 {%- set doc = hit.document ?? {} -%}
                 {%- set elementId = doc.elementId ?? '' -%}
                 {%- set href = urls[elementId] ?? '#' -%}
-                {%- set clickUrl = trackEndpoint ~ '?type=click&name=search_click&docId=' ~ (doc.id ?? '')|url_encode ~ '&q=' ~ query|url_encode -%}
+                {# The endpoint URL may already carry a query string (index.php?p=...
+                   when pretty URLs are off), so pick the right separator rather
+                   than always appending '?'. #}
+                {%- set trackSep = '?' in trackEndpoint ? '&' : '?' -%}
+                {%- set clickUrl = trackEndpoint ~ trackSep ~ 'type=click&name=search_click&docId=' ~ (doc.id ?? '')|url_encode ~ '&q=' ~ query|url_encode -%}
                 <li class="ts-results__item rounded border border-gray-200 bg-white px-4 py-3">
                     <a class="ts-results__title font-semibold text-gray-900"
                        href="{{ href }}"

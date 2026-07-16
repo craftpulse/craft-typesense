@@ -15,6 +15,19 @@
 
 {% set title = 'Search'|t('typesense') %}
 
+{# Crawl hygiene (SEO): faceted and paged permutations are near-infinite, so they
+   canonicalise to the clean search URL and are marked noindex,follow. Crawlers
+   index one page and still follow the result links, instead of indexing every
+   filter combination. Adapt (or hand to SEOmatic) for your own project. #}
+{%- set qParam = craft.app.request.getParam('q') -%}
+{%- set facetParam = craft.app.request.getParam('facets') -%}
+{%- set pageParam = craft.app.request.getParam('page') -%}
+{%- set isFiltered = qParam or facetParam or (pageParam and pageParam != '1') -%}
+{% set extraHead %}
+    <link rel="canonical" href="{{ url('typesense/search') }}">
+    {% if isFiltered %}<meta name="robots" content="noindex,follow">{% endif %}
+{% endset %}
+
 {% block main %}
     <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Search'|t('typesense') }}</h1>
 
