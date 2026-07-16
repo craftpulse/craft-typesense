@@ -67,7 +67,7 @@ class SyncCollection extends BaseJob
         $sync = Typesense::$plugin->getSync();
         $collection = $sync->getCollection($this->collectionHandle);
 
-        if ($collection === null || !$sync->isEnabled()) {
+        if ($collection === null || !$sync->isCollectionSyncable($this->collectionHandle)) {
             return;
         }
 

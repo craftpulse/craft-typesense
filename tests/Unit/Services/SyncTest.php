@@ -94,6 +94,47 @@ it('reports a collection suspended when the global switch or its own row is set'
     }
 });
 
+it('forces a deterministic id-ascending order on the sync paging queries', function() {
+    $sync = Typesense::$plugin->getSync();
+
+    foreach ($sync->buildQueriesForSite(syncTestCollection(), 1) as $query) {
+        // The paging offset slices depend on a stable order; the source query
+        // must be ordered by the element id ascending regardless of any display
+        // order the collection's own query set.
+        expect($query->orderBy)->toBe(['elements.id' => SORT_ASC]);
+
+        // And the ids it returns are actually ascending.
+        $ids = $query->ids();
+        $sorted = $ids;
+        sort($sorted);
+        expect($ids)->toBe($sorted);
+    }
+});
+
+it('is not collection-syncable when the collection is individually suspended', function() {
+    $sync = Typesense::$plugin->getSync();
+    $suspend = Typesense::$plugin->getSyncSuspend();
+
+    try {
+        $suspend->resume();
+        $suspend->resume('heroes');
+
+        // Global sync enabled, collection not suspended: syncable.
+        expect($sync->isEnabled())->toBeTrue()
+            ->and($sync->isCollectionSyncable('heroes'))->toBeTrue();
+
+        // A per-collection suspend (global still enabled) makes only that
+        // collection non-syncable, so a respawned batch job honors it.
+        $suspend->suspend('heroes');
+        expect($sync->isEnabled())->toBeTrue()
+            ->and($sync->isCollectionSyncable('heroes'))->toBeFalse()
+            ->and($sync->isCollectionSyncable('minor-heroes'))->toBeTrue();
+    } finally {
+        $suspend->resume('heroes');
+        $suspend->resume();
+    }
+});
+
 it('queues a full sync job for a site', function() {
     Typesense::$plugin->getSync()->syncCollection(syncTestCollection(), 1);
 

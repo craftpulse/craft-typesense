@@ -93,6 +93,21 @@ class Sync extends Component
     }
 
     /**
+     * Whether sync should run for a specific collection: sync is enabled globally
+     * and the collection is not individually suspended. The batch and respawn jobs
+     * gate on this (not just [[isEnabled()]]) so a per-collection suspend flipped
+     * mid-chain is honored on the next spawn, matching the element-event path.
+     *
+     * @param string $collection The logical collection name.
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isCollectionSyncable(string $collection): bool
+    {
+        return $this->isEnabled() && !Typesense::$plugin->getSyncSuspend()->isCollectionSuspended($collection);
+    }
+
+    /**
      * Whether sync is globally suspended.
      *
      * @return bool
@@ -713,6 +728,17 @@ class Sync extends Component
 
         if ($queries === []) {
             $queries[] = $type::find()->siteId($siteId)->status(null);
+        }
+
+        // Force a deterministic id-ascending order. The full sync walks these
+        // queries in offset-based slices (countForSync / syncSlice) and respawns
+        // a continuation from a cursor offset, so without a stable order a
+        // re-fetched slice could skip or duplicate elements across slices and
+        // respawns. Membership (id-exists) and reconcile (set comparison) ignore
+        // order, so forcing it here is safe for every consumer, and the
+        // collection's own query order is for display, not paging.
+        foreach ($queries as $query) {
+            $query->orderBy(['elements.id' => SORT_ASC]);
         }
 
         return $queries;
