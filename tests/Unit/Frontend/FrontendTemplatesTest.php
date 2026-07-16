@@ -51,17 +51,28 @@ function withScratchOverrides(array $files, callable $test): void
 }
 
 it('falls back to the plugin default when no override directory is configured', function() {
-    $html = FrontendTemplates::render('_facet-item', [
-        'value' => 'brand-x',
-        'count' => 3,
-        'id' => 'f1',
-        'selected' => false,
-        'endpoint' => '',
-        'theme' => [],
-    ]);
+    /** @var \craftpulse\typesense\models\Settings $settings */
+    $settings = Typesense::$plugin->getSettings();
+    $originalDir = $settings->frontendTemplatesDir;
+    $settings->frontendTemplatesDir = '';
 
-    expect($html)->toContain('ts-facets__item')
-        ->and($html)->toContain('brand-x');
+    try {
+        $html = FrontendTemplates::render('_facet-item', [
+            'value' => 'brand-x',
+            'count' => 3,
+            'id' => 'f1',
+            'selected' => false,
+            'endpoint' => '',
+            'theme' => [],
+        ]);
+
+        expect($html)->toContain('ts-facets__item')
+            ->and($html)->toContain('brand-x')
+            // The default template, not the demo pill override.
+            ->and($html)->not->toContain('ts-demo-pill');
+    } finally {
+        $settings->frontendTemplatesDir = $originalDir;
+    }
 });
 
 it('renders an atom override (_facet-item) from the configured directory', function() {

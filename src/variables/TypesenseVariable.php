@@ -79,6 +79,42 @@ class TypesenseVariable
     }
 
     /**
+     * Whether a collection is opted into the conversational ask endpoint (it is
+     * searchable and has a conversation model configured via `->ask(...)`). Use
+     * it to gate an ask UI so a demo renders an honest notice when conversations
+     * are not set up.
+     *
+     * @param string $handle
+     * @return bool
+     * @author CraftPulse
+     */
+    public function askEnabled(string $handle): bool
+    {
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
+
+        return $collection !== null && $collection->isSearchable() && $collection->isAskEnabled();
+    }
+
+    /**
+     * Returns the conversational ask endpoint URL with the fixed config baked in
+     * (collection, queryBy), for hand-rolled ask forms. Every request is an LLM
+     * call; see the plugin's throttle knobs.
+     *
+     * @param array<string, mixed> $config
+     * @return string
+     * @author CraftPulse
+     */
+    public function askEndpoint(array $config = []): string
+    {
+        $params = array_filter([
+            'collection' => (string)($config['collection'] ?? ''),
+            'queryBy' => (string)($config['queryBy'] ?? ''),
+        ], static fn(string $value): bool => $value !== '');
+
+        return UrlHelper::actionUrl('typesense/search/ask', $params);
+    }
+
+    /**
      * Returns the front-end analytics event endpoint URL. Post a click or
      * conversion event to it (the admin key stays server-side); wire it into a
      * Datastar action or a plain fetch.

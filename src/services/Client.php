@@ -151,6 +151,71 @@ class Client extends Component
     }
 
     /**
+     * Streams a conversational (RAG) answer token-by-token, invoking the callback
+     * with each message chunk as the server generates it. Uses Typesense's
+     * `conversation_stream` multi_search (a Server-Sent Events response, v29+),
+     * which the bundled SDK does not model, so this reads the streamed body
+     * directly through Guzzle. Fail-soft: on any error the callback is simply not
+     * invoked further, and the caller is responsible for a graceful close. The
+     * admin key stays server-side.
+     *
+     * @param string $collection the (prefixed at call time) collection handle
+     * @param string $modelId the conversation model id
+     * @param array<string, mixed> $search the base search params (q, query_by, ...)
+     * @param callable $onChunk fn(string $message): void, one message chunk at a time
+     * @return void
+     * @author CraftPulse
+     */
+    public function streamConversation(string $collection, string $modelId, array $search, callable $onChunk): void
+    {
+        $settings = $this->_settings();
+        $base = sprintf(
+            '%s://%s:%s',
+            (string)App::parseEnv($settings->protocol),
+            (string)App::parseEnv($settings->server),
+            (string)App::parseEnv($settings->port),
+        );
+
+        $payload = ['searches' => [array_merge(['collection' => $this->prefixedCollectionName($collection)], $search)]];
+
+        try {
+            $response = Craft::createGuzzleClient(['base_uri' => $base])->request('POST', '/multi_search', [
+                'headers' => ['X-TYPESENSE-API-KEY' => App::parseEnv($settings->apiKey)],
+                'query' => [
+                    'conversation' => 'true',
+                    'conversation_model_id' => $modelId,
+                    'conversation_stream' => 'true',
+                ],
+                'json' => $payload,
+                'stream' => true,
+            ]);
+        } catch (Throwable $e) {
+            Craft::error("Typesense conversation stream failed: {$e->getMessage()}", 'typesense');
+
+            return;
+        }
+
+        $body = $response->getBody();
+        $buffer = '';
+
+        // Read the SSE body as it arrives and emit each complete `data:` event's
+        // conversation message. Events are separated by a blank line.
+        while (!$body->eof()) {
+            $buffer .= $body->read(1024);
+
+            while (($break = strpos($buffer, "\n\n")) !== false) {
+                $event = substr($buffer, 0, $break);
+                $buffer = substr($buffer, $break + 2);
+                $message = $this->_conversationChunkMessage($event);
+
+                if ($message !== null) {
+                    $onChunk($message);
+                }
+            }
+        }
+    }
+
+    /**
      * Returns the server health payload, fail-soft.
      *
      * @return array{ok: bool}
@@ -347,6 +412,35 @@ class Client extends Component
 
     // Private Methods
     // =========================================================================
+
+    /**
+     * Extracts the conversation message from a single Server-Sent Events block of
+     * the `conversation_stream` response (a `data: {"conversation": {"message":
+     * "..."}}` line), or null when the block carries no message chunk.
+     *
+     * @param string $event one SSE event block
+     * @return string|null
+     * @author CraftPulse
+     */
+    private function _conversationChunkMessage(string $event): ?string
+    {
+        foreach (explode("\n", $event) as $line) {
+            $line = trim($line);
+
+            if (!str_starts_with($line, 'data:')) {
+                continue;
+            }
+
+            $decoded = json_decode(trim(substr($line, 5)), true);
+            $message = is_array($decoded) ? ($decoded['conversation']['message'] ?? null) : null;
+
+            if (is_string($message) && $message !== '') {
+                return $message;
+            }
+        }
+
+        return null;
+    }
 
     /**
      * Returns the plugin settings.

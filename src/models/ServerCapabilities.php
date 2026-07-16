@@ -61,6 +61,13 @@ class ServerCapabilities extends Model
     public const VERSION_NL_SEARCH = '29.0';
 
     /**
+     * @var string Streaming conversational (RAG) responses via
+     * `conversation_stream` (v29+). Below this, conversational search still works
+     * one-shot (the full answer arrives at once).
+     */
+    public const VERSION_CONVERSATION_STREAM = '29.0';
+
+    /**
      * @var string `mmr` result diversification (v30+).
      */
     public const VERSION_MMR = '30.0';
@@ -212,6 +219,18 @@ class ServerCapabilities extends Model
     public function nlSearch(): bool
     {
         return $this->atLeast(self::VERSION_NL_SEARCH);
+    }
+
+    /**
+     * Whether the server streams conversational responses (`conversation_stream`).
+     * Below this the ask endpoint answers one-shot (the full answer at once).
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function conversationStream(): bool
+    {
+        return $this->atLeast(self::VERSION_CONVERSATION_STREAM);
     }
 
     /**

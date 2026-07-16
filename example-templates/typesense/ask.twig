@@ -1,0 +1,72 @@
+{# =========================================================================
+   Typesense example templates - conversational ask (RAG)
+   =========================================================================
+   Quick-start scaffolding for the conversational ask endpoint: a question box,
+   a streamed answer region, and the cited source hits below. Opt-in and off by
+   default; a collection enables it in config with
+   `->searchable()->ask('conversation-model-id')`, and the server needs a
+   conversation model (RAG). On a streaming server (v29+) the answer arrives
+   token-by-token; otherwise it arrives one-shot.
+
+   COST: every ask is an LLM call. Throttle and on/off are your deployment
+   decision, set via the plugin's ask settings. This is scaffolding, not a
+   hardened public endpoint; put a real rate limiter in front of a public site.
+
+   When the collection is not opted in, this renders an honest notice instead of
+   a form, so the page never implies a capability that is not configured.
+   ========================================================================= #}
+{% extends 'typesense/_private/layouts/index' %}
+
+{% set title = 'Ask'|t('typesense') %}
+{% set collection = 'heroes' %}
+{% set queryBy = 'title,slug' %}
+{% set askEnabled = craft.typesense.askEnabled(collection) %}
+{% set endpoint = craft.typesense.askEndpoint({ collection: collection, queryBy: queryBy }) %}
+
+{% block main %}
+    <h1 class="text-2xl font-bold text-gray-900 mb-6">{{ 'Ask a question'|t('typesense') }}</h1>
+
+    {% if not askEnabled %}
+        <blockquote class="note rounded border border-amber-300 bg-amber-50 px-4 py-3 text-amber-900">
+            <p class="font-semibold mb-1">{{ 'Conversational ask is not configured for this collection.'|t('typesense') }}</p>
+            <p class="text-sm">
+                {{ 'Enable it in config/typesense.php with ->searchable()->ask("your-conversation-model-id"), and set up a Typesense conversation model (RAG) with an LLM API key. Streaming answers need Typesense v29 or newer; older servers answer one-shot. Each question is a billed LLM call.'|t('typesense') }}
+            </p>
+        </blockquote>
+    {% else %}
+        <form
+            method="post"
+            action="{{ endpoint }}"
+            class="max-w-xl"
+            data-signals='{"q":"","tsAsking":false}'
+            data-on:submit__prevent="$tsAsking = true; @post('{{ endpoint }}')"
+        >
+            {{ csrfInput() }}
+            <input type="hidden" name="collection" value="{{ collection }}">
+            <label class="block text-sm font-medium text-gray-700 mb-1" for="ask-input">{{ 'Your question'|t('typesense') }}</label>
+            <div class="flex gap-2">
+                <input
+                    type="text"
+                    id="ask-input"
+                    name="q"
+                    class="w-full rounded border border-gray-300 px-3 py-2"
+                    placeholder="{{ 'Ask about the heroes...'|t('typesense') }}"
+                    data-bind:q
+                    required
+                >
+                <button type="submit" class="rounded bg-gray-900 px-4 py-2 text-white" data-attr:disabled="$tsAsking">
+                    {{ 'Ask'|t('typesense') }}
+                </button>
+            </div>
+            <p class="mt-2 text-sm text-gray-400" data-show="$tsAsking">{{ 'Thinking...'|t('typesense') }}</p>
+        </form>
+
+        {# The answer streams into #ts-answer; the cited hits patch into
+           #ts-answer-sources. Both are present up front so the morph has a
+           target, and the no-JS POST fills them server-side. #}
+        <div class="mt-6 max-w-xl">
+            <div id="ts-answer" class="ts-answer whitespace-pre-line"></div>
+            <div id="ts-answer-sources"></div>
+        </div>
+    {% endif %}
+{% endblock %}

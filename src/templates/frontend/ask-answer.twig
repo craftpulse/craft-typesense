@@ -1,0 +1,27 @@
+{# =========================================================================
+   Typesense front-end fragment: conversational answer
+   =========================================================================
+   The RAG answer region plus its cited source hits. Rendered one-shot (the full
+   answer at once) for the no-JS path and on servers without streaming; on a
+   streaming server the answer region is seeded empty and each token is appended
+   into #ts-answer over SSE, then #ts-answer-sources is patched in.
+
+   Keeps its #ts-answer id (the streaming morph target). Override by copying this
+   file (and _ask-sources) into your configured front-end templates directory.
+
+   Variables:
+   - answer:    the generated answer text (may be empty)
+   - result:    the Typesense response (reads result.hits for citations)
+   - urls:      element URLs keyed by element id
+   - theme:     the merged theme config
+   ========================================================================= #}
+{%- set theme = theme ?? {} -%}
+<div{{ craft.typesense.attr(theme, 'answer', 'ts-answer whitespace-pre-line') }} id="ts-answer">
+    {%- if answer -%}
+        {{ answer|nl2br }}
+    {%- else -%}
+        <span class="ts-answer__empty text-gray-500">{{ 'No answer.'|t('typesense') }}</span>
+    {%- endif -%}
+</div>
+
+{{ craft.typesense.component('_ask-sources', { result: result, urls: urls, theme: theme }) }}

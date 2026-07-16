@@ -11,11 +11,13 @@
 namespace craftpulse\typesense\controllers;
 
 use Craft;
+use craft\helpers\Html;
 use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\helpers\FrontendTemplates;
+use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\Typesense;
 use starfederation\datastar\Consts;
 use starfederation\datastar\enums\ElementPatchMode;
@@ -64,7 +66,7 @@ class SearchController extends Controller
     /**
      * @inheritdoc
      */
-    protected array|bool|int $allowAnonymous = ['results', 'track-event'];
+    protected array|bool|int $allowAnonymous = ['results', 'track-event', 'ask'];
 
     // Public Methods
     // =========================================================================
@@ -222,8 +224,169 @@ class SearchController extends Controller
         return $this->asRaw($results . $facetsHtml . $pagination);
     }
 
+    /**
+     * Answers a free-form question about a collection with a conversational (RAG)
+     * response. Opt-in and off by default: a collection enables it with
+     * `->ask('conversation-model-id')` in the fluent config, and must also be
+     * searchable, or this 404s. Every request is a per-question LLM call (cost);
+     * the throttle and on/off policy are the site developer's deployment decision
+     * (the plugin ships a knob and a sane default, not a policy).
+     *
+     * On a server that streams conversations (v29+), a Datastar request gets the
+     * answer token-by-token over SSE (patch-elements append into the answer
+     * region). Otherwise, and for the no-JS path, it answers one-shot: the full
+     * answer plus the cited hits, as text/html.
+     *
+     * @return Response
+     * @throws NotFoundHttpException when the collection is unknown or not opted in
+     * @throws BadRequestHttpException when the question is empty
+     * @throws \yii\base\InvalidConfigException
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
+     * @throws \yii\base\Exception
+     * @author CraftPulse
+     */
+    public function actionAsk(): Response
+    {
+        $request = $this->request;
+        $handle = (string)$request->getParam('collection', '');
+        $collection = Typesense::$plugin->getCollectionRegistry()->get($handle);
+
+        // Trust boundary + opt-in: only a searchable collection that the author
+        // explicitly opted into conversations (a model is configured) answers.
+        if ($collection === null || !$collection->isSearchable() || !$collection->isAskEnabled()) {
+            throw new NotFoundHttpException('Conversational search is not enabled for this collection.');
+        }
+
+        /** @var \craftpulse\typesense\models\Settings $settings */
+        $settings = Typesense::$plugin->getSettings();
+
+        if ($this->_askThrottled($settings)) {
+            return $this->asJson(['ok' => false, 'error' => 'throttled']);
+        }
+
+        $signals = ($this->_isDatastarRequest() && $this->_hasSignalPayload()) ? ServerSentEventGenerator::readSignals() : [];
+        $question = trim((string)($signals['q'] ?? $request->getParam('q', '')));
+        $question = mb_substr($question, 0, max(1, $settings->askMaxQuestionLength));
+
+        if ($question === '') {
+            throw new BadRequestHttpException('A question is required.');
+        }
+
+        $modelId = (string)$collection->getConversationModelId();
+        $queryBy = (string)$request->getParam('queryBy', '');
+        $search = array_filter(['q' => $question, 'query_by' => $queryBy], static fn(string $value): bool => $value !== '');
+        $streams = Typesense::$plugin->getClient()->getServerCapabilities()?->conversationStream() ?? false;
+
+        if ($streams && $this->_isDatastarRequest()) {
+            return $this->_streamAnswer($handle, $modelId, $search, $collection, $queryBy);
+        }
+
+        // One-shot: the full answer plus cited hits.
+        $result = Typesense::$plugin->getSearch()->conversationalSearch($handle, $modelId, $search);
+        $answer = (string)($result['conversation']['answer'] ?? '');
+        $variables = [
+            'answer' => $answer,
+            'result' => $result,
+            'urls' => $this->_resolveUrls($collection, $result),
+            'theme' => $settings->frontendThemeConfig,
+            'streaming' => false,
+        ];
+        $html = FrontendTemplates::renderRegion('ask-answer', 'ts-answer', $variables);
+
+        if ($this->_isDatastarRequest()) {
+            $body = (new PatchElements($html, ['selector' => '#ts-answer', 'mode' => ElementPatchMode::Outer]))->getOutput()
+                . (new PatchSignals(Json::encode(['tsAsking' => false])))->getOutput();
+
+            foreach (ServerSentEventGenerator::headers() as $name => $value) {
+                $this->response->getHeaders()->set($name, $value);
+            }
+
+            return $this->asRaw($body);
+        }
+
+        return $this->asRaw($html);
+    }
+
     // Private Methods
     // =========================================================================
+
+    /**
+     * A per-IP throttle for the conversational ask endpoint, backed by the cache,
+     * with the window and cap taken from the plugin settings (a developer knob,
+     * not a security boundary; front a public site with a real rate limiter).
+     *
+     * @param Settings $settings
+     * @return bool whether this request is over the cap
+     * @author CraftPulse
+     */
+    private function _askThrottled(Settings $settings): bool
+    {
+        $cache = Craft::$app->getCache();
+
+        if ($cache === null) {
+            return false;
+        }
+
+        $key = 'typesense:ask:' . md5((string)$this->request->getUserIP());
+        $count = (int)$cache->get($key);
+
+        if ($count >= max(1, $settings->askThrottlePerWindow)) {
+            return true;
+        }
+
+        $cache->set($key, $count + 1, max(1, $settings->askThrottleWindowSeconds));
+
+        return false;
+    }
+
+    /**
+     * Streams a conversational answer token-by-token as Datastar SSE
+     * patch-elements (append) into the answer region, then patches the cited
+     * hits and clears the asking flag. This is a live stream: it sends the SSE
+     * headers, echoes and flushes each chunk through the generator, and marks the
+     * response sent so Craft does not send it a second time.
+     *
+     * @param string $handle
+     * @param string $modelId
+     * @param array<string, mixed> $search
+     * @param Collection $collection
+     * @param string $queryBy
+     * @return Response
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
+     * @throws \yii\base\Exception
+     * @author CraftPulse
+     */
+    private function _streamAnswer(string $handle, string $modelId, array $search, Collection $collection, string $queryBy): Response
+    {
+        $sse = new ServerSentEventGenerator();
+        $sse->sendHeaders();
+
+        // Seed the answer region, then append each streamed token in place.
+        $sse->patchElements('<div id="ts-answer" class="ts-answer"></div>', ['selector' => '#ts-answer', 'mode' => ElementPatchMode::Outer]);
+
+        Typesense::$plugin->getClient()->streamConversation($handle, $modelId, $search, static function(string $message) use ($sse): void {
+            $sse->patchElements(Html::encode($message), ['selector' => '#ts-answer', 'mode' => ElementPatchMode::Append]);
+        });
+
+        // Cited hits: a cheap non-conversational search for the same question,
+        // patched below the answer once the stream completes.
+        $hits = Typesense::$plugin->getSearch()->frontendSearch($handle, ['q' => $search['q'] ?? '*', 'queryBy' => $queryBy, 'perPage' => 5]);
+        $sources = FrontendTemplates::render('_ask-sources', [
+            'result' => $hits,
+            'urls' => $this->_resolveUrls($collection, $hits),
+        ]);
+        $sse->patchElements($sources, ['selector' => '#ts-answer-sources', 'mode' => ElementPatchMode::Outer]);
+        $sse->patchSignals(Json::encode(['tsAsking' => false]));
+
+        // We streamed the response directly; stop Craft sending it again.
+        $this->response->isSent = true;
+
+        return $this->response;
+    }
 
     /**
      * Builds the fragment endpoint URL with the fixed search config baked in as

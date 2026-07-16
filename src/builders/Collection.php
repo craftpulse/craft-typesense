@@ -99,6 +99,14 @@ class Collection
     private bool $_searchable = false;
 
     /**
+     * @var string|null The conversation (RAG) model id this collection answers
+     * questions with, or null when the conversational ask endpoint is not opted
+     * in. Off by default; each request is an LLM call (cost), so the author
+     * opts in explicitly and the site developer sets the abuse policy.
+     */
+    private ?string $_conversationModelId = null;
+
+    /**
      * @var array<int, array<string, mixed>> Additive boost rules baked into an
      * indexed boost_score field at index time.
      */
@@ -409,6 +417,25 @@ class Collection
     }
 
     /**
+     * Opts this collection into the anonymous conversational (RAG) ask endpoint,
+     * answering free-form questions with the given conversation model. Off by
+     * default. Every request is a per-question LLM call, so this carries a real
+     * cost: the site developer sets the throttle and on/off policy (see the plugin
+     * settings). Requires the collection to also be searchable and the server to
+     * support conversations.
+     *
+     * @param string $modelId the Typesense conversation model id
+     * @return self
+     * @author CraftPulse
+     */
+    public function ask(string $modelId): self
+    {
+        $this->_conversationModelId = $modelId;
+
+        return $this;
+    }
+
+    /**
      * Additive boost rules, baked into the indexed boost_score field at index
      * time (the deterministic alternative to the first-match-wins `_eval` bug).
      * Each rule: `weight`, `match` (`all`|`any`), and `conditions`
@@ -635,6 +662,30 @@ class Collection
     public function isSearchable(): bool
     {
         return $this->_searchable;
+    }
+
+    /**
+     * Whether this collection is opted into the conversational ask endpoint (a
+     * conversation model is configured).
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isAskEnabled(): bool
+    {
+        return $this->_conversationModelId !== null;
+    }
+
+    /**
+     * The conversation (RAG) model id this collection answers with, or null when
+     * the ask endpoint is not opted in.
+     *
+     * @return string|null
+     * @author CraftPulse
+     */
+    public function getConversationModelId(): ?string
+    {
+        return $this->_conversationModelId;
     }
 
     /**

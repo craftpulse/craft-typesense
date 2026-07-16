@@ -1,0 +1,27 @@
+{# =========================================================================
+   Typesense front-end atom: cited sources for a conversational answer
+   =========================================================================
+   The hits the RAG answer drew on, listed below the answer. Keeps its
+   #ts-answer-sources id (patched in after the streamed answer completes).
+
+   Variables:
+   - result: the Typesense response (reads result.hits)
+   - urls:   element URLs keyed by element id
+   - theme:  the merged theme config
+   ========================================================================= #}
+{%- set theme = theme ?? {} -%}
+{%- set hits = result.hits ?? [] -%}
+<div id="ts-answer-sources" class="ts-answer__sources mt-6">
+    {%- if hits is not empty -%}
+        <h2 class="ts-answer__sources-title text-sm font-semibold text-gray-500 mb-2">{{ 'Sources'|t('typesense') }}</h2>
+        <ul class="ts-answer__sources-list space-y-2">
+            {%- for hit in hits -%}
+                {%- set doc = hit.document ?? {} -%}
+                {%- set href = urls[doc.elementId ?? ''] ?? '#' -%}
+                <li{{ craft.typesense.attr(theme, 'answerSource', 'ts-answer__source rounded border border-gray-200 bg-white px-3 py-2') }}>
+                    <a class="font-medium text-gray-900" href="{{ href }}">{{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}</a>
+                </li>
+            {%- endfor -%}
+        </ul>
+    {%- endif -%}
+</div>

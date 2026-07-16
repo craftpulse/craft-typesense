@@ -182,6 +182,28 @@ class Settings extends Model
      */
     public string $frontendTemplatesDir = '';
 
+    /**
+     * @var int The conversational ask endpoint's per-IP request cap within the
+     * throttle window. This is a knob, not a policy: every request is an LLM call
+     * (cost), and abuse limiting is the site developer's deployment decision, so
+     * put a real rate limiter (a CDN or WAF rule) in front of a public site.
+     * @since 5.9.0
+     */
+    public int $askThrottlePerWindow = 20;
+
+    /**
+     * @var int The conversational ask endpoint's throttle window, in seconds.
+     * @since 5.9.0
+     */
+    public int $askThrottleWindowSeconds = 60;
+
+    /**
+     * @var int The maximum accepted question length (characters) on the ask
+     * endpoint; longer questions are truncated before reaching the model.
+     * @since 5.9.0
+     */
+    public int $askMaxQuestionLength = 500;
+
     // Public Methods
     // =========================================================================
 

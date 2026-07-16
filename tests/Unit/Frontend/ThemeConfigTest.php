@@ -64,7 +64,12 @@ it('merges the plugin-global config under the per-render config', function() {
 it('applies the configured theme to the rendered search components', function() {
     /** @var \craftpulse\typesense\models\Settings $settings */
     $settings = Typesense::$plugin->getSettings();
-    $original = $settings->frontendThemeConfig;
+    $originalTheme = $settings->frontendThemeConfig;
+    $originalDir = $settings->frontendTemplatesDir;
+    // Clear any override directory so this exercises the default facet-item
+    // template (the one that reads the theme config); an override is free to
+    // hardcode its own classes and ignore the theme, which is a separate concern.
+    $settings->frontendTemplatesDir = '';
     $settings->frontendThemeConfig = ['facetItem' => ['class' => 'ts-test-themed-facet']];
 
     try {
@@ -78,6 +83,7 @@ it('applies the configured theme to the rendered search components', function() 
         expect($html)->toContain('ts-test-themed-facet')
             ->and($html)->toContain('ts-facets__item');
     } finally {
-        $settings->frontendThemeConfig = $original;
+        $settings->frontendThemeConfig = $originalTheme;
+        $settings->frontendTemplatesDir = $originalDir;
     }
 });
