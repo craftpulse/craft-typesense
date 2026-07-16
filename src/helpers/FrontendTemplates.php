@@ -100,8 +100,56 @@ class FrontendTemplates
         return Craft::$app->getView()->renderTemplate(self::DEFAULT_ROOT . '/' . $name, $variables, View::TEMPLATE_MODE_SITE);
     }
 
+    /**
+     * Renders a result card for a document, switching on its union `_elementType`
+     * discriminator to a per-member card (`_result-card--<type>`) when one exists
+     * (as an override or a shipped default), and falling back to the shared
+     * `_result-card` otherwise. Regular-collection documents (no `_elementType`)
+     * always use the shared card.
+     *
+     * @param array<string, mixed> $doc
+     * @param array<string, mixed> $variables
+     * @return string
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
+     * @throws \yii\base\Exception
+     * @author CraftPulse
+     */
+    public static function renderCard(array $doc, array $variables = []): string
+    {
+        $type = trim((string)($doc['_elementType'] ?? ''));
+
+        if ($type !== '') {
+            $name = '_result-card--' . (string)preg_replace('/[^a-zA-Z0-9_\-]/', '', $type);
+
+            if (self::_exists($name)) {
+                return self::render($name, $variables);
+            }
+        }
+
+        return self::render('_result-card', $variables);
+    }
+
     // Private Methods
     // =========================================================================
+
+    /**
+     * Whether a component template exists, as a configured override or a shipped
+     * plugin default.
+     *
+     * @param string $name
+     * @return bool
+     * @author CraftPulse
+     */
+    private static function _exists(string $name): bool
+    {
+        if (self::_overridePath($name) !== null) {
+            return true;
+        }
+
+        return Craft::$app->getView()->doesTemplateExist(self::DEFAULT_ROOT . '/' . $name, View::TEMPLATE_MODE_SITE);
+    }
 
     /**
      * Returns the override template path for a component when the configured

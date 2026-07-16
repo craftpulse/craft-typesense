@@ -79,6 +79,25 @@ class TypesenseVariable
     }
 
     /**
+     * Renders a result card for a document, switching on its union `_elementType`
+     * to a per-member card (`_result-card--<type>`) when one exists, else the
+     * shared `_result-card`.
+     *
+     * @param array<string, mixed> $doc
+     * @param array<string, mixed> $variables
+     * @return Markup
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
+     * @throws \yii\base\Exception
+     * @author CraftPulse
+     */
+    public function card(array $doc, array $variables = []): Markup
+    {
+        return Template::raw(FrontendTemplates::renderCard($doc, $variables));
+    }
+
+    /**
      * Whether a collection is opted into the conversational ask endpoint (it is
      * searchable and has a conversation model configured via `->ask(...)`). Use
      * it to gate an ask UI so a demo renders an honest notice when conversations

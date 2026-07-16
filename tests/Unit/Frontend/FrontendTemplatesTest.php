@@ -127,3 +127,32 @@ it('graceful-degrades to the plugin default when a region override drops the req
             ->and($html)->not->toContain('broken-no-id-facets');
     });
 });
+
+it('switches a union document to its per-member card, and falls back to the shared card', function() {
+    withScratchOverrides([
+        '_result-card--news.twig' => '<li class="news-card">{{ doc.title }}</li>',
+    ], function() {
+        // A union doc whose _elementType has a per-member card uses it.
+        $news = FrontendTemplates::renderCard(['_elementType' => 'news', 'title' => 'A headline', 'id' => '1'], [
+            'doc' => ['_elementType' => 'news', 'title' => 'A headline', 'id' => '1'],
+            'href' => '#',
+            'clickUrl' => '#',
+            'csrfToken' => '',
+            'theme' => [],
+        ]);
+        expect($news)->toContain('news-card')
+            ->and($news)->toContain('A headline');
+
+        // A member without a per-member card falls back to the shared card.
+        $blocks = FrontendTemplates::renderCard(['_elementType' => 'blocks', 'title' => 'A block', 'id' => '2'], [
+            'doc' => ['_elementType' => 'blocks', 'title' => 'A block', 'id' => '2'],
+            'href' => '#',
+            'clickUrl' => '#',
+            'csrfToken' => '',
+            'theme' => [],
+        ]);
+        expect($blocks)->not->toContain('news-card')
+            ->and($blocks)->toContain('ts-results__item')
+            ->and($blocks)->toContain('A block');
+    });
+});
