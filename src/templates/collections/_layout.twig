@@ -19,7 +19,9 @@
    ========================================================================= #}
 {% extends '_layouts/cp' %}
 
-{% set title = screenName ?? definition.name %}
+{# The friendly display name is the human title; screenName (a config-file
+   collection's name) wins when set, since those have no display name. #}
+{% set title = screenName ?? definition.displayName ?? definition.name %}
 {% set selectedSubnavItem = 'collections' %}
 {% set crumbs = [
     { label: 'Collections'|t('typesense'), url: url('typesense/collections') },

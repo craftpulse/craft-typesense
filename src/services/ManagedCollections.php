@@ -147,6 +147,9 @@ class ManagedCollections extends Component
         $definition = new CollectionDefinition();
         $definition->uid = $uid;
         $definition->name = (string)($config['name'] ?? '');
+        // Backfill on read: a config saved before the display name existed has
+        // no displayName key, so fall back to the index name.
+        $definition->displayName = (string)($config['displayName'] ?? '') ?: $definition->name;
         /** @var class-string<ElementInterface> $elementType */
         $elementType = (string)($config['elementType'] ?? '');
         $definition->elementType = $elementType;

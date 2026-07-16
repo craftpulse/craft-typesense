@@ -55,9 +55,19 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     public ?string $fieldLayoutUid = null;
 
     /**
-     * @var string The logical collection name (the registry key).
+     * @var string The logical collection name (the registry key), which is also
+     * the Typesense index name. Locked once the collection is created (its
+     * immutability is the index-rename story). This is the handle-position field.
      */
     public string $name = '';
+
+    /**
+     * @var string The friendly display name shown throughout the control panel
+     * (the title-position field). Free-form and editable any time; falls back to
+     * the index name when unset (older configs, or a collection created before
+     * this field existed).
+     */
+    public string $displayName = '';
 
     /**
      * @var class-string<ElementInterface> The element type the collection indexes.
@@ -127,6 +137,10 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         $rules = parent::defineRules();
         $rules[] = [['name', 'elementType', 'multisite'], 'required'];
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
+        // displayName is not hard-required: it falls back to the index name (see
+        // getDisplayName()), so a programmatic save without it is graceful. The
+        // edit form marks the Name field required at the UI level.
+        $rules[] = [['displayName'], 'string'];
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
         $rules[] = [['enabled', 'searchable'], 'boolean'];
         $rules[] = [['mappings', 'metadata', 'relevance', 'embedding'], 'safe'];
@@ -145,6 +159,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     {
         $config = [
             'name' => $this->name,
+            'displayName' => $this->getDisplayName(),
             'elementType' => $this->elementType,
             'source' => $this->source,
             'multisite' => $this->multisite,
@@ -179,6 +194,18 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         }
 
         return $this->_fieldLayout;
+    }
+
+    /**
+     * The friendly display name, falling back to the index name when unset (an
+     * older config, or a collection created before the field existed).
+     *
+     * @return string
+     * @author CraftPulse
+     */
+    public function getDisplayName(): string
+    {
+        return $this->displayName !== '' ? $this->displayName : $this->name;
     }
 
     /**

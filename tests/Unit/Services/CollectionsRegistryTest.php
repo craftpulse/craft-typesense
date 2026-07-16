@@ -80,6 +80,20 @@ it('does not flag overrides when names do not collide', function() {
     );
 });
 
+it('exposes the config-file and event sources separately so neither leaks into the other', function() {
+    withCollections(
+        [Collection::make('cfg_only')->fields(Field::string('t'))],
+        [Collection::make('evt_only')->fields(Field::string('t'))],
+        function() {
+            expect(registry()->getConfigCollections())->toHaveKey('cfg_only')
+                ->and(registry()->getConfigCollections())->not->toHaveKey('evt_only')
+                ->and(registry()->getEventCollections())->toHaveKey('evt_only')
+                ->and(registry()->getEventCollections())->not->toHaveKey('cfg_only')
+                ->and(registry()->getAll())->toHaveKeys(['cfg_only', 'evt_only']);
+        },
+    );
+});
+
 it('resolves collection names through the environment prefix', function() {
     $settings = Typesense::$plugin->getSettings();
     $original = $settings->collectionPrefix;

@@ -203,7 +203,7 @@ class CollectionsController extends ProController
             'collection' => $collection,
             'editBase' => "typesense/collections/{$uid}",
             'editKey' => (string)$uid,
-            'screenName' => $definition->name,
+            'screenName' => $definition->getDisplayName(),
             'navItems' => self::editScreenNavItems($definition),
             'disabled' => !$definition->enabled || $collection === null,
         ];
@@ -363,7 +363,6 @@ class CollectionsController extends ProController
     {
         $registry = Typesense::$plugin->getCollectionRegistry();
         $managed = Typesense::$plugin->getManagedCollections()->getAll();
-        $configCollections = $registry->getAll();
         $primarySiteId = Craft::$app->getSites()->getPrimarySite()->id;
 
         // The name the front end queries: the logical/alias name when a
@@ -379,17 +378,44 @@ class CollectionsController extends ProController
                 : $registry->resolveName($definition->name);
         }
 
-        $configTsNames = [];
-        foreach ($configCollections as $name => $collection) {
-            $configTsNames[$name] = $registry->resolveName($collection, $primarySiteId);
+        // The "Code managed" tab lists only the read-only, code-owned sources:
+        // config-file declarations and module (event) registrations. The merged
+        // getAll() map is NOT used here, or a control-panel-managed collection
+        // would leak in with a false config-owned status. Config wins over a
+        // module name, so a config row represents an overridden name.
+        $overridden = $registry->getOverriddenNames();
+        $codeCollections = [];
+
+        foreach ($registry->getConfigCollections() as $name => $collection) {
+            $codeCollections[$name] = [
+                'name' => (string)$name,
+                'tsName' => $registry->resolveName($collection, $primarySiteId),
+                'elementType' => $collection->getElementType(),
+                'source' => 'config',
+                'overridden' => in_array($name, $overridden, true),
+            ];
+        }
+
+        foreach ($registry->getEventCollections() as $name => $collection) {
+            // A config-file collection of the same name wins, so it is already
+            // represented above (as overridden); do not double-list.
+            if (isset($codeCollections[$name])) {
+                continue;
+            }
+
+            $codeCollections[$name] = [
+                'name' => (string)$name,
+                'tsName' => $registry->resolveName($collection, $primarySiteId),
+                'elementType' => $collection->getElementType(),
+                'source' => 'module',
+                'overridden' => false,
+            ];
         }
 
         return $this->renderTemplate('typesense/collections/index', [
             'managed' => $managed,
-            'configCollections' => $configCollections,
             'managedTsNames' => $managedTsNames,
-            'configTsNames' => $configTsNames,
-            'overriddenNames' => $registry->getOverriddenNames(),
+            'codeCollections' => $codeCollections,
             'canManageCollections' => Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS),
             'rowSectionSuffix' => $this->_firstSectionSuffix() ?? '',
         ]);
@@ -453,6 +479,7 @@ class CollectionsController extends ProController
             : new CollectionDefinition();
 
         $definition->name = (string)$this->request->getBodyParam('name', $definition->name);
+        $definition->displayName = (string)$this->request->getBodyParam('displayName', $definition->displayName);
         $definition->multisite = (string)$this->request->getBodyParam('multisite', $definition->multisite);
         $definition->enabled = (bool)$this->request->getBodyParam('enabled', $definition->enabled);
 

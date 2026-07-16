@@ -88,6 +88,44 @@ class Collections extends Component
     }
 
     /**
+     * Returns only the config-file-declared collections (from
+     * `config/typesense.php`), keyed by logical name. Distinct from getAll(),
+     * which merges in the control-panel-managed and module-registered sources.
+     *
+     * @return array<string, Collection>
+     * @author CraftPulse
+     */
+    public function getConfigCollections(): array
+    {
+        $collections = [];
+
+        foreach ($this->_configCollections() as $collection) {
+            $collections[$collection->getName()] = $collection;
+        }
+
+        return $collections;
+    }
+
+    /**
+     * Returns only the module/event-registered collections (declared in code via
+     * EVENT_REGISTER_COLLECTIONS), keyed by logical name. These are code-owned
+     * and read-only in the control panel, like config-file collections.
+     *
+     * @return array<string, Collection>
+     * @author CraftPulse
+     */
+    public function getEventCollections(): array
+    {
+        $collections = [];
+
+        foreach ($this->_eventCollections() as $collection) {
+            $collections[$collection->getName()] = $collection;
+        }
+
+        return $collections;
+    }
+
+    /**
      * Returns the logical names of collections where a config-file collection
      * displaced an event-registered one (the overridden-by-config notice state).
      *

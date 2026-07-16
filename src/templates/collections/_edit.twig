@@ -33,8 +33,18 @@
     {{ forms.textField({
         first: true,
         label: 'Name'|t('typesense'),
-        instructions: 'The logical collection name. Letters, numbers, underscores, and hyphens. Locked once the collection is created.'|t('typesense'),
+        instructions: 'A friendly label for this collection, shown throughout the control panel. Editable any time.'|t('typesense'),
         id: 'name',
+        name: 'displayName',
+        value: definition.displayName,
+        required: true,
+        errors: definition.getErrors('displayName'),
+    }) }}
+
+    {{ forms.textField({
+        label: 'Index name'|t('typesense'),
+        instructions: 'The Typesense collection (index) name your front end queries. Letters, numbers, underscores, and hyphens. Locked once the collection is created.'|t('typesense'),
+        id: 'handle',
         name: 'name',
         class: 'code',
         value: definition.name,
@@ -42,6 +52,10 @@
         required: true,
         errors: definition.getErrors('name'),
     }) }}
+
+    {% if isNew %}
+        {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
+    {% endif %}
 
     {{ forms.selectField({
         label: 'Element source'|t('typesense'),

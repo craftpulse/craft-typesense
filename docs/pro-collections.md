@@ -9,11 +9,23 @@ without touching `config/typesense.php`. It sits alongside the config-file and
 code-registered collections, and everything it authors persists to project
 config, so it deploys and reviews like the rest of your configuration.
 
-The cockpit lists collections across two tabs, CP managed and Config managed.
-Each row carries a copyable "Typesense collection" chip: the exact name a front
-end should query. It is alias-aware, showing the logical (alias) name when the
-collection sits behind an alias and the physical name otherwise, which in both
-cases is the name Typesense answers to. Copy it to query the search server
+The cockpit lists collections across two tabs. **CP managed** holds the
+collections you author here. **Code managed** holds the read-only, code-owned
+collections: those declared in `config/typesense.php` and those registered by a
+module (a Source column distinguishes them). A collection is only ever in one
+tab.
+
+A CP-managed collection has a friendly **Name** (a display label, editable any
+time) and an **Index name** (the Typesense collection name your front end
+queries, locked once created since it is the index name). The edit screen seeds
+the index name from the Name as you type (the Craft Name/Handle idiom), and the
+Name is the row link in the list. Config-file and module collections have no
+display name, so their index name is shown as both.
+
+Each row also carries a copyable "Typesense collection" chip: the exact name a
+front end should query. It is alias-aware, showing the logical (alias) name when
+the collection sits behind an alias and the physical name otherwise, which in
+both cases is the name Typesense answers to. Copy it to query the search server
 directly (bypassing this plugin's search layer) when you roll your own front end.
 
 ## Editions and permissions

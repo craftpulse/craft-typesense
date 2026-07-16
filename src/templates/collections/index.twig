@@ -23,11 +23,14 @@
    can copy it and query Typesense directly. It rides the VueAdminTable handle
    slot, which renders Craft's copy-text button.
 
-   @var managed              array
-   @var configCollections    array
+   The second tab is "Code managed": the read-only, code-owned sources
+   (config-file declarations and module/event registrations), never the merged
+   runtime map, so a control-panel-managed collection never leaks in with a false
+   config-owned status. A Source column distinguishes config file from module.
+
+   @var managed              array   uid => CollectionDefinition (CP-managed)
    @var managedTsNames       array   uid  => the query-correct Typesense name
-   @var configTsNames        array   name => the query-correct Typesense name
-   @var overriddenNames      array
+   @var codeCollections      array   name => {name, tsName, elementType, source, overridden}
    @var canManageCollections bool    whether the viewer may create/edit/delete
    @var rowSectionSuffix     string  the section suffix the viewer first reaches
    ========================================================================= #}
@@ -39,7 +42,7 @@
 
 {% set tabs = {
     tsCpManaged: { label: 'CP managed'|t('typesense'), url: '#ts-cp-managed' },
-    tsConfigManaged: { label: 'Config managed'|t('typesense'), url: '#ts-config-managed' },
+    tsConfigManaged: { label: 'Code managed'|t('typesense'), url: '#ts-config-managed' },
 } %}
 
 {% block actionButton %}
@@ -61,7 +64,7 @@
     {% for uid, def in managed %}
         {% set managedData = managedData|merge([{
             id: uid,
-            title: def.name,
+            title: def.displayName,
             url: url('typesense/collections/' ~ uid ~ rowSectionSuffix),
             handle: managedTsNames[uid] ?? def.name,
             elementType: def.elementType|split('\\')|last,
@@ -70,14 +73,15 @@
         }]) %}
     {% endfor %}
 
-    {% set configData = [] %}
-    {% for name, collection in configCollections %}
-        {% set configData = configData|merge([{
-            title: name,
-            url: url('typesense/collections/config/' ~ name),
-            handle: configTsNames[name] ?? name,
-            elementType: collection.getElementType()|split('\\')|last,
-            status: name in overriddenNames ? 'Overridden by the config file'|t('typesense') : 'Read only (config-owned)'|t('typesense'),
+    {% set codeData = [] %}
+    {% for row in codeCollections %}
+        {% set codeData = codeData|merge([{
+            title: row.name,
+            url: url('typesense/collections/config/' ~ row.name),
+            handle: row.tsName,
+            elementType: row.elementType|split('\\')|last,
+            sourceLabel: row.source == 'module' ? 'Module'|t('typesense') : 'Config file'|t('typesense'),
+            status: row.overridden ? 'Overridden by the config file'|t('typesense') : 'Read only'|t('typesense'),
         }]) %}
     {% endfor %}
 
@@ -114,11 +118,12 @@
                 { name: '__slot:title', title: Craft.t('typesense', 'Name') },
                 { name: '__slot:handle', title: Craft.t('typesense', 'Typesense collection') },
                 { name: 'elementType', title: Craft.t('typesense', 'Element type') },
+                { name: 'sourceLabel', title: Craft.t('typesense', 'Source') },
                 { name: 'status', title: Craft.t('typesense', 'Status') },
             ],
             container: '#ts-config-collections-table',
-            emptyMessage: Craft.t('typesense', 'No config-file collections are declared.'),
-            tableData: {{ configData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            emptyMessage: Craft.t('typesense', 'No config-file or module-registered collections.'),
+            tableData: {{ codeData|json_encode(constant('JSON_HEX_TAG'))|raw }},
         });
     {% endjs %}
 {% endblock %}
