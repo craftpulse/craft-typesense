@@ -412,7 +412,14 @@ class MappingSources extends Component
         $source = $definition->source;
         $type = $definition->elementType;
 
-        if (is_a($type, Entry::class, true) && $source !== null) {
+        if (
+            is_a($type, Entry::class, true)
+            && $definition->sourceType === CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE
+            && $source !== null
+        ) {
+            // An entry-type source maps a single entry type's own field layout.
+            $layouts[] = Craft::$app->getEntries()->getEntryTypeByHandle($source)?->getFieldLayout();
+        } elseif (is_a($type, Entry::class, true) && $source !== null) {
             $section = Craft::$app->getEntries()->getSectionByHandle($source);
 
             foreach ($section?->getEntryTypes() ?? [] as $entryType) {

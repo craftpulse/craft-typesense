@@ -191,6 +191,14 @@ class Compiler extends Component
 
         $type = $definition->elementType;
 
+        // An entry-type source indexes a single entry type directly, including a
+        // sectionless (nested Matrix / CKEditor) entry type. A plain type() query
+        // returns nested entries without any owner or field scoping (verified
+        // against the playground: ->type(nestedHandle) returns the nested rows).
+        if (is_a($type, Entry::class, true) && $definition->sourceType === CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE) {
+            return static fn($query) => $query->type($source);
+        }
+
         if (is_a($type, Entry::class, true)) {
             return static fn($query) => $query->section($source);
         }
