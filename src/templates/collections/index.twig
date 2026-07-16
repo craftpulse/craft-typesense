@@ -2,12 +2,20 @@
    Typesense Pro - Collections cockpit (browse)
    =========================================================================
    Lists the control-panel-managed collections (create/edit/delete) and, read
-   only below, the collections owned by config/typesense.php. Both render as
-   VueAdminTables (matching vendor/craftcms/cms/src/templates/settings/assets/
+   only, the collections owned by config/typesense.php. Each list is a
+   VueAdminTable (matching vendor/craftcms/cms/src/templates/settings/assets/
    transforms/_index.twig): row name links to the collection edit screen, and
    the managed table deletes through the core delete affordance. A config-owned
    collection that displaces a code-registered one carries the "overridden by
    the config file" notice.
+
+   The two tables are split across anchor tabs rather than stacked under
+   headings: a VueAdminTable's pane bleeds with negative margins and is designed
+   to be the sole content of a pane (core never stacks two under headings), so
+   stacking them clipped the headings. Each tab pane holds one table as its sole
+   content, following the anchor-tab pattern in the craftcms skill's cp.md (tab
+   key, `url: '#...'` anchor, and the matching pane `<div id>` all line up, with
+   feature-prefixed keys so they never collide with Craft's reserved DOM ids).
 
    @var managed              array
    @var configCollections    array
@@ -21,6 +29,11 @@
 
 {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
 
+{% set tabs = {
+    tsCpManaged: { label: 'CP managed'|t('typesense'), url: '#ts-cp-managed' },
+    tsConfigManaged: { label: 'Config managed'|t('typesense'), url: '#ts-config-managed' },
+} %}
+
 {% block actionButton %}
     {% if canManageCollections %}
         <a href="{{ url('typesense/collections/new') }}" class="btn submit add icon">{{ 'New collection'|t('typesense') }}</a>
@@ -28,13 +41,13 @@
 {% endblock %}
 
 {% block content %}
-    <h2>{{ 'Managed in the control panel'|t('typesense') }}</h2>
-    <div id="ts-managed-collections-table"></div>
+    <div id="ts-cp-managed">
+        <div id="ts-managed-collections-table"></div>
+    </div>
 
-    <hr>
-
-    <h2>{{ 'Managed in config'|t('typesense') }}</h2>
-    <div id="ts-config-collections-table"></div>
+    <div id="ts-config-managed" class="hidden">
+        <div id="ts-config-collections-table"></div>
+    </div>
 
     {% set managedData = [] %}
     {% for uid, def in managed %}

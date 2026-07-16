@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/) and this p
 > - **Full upgrade guide:** see `docs/upgrading.md`.
 
 ### Changed
+- **The collections index splits its two lists across anchor tabs ("CP managed" and "Config managed").** A VueAdminTable's pane bleeds with negative margins and is designed to be the sole content of a pane, so stacking both tables under headings clipped the headings; each tab pane now holds one table as its sole content. The New collection button is unchanged.
 - Moved the internal PHP namespace from `percipiolondon\typesense` to `craftpulse\typesense`, keeping the `craftpulse/craft-typesense` package name and `typesense` handle.
 - Replaced the legacy client service with the new `Client` service. The plugin component is still reached with `getClient()`, and `getClient()->client()` still returns the typesense-php client, so existing calls keep working.
 - The plugin's `typesense:manageSettings` permission now gates the settings screen. The old `typesense:plugin-settings` and `typesense:dashboard` permissions were removed.
