@@ -17,6 +17,13 @@
 {% extends 'typesense/collections/_layout' %}
 {% set selectedNavItem = 'synonyms' %}
 
+{# The config read-only notice rides contentNotice so the table is the sole
+   content of its pane (a VueAdminTable bleeds to the pane edges and clips copy
+   above it), matching core's index screens. #}
+{% if not editable %}
+    {% set contentNotice = 'This collection declares its synonyms in config. They are read-only here.'|t('typesense') %}
+{% endif %}
+
 {% block actionButton %}
     {% if editable %}
         <a class="btn submit add icon" href="{{ url(editBase ~ '/synonyms/new') }}">{{ 'New synonym'|t('typesense') }}</a>
@@ -24,12 +31,6 @@
 {% endblock %}
 
 {% block content %}
-    {% if not editable %}
-        <blockquote class="note">
-            {{ 'This collection declares its synonyms in config. They are read-only here.'|t('typesense') }}
-        </blockquote>
-    {% endif %}
-
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-synonyms-table"></div>
 

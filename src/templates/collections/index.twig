@@ -17,8 +17,16 @@
    key, `url: '#...'` anchor, and the matching pane `<div id>` all line up, with
    feature-prefixed keys so they never collide with Craft's reserved DOM ids).
 
+   Each row carries a copyable "Typesense collection" chip: the exact name a
+   front end should query (the logical/alias name when the collection sits behind
+   an alias, the physical name otherwise), so someone rolling their own front end
+   can copy it and query Typesense directly. It rides the VueAdminTable handle
+   slot, which renders Craft's copy-text button.
+
    @var managed              array
    @var configCollections    array
+   @var managedTsNames       array   uid  => the query-correct Typesense name
+   @var configTsNames        array   name => the query-correct Typesense name
    @var overriddenNames      array
    @var canManageCollections bool    whether the viewer may create/edit/delete
    @var rowSectionSuffix     string  the section suffix the viewer first reaches
@@ -55,9 +63,10 @@
             id: uid,
             title: def.name,
             url: url('typesense/collections/' ~ uid ~ rowSectionSuffix),
+            handle: managedTsNames[uid] ?? def.name,
             elementType: def.elementType|split('\\')|last,
             source: def.source ?? 'All'|t('typesense'),
-            enabled: def.enabled ? 'Yes'|t('typesense') : 'No'|t('typesense'),
+            enabled: def.enabled,
         }]) %}
     {% endfor %}
 
@@ -66,6 +75,7 @@
         {% set configData = configData|merge([{
             title: name,
             url: url('typesense/collections/config/' ~ name),
+            handle: configTsNames[name] ?? name,
             elementType: collection.getElementType()|split('\\')|last,
             status: name in overriddenNames ? 'Overridden by the config file'|t('typesense') : 'Read only (config-owned)'|t('typesense'),
         }]) %}
@@ -75,9 +85,17 @@
         var managedConfig = {
             columns: [
                 { name: '__slot:title', title: Craft.t('typesense', 'Name') },
+                { name: '__slot:handle', title: Craft.t('typesense', 'Typesense collection') },
                 { name: 'elementType', title: Craft.t('typesense', 'Element type') },
                 { name: 'source', title: Craft.t('typesense', 'Source') },
-                { name: 'enabled', title: Craft.t('typesense', 'Enabled') },
+                {
+                    name: 'enabled',
+                    title: Craft.t('typesense', 'Enabled'),
+                    callback: function(value) {
+                        return '<span class="status ' + (value ? 'green' : '') + '"></span>' +
+                            (value ? Craft.t('typesense', 'Enabled') : Craft.t('typesense', 'Disabled'));
+                    },
+                },
             ],
             container: '#ts-managed-collections-table',
             emptyMessage: Craft.t('typesense', 'No control-panel collections yet. Create one to map an element source to a Typesense collection.'),
@@ -94,6 +112,7 @@
         new Craft.VueAdminTable({
             columns: [
                 { name: '__slot:title', title: Craft.t('typesense', 'Name') },
+                { name: '__slot:handle', title: Craft.t('typesense', 'Typesense collection') },
                 { name: 'elementType', title: Craft.t('typesense', 'Element type') },
                 { name: 'status', title: Craft.t('typesense', 'Status') },
             ],

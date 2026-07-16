@@ -13,13 +13,14 @@
     { label: definition.name, url: url('typesense/collections/' ~ definition.uid ~ '/vector') },
 ] %}
 
+{# The models table leads the pane with nothing above it (a VueAdminTable bleeds
+   to the pane edges and clips copy above it); the cost warning rides
+   contentNotice. The create form sits below the table, the one spot core allows
+   secondary content in a table pane (settings/assets/transforms/_index.twig puts
+   its New button below the table the same way). #}
+{% set contentNotice = 'Conversational RAG makes a per-search call to an LLM provider, so each conversational query has a cost. The API key is read from an environment variable and never stored by the plugin.'|t('typesense') %}
+
 {% block content %}
-    <blockquote class="note warning">
-        {{ 'Conversational RAG makes a per-search call to an LLM provider, so each conversational query has a cost. The API key is read from an environment variable and never stored by the plugin.'|t('typesense') }}
-    </blockquote>
-
-    <h2>{{ 'Models'|t('typesense') }}</h2>
-
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-conversation-models-table"></div>
 

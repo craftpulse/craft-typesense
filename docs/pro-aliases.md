@@ -29,6 +29,11 @@ Because the alias swap is atomic and the new collection is fully populated befor
 the swap, the logical name resolves to a queryable collection at every step. The
 first rebuild of a plain (non-alias) collection converts it to the alias pattern.
 
+The aliases screen lists one row per collection: the collection name, a copyable
+Query name (the name a front end should hit, alias-aware), the physical
+collection currently serving it (also copyable), and when it was last built. Both
+copyable chips use Craft's copy-text button.
+
 Rebuilds always run on the queue, never as a blocking request: a schema change
 applied in place blocks writes cluster-wide, so the plugin never does that.
 Trigger a rebuild from the aliases screen or the console:

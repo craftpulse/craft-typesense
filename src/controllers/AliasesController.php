@@ -148,7 +148,7 @@ class AliasesController extends ProController
      * aliased), and when that physical collection was last built (its server
      * created_at). Fail-soft: an unreachable server yields null timestamps.
      *
-     * @return array<int, array{name: string, physical: string, aliased: bool, lastBuilt: int|null}>
+     * @return array<int, array{name: string, resolved: string, physical: string, aliased: bool, lastBuilt: int|null}>
      * @throws \yii\base\InvalidConfigException
      * @author CraftPulse
      */
@@ -182,6 +182,7 @@ class AliasesController extends ProController
             $physical = $aliased ? (string)$aliases[$resolved] : $resolved;
             $rows[] = [
                 'name' => (string)$name,
+                'resolved' => $resolved,
                 'physical' => $physical,
                 'aliased' => $aliased,
                 'lastBuilt' => $created[$physical] ?? null,

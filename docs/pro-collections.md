@@ -9,6 +9,13 @@ without touching `config/typesense.php`. It sits alongside the config-file and
 code-registered collections, and everything it authors persists to project
 config, so it deploys and reviews like the rest of your configuration.
 
+The cockpit lists collections across two tabs, CP managed and Config managed.
+Each row carries a copyable "Typesense collection" chip: the exact name a front
+end should query. It is alias-aware, showing the logical (alias) name when the
+collection sits behind an alias and the physical name otherwise, which in both
+cases is the name Typesense answers to. Copy it to query the search server
+directly (bypassing this plugin's search layer) when you roll your own front end.
+
 ## Editions and permissions
 
 The cockpit is a Pro feature. In the Free edition the plugin renders none of the

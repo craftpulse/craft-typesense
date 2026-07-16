@@ -362,10 +362,33 @@ class CollectionsController extends ProController
     public function actionIndex(): Response
     {
         $registry = Typesense::$plugin->getCollectionRegistry();
+        $managed = Typesense::$plugin->getManagedCollections()->getAll();
+        $configCollections = $registry->getAll();
+        $primarySiteId = Craft::$app->getSites()->getPrimarySite()->id;
+
+        // The name the front end queries: the logical/alias name when a
+        // collection sits behind an alias, the physical name otherwise. In both
+        // cases that is resolveName() (an alias is registered under the resolved
+        // logical name, and search routes it to the physical collection), so the
+        // resolved name is query-correct either way.
+        $managedTsNames = [];
+        foreach ($managed as $uid => $definition) {
+            $collection = $registry->get($definition->name);
+            $managedTsNames[$uid] = $collection !== null
+                ? $registry->resolveName($collection, $primarySiteId)
+                : $registry->resolveName($definition->name);
+        }
+
+        $configTsNames = [];
+        foreach ($configCollections as $name => $collection) {
+            $configTsNames[$name] = $registry->resolveName($collection, $primarySiteId);
+        }
 
         return $this->renderTemplate('typesense/collections/index', [
-            'managed' => Typesense::$plugin->getManagedCollections()->getAll(),
-            'configCollections' => $registry->getAll(),
+            'managed' => $managed,
+            'configCollections' => $configCollections,
+            'managedTsNames' => $managedTsNames,
+            'configTsNames' => $configTsNames,
             'overriddenNames' => $registry->getOverriddenNames(),
             'canManageCollections' => Craft::$app->getUser()->checkPermission(self::PERMISSION_MANAGE_COLLECTIONS),
             'rowSectionSuffix' => $this->_firstSectionSuffix() ?? '',

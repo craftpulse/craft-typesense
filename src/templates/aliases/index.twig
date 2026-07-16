@@ -1,13 +1,15 @@
 {# =========================================================================
    Typesense Pro - aliases manager (one coherent flow)
    =========================================================================
-   One table of collections: each collection's current physical target and when
-   it was last built, with a per-row zero-downtime rebuild (the core per-row
-   action-menu idiom from vendor/craftcms/cms/src/templates/settings/plugins/
-   index.twig, via the disclosureMenu Twig function). A capability-gated clone
-   folds in below.
+   One table of collections: the query name a front end should hit (copyable),
+   the physical target currently serving it (copyable), and when it was last
+   built, with a per-row zero-downtime rebuild (the core per-row action-menu
+   idiom from vendor/craftcms/cms/src/templates/settings/plugins/index.twig, via
+   the disclosureMenu Twig function). The copyable chips use Craft's copy-text
+   button, the same control behind a VueAdminTable handle column. A
+   capability-gated clone folds in below.
 
-   @var rows            array   {name, physical, aliased, lastBuilt}
+   @var rows            array   {name, resolved, physical, aliased, lastBuilt}
    @var supportsCloning bool
    ========================================================================= #}
 {% extends '_layouts/cp' %}
@@ -27,6 +29,7 @@
             <thead>
                 <tr>
                     <th scope="col">{{ 'Collection'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Query name'|t('typesense') }}</th>
                     <th scope="col">{{ 'Serving collection'|t('typesense') }}</th>
                     <th scope="col">{{ 'Last built'|t('typesense') }}</th>
                     <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
@@ -35,9 +38,10 @@
             <tbody>
                 {% for row in rows %}
                     <tr>
-                        <td><code>{{ row.name }}</code></td>
+                        <td><strong>{{ row.name }}</strong></td>
+                        <td><span class="ts-copytext" data-value="{{ row.resolved }}"></span></td>
                         <td>
-                            <code>{{ row.physical }}</code>
+                            <span class="ts-copytext" data-value="{{ row.physical }}"></span>
                             {% if not row.aliased %}<span class="light"> {{ '(direct, not aliased yet)'|t('typesense') }}</span>{% endif %}
                         </td>
                         <td>
@@ -66,6 +70,17 @@
                 {% endfor %}
             </tbody>
         </table>
+
+        {% js %}
+            // Render Craft's copy-text button into each query/physical name cell
+            // (the same control a VueAdminTable handle column uses).
+            $('.ts-copytext').each(function() {
+                var value = $(this).data('value');
+                if (value) {
+                    $(this).append(Craft.ui.createCopyTextBtn({ value: value, class: 'code light' }));
+                }
+            });
+        {% endjs %}
     {% endif %}
 
     {% if supportsCloning %}

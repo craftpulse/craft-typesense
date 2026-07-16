@@ -11,9 +11,13 @@
     <a class="btn submit add icon" href="{{ url('typesense/experiments/new') }}">{{ 'New experiment'|t('typesense') }}</a>
 {% endblock %}
 
-{% block content %}
-    <p class="light">{{ 'An A/B experiment splits a collection’s search traffic between variants. Each variant applies its own search composition (a preset, an optional scoped-key filter profile, and an analytics tag), and the front end asks craft.typesense.experiment("handle") which variant to use per visitor. Compare the tagged results in the analytics dashboard.'|t('typesense') }}</p>
+{# The intro rides contentNotice so the table is the sole content of its pane
+   (a VueAdminTable bleeds to the pane edges and clips copy above it), matching
+   core's index screens. The empty state has no table, so its fuller copy is
+   safe inside the pane. #}
+{% set contentNotice = 'An A/B experiment splits a collection’s search traffic between variants. Each variant applies its own search composition (a preset, an optional scoped-key filter profile, and an analytics tag), and the front end asks craft.typesense.experiment("handle") which variant to use per visitor. Compare the tagged results in the analytics dashboard.'|t('typesense') %}
 
+{% block content %}
     {% if experiments is empty %}
         <div class="zilch">
             <p>{{ 'No experiments yet.'|t('typesense') }}</p>
@@ -33,7 +37,7 @@
             handle: handle,
             collection: experiment.collection,
             variants: experiment.variants|length,
-            status: experiment.enabled ? 'Active'|t('typesense') : 'Paused'|t('typesense'),
+            enabled: experiment.enabled,
         }]) %}
     {% endfor %}
 
@@ -44,7 +48,14 @@
                 { name: '__slot:handle', title: Craft.t('typesense', 'Handle') },
                 { name: 'collection', title: Craft.t('typesense', 'Collection') },
                 { name: 'variants', title: Craft.t('typesense', 'Variants') },
-                { name: 'status', title: Craft.t('typesense', 'Status') },
+                {
+                    name: 'enabled',
+                    title: Craft.t('typesense', 'Status'),
+                    callback: function(value) {
+                        return '<span class="status ' + (value ? 'green' : '') + '"></span>' +
+                            (value ? Craft.t('typesense', 'Active') : Craft.t('typesense', 'Paused'));
+                    },
+                },
             ],
             container: '#ts-experiments-table',
             emptyMessage: Craft.t('typesense', 'No experiments yet.'),

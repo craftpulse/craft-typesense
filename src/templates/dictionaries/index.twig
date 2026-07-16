@@ -7,13 +7,18 @@
 {% set title = 'Dictionaries'|t('typesense') %}
 {% set selectedSubnavItem = 'dictionaries' %}
 
+{# The table is the sole content of its pane (a VueAdminTable bleeds to the pane
+   edges, so any copy or heading above it is clipped). The intro rides
+   contentNotice, and the Stemming dictionaries link rides the header action
+   button, matching how core index screens keep copy and buttons out of the
+   table's pane (settings/assets/transforms/_index.twig, settings/fields/index). #}
+{% set contentNotice = 'Manage each collection’s stopwords below. Stemming dictionaries are shared across collections.'|t('typesense') %}
+
+{% block actionButton %}
+    <a class="btn" href="{{ url('typesense/dictionaries/stemming') }}">{{ 'Stemming dictionaries'|t('typesense') }}</a>
+{% endblock %}
+
 {% block content %}
-    <p class="light">{{ 'Manage each collection’s stopwords, and the stemming dictionaries shared across collections.'|t('typesense') }}</p>
-
-    <p><a class="btn" href="{{ url('typesense/dictionaries/stemming') }}">{{ 'Stemming dictionaries'|t('typesense') }}</a></p>
-
-    <h2>{{ 'Stopwords'|t('typesense') }}</h2>
-
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-stopwords-table"></div>
 

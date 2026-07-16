@@ -68,36 +68,47 @@
     <h2>{{ 'Scoped-key profiles'|t('typesense') }}</h2>
     <p class="light">{{ 'A scoped-key profile is a reusable filter template for front-end scoped search keys. Reference one in Twig with craft.typesense.scopedSearchKey({ profile: "handle" }) to issue a narrow, expiring key that only ever sees the filtered results.'|t('typesense') }}</p>
 
-    {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
-    <div id="ts-key-profiles-table"></div>
-
-    {% set profileData = [] %}
-    {% for handle, profile in profiles %}
-        {% set profileData = profileData|merge([{
-            id: handle,
-            title: profile.name,
-            url: url('typesense/keys/profile/' ~ handle),
-            handle: handle,
-            filter: profile.filterBy ?: 'None'|t('typesense'),
-            expiresIn: profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense'),
-        }]) %}
-    {% endfor %}
-
-    {% js %}
-        new Craft.VueAdminTable({
-            columns: [
-                { name: '__slot:title', title: Craft.t('typesense', 'Profile') },
-                { name: '__slot:handle', title: Craft.t('typesense', 'Handle') },
-                { name: 'filter', title: Craft.t('typesense', 'Filter') },
-                { name: 'expiresIn', title: Craft.t('typesense', 'Expires in') },
-            ],
-            container: '#ts-key-profiles-table',
-            emptyMessage: Craft.t('typesense', 'No profiles yet.'),
-            tableData: {{ profileData|json_encode(constant('JSON_HEX_TAG'))|raw }},
-            deleteAction: 'typesense/keys/delete-profile',
-            deleteConfirmationMessage: Craft.t('typesense', 'Delete this profile?'),
-        });
-    {% endjs %}
+    {% if profiles is empty %}
+        <div class="zilch"><p>{{ 'No profiles yet.'|t('typesense') }}</p></div>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Profile'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Handle'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Filter'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Expires in'|t('typesense') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle, profile in profiles %}
+                    <tr>
+                        <td><a href="{{ url('typesense/keys/profile/' ~ handle) }}"><strong>{{ profile.name }}</strong></a></td>
+                        <td><code>{{ handle }}</code></td>
+                        <td>{% if profile.filterBy %}<code>{{ profile.filterBy }}</code>{% else %}<span class="light">{{ 'None'|t('typesense') }}</span>{% endif %}</td>
+                        <td>{{ profile.expiresIn > 0 ? profile.expiresIn ~ 's' : 'Never'|t('typesense') }}</td>
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {{ disclosureMenu([
+                                {
+                                    label: 'Delete'|t('typesense'),
+                                    action: 'typesense/keys/delete-profile',
+                                    params: { id: handle },
+                                    destructive: true,
+                                    confirm: 'Delete this profile?'|t('typesense'),
+                                },
+                            ], {
+                                buttonAttributes: {
+                                    class: ['action-btn', 'hairline'],
+                                    hiddenLabel: 'Actions'|t('typesense'),
+                                },
+                            }) }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
 
     <div class="buttons">
         <a class="btn submit add icon" href="{{ url('typesense/keys/profile') }}">{{ 'New profile'|t('typesense') }}</a>
