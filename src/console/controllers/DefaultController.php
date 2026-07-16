@@ -19,6 +19,7 @@ use percipiolondon\typesense\events\DocumentEvent;
 
 use percipiolondon\typesense\Typesense;
 use yii\console\Controller;
+use yii\console\ExitCode;
 
 /**
  * Default Command
@@ -56,8 +57,31 @@ class DefaultController extends Controller
     public const EVENT_BEFORE_FLUSH = 'beforeFlush';
     public const EVENT_BEFORE_SYNC = 'beforeSync';
 
+    // Public Properties
+    // =========================================================================
+
+    /**
+     * @var bool Whether to skip the confirmation prompt on the destructive
+     * update-schema action.
+     */
+    public bool $force = false;
+
     // Public Methods
     // =========================================================================
+
+    /**
+     * @inheritdoc
+     */
+    public function options($actionID): array
+    {
+        $options = parent::options($actionID);
+
+        if ($actionID === 'update-schema') {
+            $options[] = 'force';
+        }
+
+        return $options;
+    }
 
     /**
      * Handle typesense/default console commands
@@ -93,9 +117,26 @@ class DefaultController extends Controller
         }
     }
 
+    /**
+     * DESTRUCTIVE: drops and recreates every configured collection's fields.
+     *
+     * Rebuilds each collection's schema by dropping all of its fields and
+     * re-adding them from config/typesense.php. Existing field data is removed
+     * and must be re-synced afterwards. Intended for development when a schema is
+     * tweaked. Prompts for confirmation unless --force is passed.
+     *
+     * @return mixed
+     */
     public function actionUpdateSchema()
     {
+        if (!$this->force && !$this->confirm('This DROPS and recreates the fields on every configured collection, removing existing field data. Continue?')) {
+            $this->stdout('Aborted.' . PHP_EOL);
+            return ExitCode::OK;
+        }
+
         Typesense::$plugin->getCollections()->updateSchema();
+
+        return ExitCode::OK;
     }
 
     public function actionSync()
