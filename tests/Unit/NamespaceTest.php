@@ -13,6 +13,7 @@
  * @since     5.9.0
  */
 
+use craftpulse\typesense\jobs\RebuildCollection;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\Typesense;
 use craftpulse\typesense\TypesenseCollectionIndex;
@@ -42,4 +43,32 @@ it('aliases the legacy percipiolondon class names to the craftpulse namespace', 
     ]);
 
     expect($index)->toBeInstanceOf(TypesenseCollectionIndex::class);
+});
+
+it('unserializes a queue payload that carries a legacy class name', function() {
+    // A queue message already in the database, enqueued before the upgrade, holds
+    // the serialized job under its old FQCN. Simulate that exact string and prove
+    // it unserializes and runs: the fallback autoloader aliases the legacy class
+    // during unserialize(), so the payload resolves to the new job class.
+    $newClass = RebuildCollection::class;
+    $legacyClass = 'percipiolondon\\typesense\\jobs\\RebuildCollection';
+
+    $job = new RebuildCollection();
+    $job->collectionHandle = 'heroes';
+    $job->siteId = 1;
+
+    // Rewrite the class token in the serialized payload to the legacy FQCN,
+    // recomputing the length prefix so the string stays valid.
+    $legacyPayload = str_replace(
+        sprintf('O:%d:"%s"', strlen($newClass), $newClass),
+        sprintf('O:%d:"%s"', strlen($legacyClass), $legacyClass),
+        serialize($job),
+    );
+
+    /** @var RebuildCollection $restored */
+    $restored = unserialize($legacyPayload);
+
+    expect($restored)->toBeInstanceOf($newClass)
+        ->and($restored->collectionHandle)->toBe('heroes')
+        ->and($restored->siteId)->toBe(1);
 });

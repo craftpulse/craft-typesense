@@ -28,8 +28,25 @@ and the plugin handle (`typesense`) are unchanged, so project config,
 permissions, and settings survive.
 
 If your own code references plugin classes directly, update the namespace. A
-backwards-compatibility autoloader keeps legacy `percipiolondon\typesense\*`
-class names working in the meantime.
+backwards-compatibility autoloader (a Composer `files`-loaded fallback in
+`src/bootstrap.php`) keeps legacy `percipiolondon\typesense\*` class names working
+in the meantime: it logs a Craft deprecation naming the old and new class, then
+aliases the old name to the new one. This covers every place a legacy name
+survives the upgrade:
+
+- `config/typesense.php` references and custom-module `Event::on(percipiolondon\...)`
+  handlers and type hints.
+- Class strings Craft persisted (a dashboard `HealthWidget`, the mapping
+  field-layout element classes in project config). The field-layout classes are
+  also permanently rewritten to the new namespace by a migration on `craft up`, so
+  that stored data no longer depends on the shim.
+- Serialized queue payloads already in the database, which unserialize and run
+  through the alias.
+
+**Deprecation timeline.** The shim is a bridge, not a permanent contract: legacy
+`percipiolondon\typesense\*` names are deprecated as of 5.9.0 and the shim will be
+removed in a future major version. Update your references (and re-save any
+CP-managed collections) to clear the deprecation warnings.
 
 ### Config files keep working
 
