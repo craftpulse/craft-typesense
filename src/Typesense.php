@@ -42,6 +42,7 @@ use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\web\View;
 use craftpulse\typesense\base\PluginTrait;
+use craftpulse\typesense\controllers\AiProvidersController;
 use craftpulse\typesense\controllers\AliasesController;
 use craftpulse\typesense\controllers\AnalyticsController;
 use craftpulse\typesense\controllers\CollectionsController;
@@ -318,6 +319,13 @@ class Typesense extends Plugin
                 ];
             }
 
+            if ($currentUser->checkPermission(AiProvidersController::PERMISSION_MANAGE_AI_PROVIDERS)) {
+                $subNavs['ai-providers'] = [
+                    'label' => Craft::t('typesense', 'AI providers'),
+                    'url' => 'typesense/ai-providers',
+                ];
+            }
+
             // The playground sits at the bottom of the Pro subnav, directly above
             // Settings (Michael's Fix 11 ruling).
             if ($currentUser->checkPermission(PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS)) {
@@ -515,6 +523,11 @@ class Typesense extends Plugin
             $routes['typesense/keys/profile'] = 'typesense/keys/edit-profile';
             $routes['typesense/keys/profile/<handle:[\w\-]+>'] = 'typesense/keys/edit-profile';
             $routes['typesense/analytics'] = 'typesense/analytics/index';
+            $routes['typesense/ai-providers'] = 'typesense/ai-providers/index';
+            $routes['typesense/ai-providers/provider/new'] = 'typesense/ai-providers/edit-provider';
+            $routes['typesense/ai-providers/provider/<handle:[\w\-]+>'] = 'typesense/ai-providers/edit-provider';
+            $routes['typesense/ai-providers/model/new'] = 'typesense/ai-providers/edit-model';
+            $routes['typesense/ai-providers/model/<handle:[\w\-]+>'] = 'typesense/ai-providers/edit-model';
         }
 
         return $routes;
@@ -562,6 +575,9 @@ class Typesense extends Plugin
             ];
             $permissions[AnalyticsController::PERMISSION_VIEW_ANALYTICS] = [
                 'label' => Craft::t('typesense', 'View analytics'),
+            ];
+            $permissions[AiProvidersController::PERMISSION_MANAGE_AI_PROVIDERS] = [
+                'label' => Craft::t('typesense', 'Manage AI providers and conversation models'),
             ];
             $permissions[PlaygroundController::PERMISSION_VIEW_DIAGNOSTICS] = [
                 'label' => Craft::t('typesense', 'Use the search playground and diagnostics'),

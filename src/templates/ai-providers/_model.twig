@@ -1,0 +1,101 @@
+{# =========================================================================
+   Typesense Pro - conversation model editor
+   =========================================================================
+   @var model           craftpulse\typesense\models\ConversationModel
+   @var isNew           bool
+   @var providerOptions array  conversation-kind provider select options
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set title = isNew ? 'New conversation model'|t('typesense') : model.name %}
+{% set selectedSubnavItem = 'ai-providers' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'AI providers'|t('typesense'), url: url('typesense/ai-providers') }] %}
+
+{% block content %}
+    {{ actionInput('typesense/ai-providers/save-model') }}
+    {% if not isNew %}{{ hiddenInput('originalHandle', model.handle) }}{% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('typesense'),
+        id: 'name',
+        name: 'name',
+        value: model.name,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('typesense'),
+        instructions: 'Referenced from a collection with ->ask("handle"). Also the Typesense server model id.'|t('typesense'),
+        id: 'handle',
+        name: 'handle',
+        class: 'code',
+        value: model.handle,
+        disabled: not isNew,
+        required: true,
+    }) }}
+
+    {% if isNew %}
+        {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
+    {% endif %}
+
+    {{ forms.selectField({
+        label: 'Conversation provider'|t('typesense'),
+        instructions: 'The conversation provider supplying the credentials and endpoint. Create one on the AI providers screen first.'|t('typesense'),
+        id: 'providerHandle',
+        name: 'providerHandle',
+        options: providerOptions,
+        value: model.providerHandle,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'LLM model name'|t('typesense'),
+        instructions: 'The model passed to the provider, for example gpt-4o-mini.'|t('typesense'),
+        id: 'modelName',
+        name: 'modelName',
+        class: 'code',
+        value: model.modelName,
+        required: true,
+    }) }}
+
+    {{ forms.textareaField({
+        label: 'System prompt'|t('typesense'),
+        instructions: 'Prepended to every conversation.'|t('typesense'),
+        id: 'systemPrompt',
+        name: 'systemPrompt',
+        rows: 4,
+        value: model.systemPrompt,
+    }) }}
+
+    {{ forms.textField({
+        label: 'History collection'|t('typesense'),
+        instructions: 'The Typesense collection conversation turns are stored in. Created automatically when the model is pushed to the server.'|t('typesense'),
+        id: 'historyCollection',
+        name: 'historyCollection',
+        class: 'code',
+        value: model.historyCollection,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Conversation TTL (seconds)'|t('typesense'),
+        instructions: 'How long a conversation is retained. 0 uses the server default.'|t('typesense'),
+        type: 'number',
+        id: 'ttl',
+        name: 'ttl',
+        value: model.ttl,
+        size: 10,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Max answer bytes'|t('typesense'),
+        instructions: 'The answer byte budget. 0 uses the server default.'|t('typesense'),
+        type: 'number',
+        id: 'maxBytes',
+        name: 'maxBytes',
+        value: model.maxBytes,
+        size: 10,
+    }) }}
+{% endblock %}

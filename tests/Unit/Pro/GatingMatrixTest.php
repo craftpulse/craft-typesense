@@ -25,6 +25,7 @@ use craftpulse\typesense\Typesense;
  * @return array<string, array{0: string, 1: string, 2: string}>
  */
 dataset('proActions', [
+    'ai-providers' => ['typesense/ai-providers/index', 'get', 'typesense:manageAiProviders'],
     'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageAliases'],
     'analytics' => ['typesense/analytics/index', 'get', 'typesense:viewAnalytics'],
     'collections' => ['typesense/collections/edit', 'get', 'typesense:manageCollections'],

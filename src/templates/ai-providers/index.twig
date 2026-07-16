@@ -1,0 +1,146 @@
+{# =========================================================================
+   Typesense Pro - AI providers manager
+   =========================================================================
+   @var providers      craftpulse\typesense\models\AiProvider[]        keyed by handle
+   @var models         craftpulse\typesense\models\ConversationModel[] keyed by handle
+   @var serverModelIds string[]  conversation model ids present on the server
+   @var typeLabels     string[]  type handle => label
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% set title = 'AI providers'|t('typesense') %}
+{% set selectedSubnavItem = 'ai-providers' %}
+
+{% block content %}
+    <p class="light">{{ 'AI providers hold the credentials and endpoints the embedding and conversation subsystems draw on. Credentials are stored as environment variable references only and resolved at the moment a config is sent to Typesense. Providers declared in config/typesense.php are read only here.'|t('typesense') }}</p>
+
+    {% if providers is empty %}
+        <div class="zilch"><p>{{ 'No AI providers yet.'|t('typesense') }}</p></div>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Provider'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Handle'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Kind'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Type'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Source'|t('typesense') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle, provider in providers %}
+                    <tr>
+                        <td>
+                            {%- if provider.readOnly -%}
+                                <strong>{{ provider.name }}</strong>
+                            {%- else -%}
+                                <a href="{{ url('typesense/ai-providers/provider/' ~ handle) }}"><strong>{{ provider.name }}</strong></a>
+                            {%- endif -%}
+                            {% if not provider.enabled %} <span class="light">({{ 'disabled'|t('typesense') }})</span>{% endif %}
+                        </td>
+                        <td><code>{{ handle }}</code></td>
+                        <td>{{ provider.kind == 'conversation' ? 'Conversation'|t('typesense') : 'Embedding'|t('typesense') }}</td>
+                        <td>{{ typeLabels[provider.type] ?? provider.type }}</td>
+                        <td>{% if provider.readOnly %}<span class="status-label"><span class="status"></span>{{ 'Config file'|t('typesense') }}</span>{% else %}<span class="light">{{ 'Control panel'|t('typesense') }}</span>{% endif %}</td>
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {% if not provider.readOnly %}
+                                {{ disclosureMenu([
+                                    {
+                                        label: 'Edit'|t('typesense'),
+                                        url: url('typesense/ai-providers/provider/' ~ handle),
+                                    },
+                                    {
+                                        label: 'Delete'|t('typesense'),
+                                        action: 'typesense/ai-providers/delete-provider',
+                                        params: { id: handle },
+                                        destructive: true,
+                                        confirm: 'Delete this provider? Any embedding config or conversation model that references it will stop resolving.'|t('typesense'),
+                                    },
+                                ], {
+                                    buttonAttributes: { class: ['action-btn', 'hairline'], hiddenLabel: 'Actions'|t('typesense') },
+                                }) }}
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div class="buttons">
+        <a class="btn submit add icon" href="{{ url('typesense/ai-providers/provider/new', { kind: 'embedding' }) }}">{{ 'New embedding provider'|t('typesense') }}</a>
+        <a class="btn add icon" href="{{ url('typesense/ai-providers/provider/new', { kind: 'conversation' }) }}">{{ 'New conversation provider'|t('typesense') }}</a>
+    </div>
+
+    <hr>
+
+    <h2>{{ 'Conversation models'|t('typesense') }}</h2>
+    <p class="light">{{ 'A conversation model is a named answer configuration a searchable collection opts into with ->ask("handle"). Push it to the server to make it answerable; every question is an LLM call, so opt in deliberately and set your abuse policy at the edge.'|t('typesense') }}</p>
+
+    {% if models is empty %}
+        <div class="zilch"><p>{{ 'No conversation models yet.'|t('typesense') }}</p></div>
+    {% else %}
+        <table class="data fullwidth">
+            <thead>
+                <tr>
+                    <th scope="col">{{ 'Model'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Handle'|t('typesense') }}</th>
+                    <th scope="col">{{ 'Provider'|t('typesense') }}</th>
+                    <th scope="col">{{ 'LLM model'|t('typesense') }}</th>
+                    <th scope="col">{{ 'On server'|t('typesense') }}</th>
+                    <th scope="col"><span class="visually-hidden">{{ 'Actions'|t('typesense') }}</span></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for handle, model in models %}
+                    {% set onServer = handle in serverModelIds %}
+                    <tr>
+                        <td>
+                            {%- if model.readOnly -%}
+                                <strong>{{ model.name }}</strong>
+                            {%- else -%}
+                                <a href="{{ url('typesense/ai-providers/model/' ~ handle) }}"><strong>{{ model.name }}</strong></a>
+                            {%- endif -%}
+                        </td>
+                        <td><code>{{ handle }}</code></td>
+                        <td><code>{{ model.providerHandle }}</code></td>
+                        <td><code>{{ model.modelName }}</code></td>
+                        <td>
+                            {% if onServer %}
+                                <span class="status-label"><span class="status green"></span>{{ 'Pushed'|t('typesense') }}</span>
+                            {% else %}
+                                <span class="status-label"><span class="status"></span>{{ 'Not pushed'|t('typesense') }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="nowrap thin" data-title="{{ 'Actions'|t('typesense') }}">
+                            {{ disclosureMenu([
+                                {
+                                    label: 'Push to server'|t('typesense'),
+                                    action: 'typesense/ai-providers/push-model',
+                                    params: { id: handle },
+                                },
+                                not model.readOnly ? {
+                                    label: 'Edit'|t('typesense'),
+                                    url: url('typesense/ai-providers/model/' ~ handle),
+                                },
+                                not model.readOnly ? {
+                                    label: 'Delete'|t('typesense'),
+                                    action: 'typesense/ai-providers/delete-model',
+                                    params: { id: handle },
+                                    destructive: true,
+                                    confirm: 'Delete this conversation model? It is removed from the server too.'|t('typesense'),
+                                },
+                            ]|filter, {
+                                buttonAttributes: { class: ['action-btn', 'hairline'], hiddenLabel: 'Actions'|t('typesense') },
+                            }) }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% endif %}
+
+    <div class="buttons">
+        <a class="btn submit add icon" href="{{ url('typesense/ai-providers/model/new') }}">{{ 'New conversation model'|t('typesense') }}</a>
+    </div>
+{% endblock %}

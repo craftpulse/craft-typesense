@@ -60,7 +60,7 @@ it('renders the Pro nav items in Pro for a permitted admin', function() {
     // sections of the collection edit screen, not top-level subnav items, so they
     // are absent from the subnav keys. Dictionaries stays top-level (stopwords
     // and stemming are server-global resources).
-    foreach (['collections', 'dictionaries', 'keys', 'aliases', 'experiments', 'analytics', 'settings'] as $expected) {
+    foreach (['collections', 'dictionaries', 'keys', 'aliases', 'experiments', 'analytics', 'ai-providers', 'settings'] as $expected) {
         expect($keys)->toContain($expected);
     }
 

@@ -1,0 +1,102 @@
+{# =========================================================================
+   Typesense Pro - AI provider editor
+   =========================================================================
+   @var provider craftpulse\typesense\models\AiProvider
+   @var isNew    bool
+   @var types    array  the type catalog for this provider's kind
+   ========================================================================= #}
+{% extends '_layouts/cp' %}
+{% import '_includes/forms.twig' as forms %}
+{% set isConversation = provider.kind == 'conversation' %}
+{% set title = isNew ? (isConversation ? 'New conversation provider'|t('typesense') : 'New embedding provider'|t('typesense')) : provider.name %}
+{% set selectedSubnavItem = 'ai-providers' %}
+{% set fullPageForm = true %}
+{% set crumbs = [{ label: 'AI providers'|t('typesense'), url: url('typesense/ai-providers') }] %}
+
+{% set typeOptions = [{ label: 'Choose a type'|t('typesense'), value: '' }] %}
+{% for handle, spec in types %}
+    {% set typeOptions = typeOptions|merge([{ label: spec.label, value: handle }]) %}
+{% endfor %}
+
+{% block content %}
+    {{ actionInput('typesense/ai-providers/save-provider') }}
+    {{ hiddenInput('kind', provider.kind) }}
+    {% if not isNew %}{{ hiddenInput('originalHandle', provider.handle) }}{% endif %}
+
+    {{ forms.textField({
+        first: true,
+        label: 'Name'|t('typesense'),
+        id: 'name',
+        name: 'name',
+        value: provider.name,
+        required: true,
+    }) }}
+
+    {{ forms.textField({
+        label: 'Handle'|t('typesense'),
+        instructions: 'Referenced by conversation models and embedding configs.'|t('typesense'),
+        id: 'handle',
+        name: 'handle',
+        class: 'code',
+        value: provider.handle,
+        disabled: not isNew,
+        required: true,
+    }) }}
+
+    {% if isNew %}
+        {% js %}new Craft.HandleGenerator('#name', '#handle');{% endjs %}
+    {% endif %}
+
+    {{ forms.selectField({
+        label: 'Provider type'|t('typesense'),
+        instructions: isConversation
+            ? 'The conversation provider. Anthropic is offered as a guided preset over an OpenAI-compatible gateway.'|t('typesense')
+            : 'The embedding provider.'|t('typesense'),
+        id: 'type',
+        name: 'type',
+        options: typeOptions,
+        value: provider.type,
+        toggle: true,
+        targetPrefix: 'type-',
+        required: true,
+    }) }}
+
+    {% for handle, spec in types %}
+        <div id="type-{{ handle }}"{% if provider.type != handle %} class="hidden"{% endif %}>
+            {% if spec.docUrl is defined %}
+                <p class="light">{{ 'See the {name} walkthrough.'|t('typesense', { name: spec.label })|raw }} <a href="{{ spec.docUrl }}" rel="noopener" target="_blank">{{ spec.docUrl }}</a></p>
+            {% endif %}
+
+            {% if spec.endpoint %}
+                {{ forms.autosuggestField({
+                    label: 'Endpoint URL'|t('typesense'),
+                    instructions: 'The provider endpoint. An environment variable reference is allowed.'|t('typesense'),
+                    id: 'endpoint-' ~ handle,
+                    name: 'endpoint_' ~ handle,
+                    suggestEnvVars: true,
+                    value: provider.endpoint,
+                }) }}
+            {% endif %}
+
+            {% for key in spec.credentials %}
+                {{ forms.autosuggestField({
+                    label: key,
+                    instructions: 'An environment variable reference, for example $OPENAI_API_KEY. The value is resolved only when a config is sent to Typesense, never stored.'|t('typesense'),
+                    id: 'cred-' ~ handle ~ '-' ~ key,
+                    name: 'cred_' ~ handle ~ '_' ~ key,
+                    class: 'code',
+                    suggestEnvVars: true,
+                    value: provider.credentials[key] ?? '',
+                }) }}
+            {% endfor %}
+        </div>
+    {% endfor %}
+
+    {{ forms.lightswitchField({
+        label: 'Enabled'|t('typesense'),
+        instructions: 'Whether the provider is available for selection.'|t('typesense'),
+        id: 'enabled',
+        name: 'enabled',
+        on: provider.enabled,
+    }) }}
+{% endblock %}
