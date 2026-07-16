@@ -42,7 +42,7 @@ it('drops the vestigial collections table and preserves everything else', functi
         ->and($db->getTableSchema(Table::SYNC_STATE, true))->not->toBeNull()
         ->and($db->getTableSchema(Table::SYNC_DEPENDENCIES, true))->not->toBeNull()
         ->and($db->getTableSchema(Table::CURATION_INDEX, true))->not->toBeNull()
-        ->and(Typesense::$plugin->schemaVersion)->toBe('5.9.8')
+        ->and(Typesense::$plugin->schemaVersion)->toBe('5.9.9')
         ->and(Craft::$app->getProjectConfig()->get('plugins.typesense'))->not->toBeNull();
 });
 

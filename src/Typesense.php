@@ -127,7 +127,7 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public string $schemaVersion = '5.9.8';
+    public string $schemaVersion = '5.9.9';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.

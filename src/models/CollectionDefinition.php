@@ -36,6 +36,19 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     // =========================================================================
 
     /**
+     * @var string A regular collection: one element source (the default). The
+     * control-panel UI is unchanged for these.
+     */
+    public const COLLECTION_TYPE_REGULAR = 'regular';
+
+    /**
+     * @var string A union collection: many element-source members indexed into
+     * one collection, distinguished by a reserved `_elementType` document field
+     * (see Gap 1).
+     */
+    public const COLLECTION_TYPE_UNION = 'union';
+
+    /**
      * @var string A section-shaped source (a section, category group, volume, tag
      * group, global set, or the users source): the collection indexes every entry
      * type of the source.
@@ -87,9 +100,28 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     public string $displayName = '';
 
     /**
+     * @var string The collection type (a COLLECTION_TYPE_* value): a regular
+     * single-source collection (the default), or a union of many member sources.
+     * Backfilled to `regular` on read for definitions saved before this existed.
+     * Locked once the collection is saved (the schema shape differs fundamentally).
+     */
+    public string $collectionType = self::COLLECTION_TYPE_REGULAR;
+
+    /**
      * @var class-string<ElementInterface> The element type the collection indexes.
+     * For a union collection this is the first member's element type; the members
+     * carry the full set (see [[members]] and [[getMembers()]]).
      */
     public string $elementType = Entry::class;
+
+    /**
+     * @var array<int, array<string, mixed>> The union member sources, each a map
+     * of `handle` (unique, the `_elementType` discriminator value), `elementType`,
+     * `source`, `sourceType`, and `fieldLayoutUid` (its own mapping layout). Empty
+     * for a regular collection, whose single member is synthesized from the
+     * top-level `elementType`/`source`/`sourceType`. See [[getMembers()]].
+     */
+    public array $members = [];
 
     /**
      * @var string|null The element source the collection indexes (a section,
@@ -173,6 +205,8 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         $rules = parent::defineRules();
         $rules[] = [['name', 'elementType', 'multisite'], 'required'];
         $rules[] = [['sourceType'], 'in', 'range' => [self::SOURCE_TYPE_SECTION, self::SOURCE_TYPE_ENTRY_TYPE]];
+        $rules[] = [['collectionType'], 'in', 'range' => [self::COLLECTION_TYPE_REGULAR, self::COLLECTION_TYPE_UNION]];
+        $rules[] = [['members'], 'safe'];
         $rules[] = [['name'], 'match', 'pattern' => '/^[a-zA-Z0-9_\-]+$/'];
         // displayName is not hard-required: it falls back to the index name (see
         // getDisplayName()), so a programmatic save without it is graceful. The
@@ -197,9 +231,11 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         $config = [
             'name' => $this->name,
             'displayName' => $this->getDisplayName(),
+            'collectionType' => $this->collectionType,
             'elementType' => $this->elementType,
             'source' => $this->source,
             'sourceType' => $this->sourceType,
+            'members' => $this->members,
             'multisite' => $this->multisite,
             'enabled' => $this->enabled,
             'searchable' => $this->searchable,
@@ -256,23 +292,55 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     }
 
     /**
+     * Whether this is a union collection (many member sources into one collection).
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isUnion(): bool
+    {
+        return $this->collectionType === self::COLLECTION_TYPE_UNION;
+    }
+
+    /**
      * The collection's source members, each a descriptor of one element source to
-     * index: `elementType`, `sourceType` (a SOURCE_TYPE_* value), and `source`
-     * (the source handle, or null for every source of the type).
+     * index: `handle` (unique, the `_elementType` discriminator value),
+     * `elementType`, `sourceType` (a SOURCE_TYPE_* value), `source` (the source
+     * handle, or null for every source of the type), and `fieldLayoutUid` (the
+     * member's own mapping layout, or null for a regular collection which uses the
+     * top-level layout).
      *
-     * A collection has exactly one member today. This accessor is the seam a
-     * union collection (Gap 1) extends to N members without the compiler, sync,
-     * and mapping layers having to change how they read the source set.
+     * A regular collection synthesizes a single member from its top-level
+     * `elementType`/`source`/`sourceType`; a union collection returns its stored
+     * members. The compiler, sync, and mapping layers read the source set only
+     * through this accessor.
      *
-     * @return array<int, array{elementType: class-string<ElementInterface>, sourceType: string, source: string|null}>
+     * @return array<int, array{handle: string, elementType: class-string<ElementInterface>, sourceType: string, source: string|null, fieldLayoutUid: string|null}>
      * @author CraftPulse
      */
     public function getMembers(): array
     {
+        if ($this->isUnion() && $this->members !== []) {
+            return array_values(array_map(function(array $member): array {
+                /** @var class-string<ElementInterface> $elementType */
+                $elementType = (string)($member['elementType'] ?? Entry::class);
+
+                return [
+                    'handle' => (string)($member['handle'] ?? ''),
+                    'elementType' => $elementType,
+                    'sourceType' => (string)($member['sourceType'] ?? self::SOURCE_TYPE_SECTION),
+                    'source' => isset($member['source']) ? (string)$member['source'] : null,
+                    'fieldLayoutUid' => isset($member['fieldLayoutUid']) ? (string)$member['fieldLayoutUid'] : null,
+                ];
+            }, $this->members));
+        }
+
         return [[
+            'handle' => $this->name !== '' ? $this->name : 'default',
             'elementType' => $this->elementType,
             'sourceType' => $this->sourceType,
             'source' => $this->source,
+            'fieldLayoutUid' => $this->fieldLayoutUid,
         ]];
     }
 

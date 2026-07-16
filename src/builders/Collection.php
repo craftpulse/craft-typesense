@@ -57,6 +57,14 @@ class Collection
     private array $_elementQueries = [];
 
     /**
+     * @var array<int, array{handle: string, elementType: class-string, query: callable}>
+     * The union member sources. Empty for a regular collection. Each member has a
+     * unique handle (the `_elementType` discriminator value), an element type, and
+     * an element-query callable. Read through [[getMembers()]].
+     */
+    private array $_members = [];
+
+    /**
      * @var callable|null The document transform callable.
      */
     private $_transform = null;
@@ -188,6 +196,55 @@ class Collection
     public static function make(string $name): self
     {
         return new self($name);
+    }
+
+    /**
+     * Starts a union collection: many member sources indexed into one collection,
+     * distinguished by a reserved `_elementType` document field. Add members with
+     * [[addMember()]].
+     *
+     * @param string $name
+     * @return self
+     * @author CraftPulse
+     */
+    public static function union(string $name): self
+    {
+        return new self($name);
+    }
+
+    /**
+     * Adds a union member source: an element type and its element-query callable,
+     * with a unique handle (the `_elementType` discriminator value; defaults to
+     * the element type's short name).
+     *
+     * @param class-string $elementType
+     * @param callable $query the element-query callable, as in [[elementQuery()]]
+     * @param string|null $handle
+     * @return self
+     * @author CraftPulse
+     */
+    public function addMember(string $elementType, callable $query, ?string $handle = null): self
+    {
+        $parts = explode('\\', $elementType);
+        $handle ??= lcfirst((string)end($parts)) . (string)(count($this->_members) + 1);
+        $this->_members[] = ['handle' => $handle, 'elementType' => $elementType, 'query' => $query];
+
+        return $this;
+    }
+
+    /**
+     * Sets all union members at once. Each entry is a map of `handle`,
+     * `elementType`, and `query` (the element-query callable).
+     *
+     * @param array<int, array{handle: string, elementType: class-string, query: callable}> $members
+     * @return self
+     * @author CraftPulse
+     */
+    public function members(array $members): self
+    {
+        $this->_members = array_values($members);
+
+        return $this;
     }
 
     // Schema builders
@@ -581,6 +638,29 @@ class Collection
     public function getElementQueries(): array
     {
         return $this->_elementQueries;
+    }
+
+    /**
+     * Whether this is a union collection (it has member sources).
+     *
+     * @return bool
+     * @author CraftPulse
+     */
+    public function isUnion(): bool
+    {
+        return $this->_members !== [];
+    }
+
+    /**
+     * The union member sources, each a map of `handle`, `elementType`, and
+     * `query` (the element-query callable).
+     *
+     * @return array<int, array{handle: string, elementType: class-string, query: callable}>
+     * @author CraftPulse
+     */
+    public function getMembers(): array
+    {
+        return $this->_members;
     }
 
     /**

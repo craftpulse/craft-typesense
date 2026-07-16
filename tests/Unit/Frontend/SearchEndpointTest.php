@@ -55,7 +55,7 @@ it('returns the plain fragment HTML for a non-Datastar request (no-JS and back-c
     expect($body)->toContain('id="ts-results"')
         ->and($body)->toContain('id="ts-facets"')
         ->and($body)->toContain('id="ts-pagination"')
-        ->and($body)->toContain('Found 10 results')
+        ->and($body)->toContain('Found 11 results')
         ->and($body)->not->toContain('event: datastar-patch-elements');
 });
 

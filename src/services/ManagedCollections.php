@@ -153,6 +153,10 @@ class ManagedCollections extends Component
         /** @var class-string<ElementInterface> $elementType */
         $elementType = (string)($config['elementType'] ?? '');
         $definition->elementType = $elementType;
+        // Backfill on read: a config saved before union collections existed has no
+        // collectionType and is a regular single-source collection.
+        $definition->collectionType = (string)($config['collectionType'] ?? '') ?: CollectionDefinition::COLLECTION_TYPE_REGULAR;
+        $definition->members = is_array($config['members'] ?? null) ? $config['members'] : [];
         $definition->source = isset($config['source']) ? (string)$config['source'] : null;
         // Backfill on read: a config saved before entry-type sources existed has
         // no sourceType key, so it is a section-shaped source.
