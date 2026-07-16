@@ -2,17 +2,19 @@
    Typesense Pro - collection edit screen: Curation section
    =========================================================================
    Lists a control-panel-managed collection's curation rules as a VueAdminTable
-   (matching vendor/craftcms/cms/src/templates/settings/assets/transforms/
-   _index.twig): the row name links to the editor, and rows delete through the
-   core delete affordance. A collection that declares its curation in config is
-   read-only with the config notice.
+   (matching vendor/craftcms/cms/src/templates/settings/sections/_index.twig):
+   the row name links to the editor, and rows delete through the core delete
+   affordance. A rule list is unbounded per collection, so the rows are paged
+   server-side through a tableDataEndpoint (searchable, with the count footer).
+   A collection that declares its curation in config is read-only with the config
+   notice.
 
-   @var rules      array
-   @var editable   bool   whether this collection's curation is control-panel-owned
-   @var editBase   string the section URL base (managed uid or config/<name>)
-   @var editKey    string the post/row-id key for this collection
-   @var screenName string the collection display name
-   @var navItems   array  the collection screen's permission-filtered nav
+   @var editable          bool   whether this collection's curation is control-panel-owned
+   @var editBase          string the section URL base (managed uid or config/<name>)
+   @var editKey           string the post/row-id key for this collection
+   @var screenName        string the collection display name
+   @var navItems          array  the collection screen's permission-filtered nav
+   @var tableDataEndpoint string the paged JSON page source for this collection
    ========================================================================= #}
 {% extends 'typesense/collections/_layout' %}
 {% set selectedNavItem = 'curation' %}
@@ -34,31 +36,19 @@
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-curation-table"></div>
 
-    {% set tableData = [] %}
-    {% for rule in rules %}
-        {% set tableData = tableData|merge([{
-            id: editKey ~ '|' ~ rule.id,
-            title: rule.id,
-            url: editable ? url(editBase ~ '/curation/rule/' ~ rule.id) : null,
-            query: rule.rule.query ?? '',
-            match: rule.rule.match ?? 'exact',
-            pins: (rule.includes ?? [])|length,
-        }]) %}
-    {% endfor %}
-
     {% js %}
-        var columns = [
-            { name: '__slot:title', title: Craft.t('typesense', 'Rule') },
-            { name: 'query', title: Craft.t('typesense', 'Query') },
-            { name: 'match', title: Craft.t('typesense', 'Match') },
-            { name: 'pins', title: Craft.t('typesense', 'Pins') },
-        ];
-
         var config = {
-            columns: columns,
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Rule') },
+                { name: 'query', title: Craft.t('typesense', 'Query') },
+                { name: 'match', title: Craft.t('typesense', 'Match') },
+                { name: 'pins', title: Craft.t('typesense', 'Pins') },
+            ],
             container: '#ts-curation-table',
             emptyMessage: Craft.t('typesense', 'No curation rules yet.'),
-            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            tableDataEndpoint: {{ tableDataEndpoint|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            search: true,
+            pagination: true,
         };
 
         {% if editable %}

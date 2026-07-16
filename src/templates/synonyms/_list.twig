@@ -2,17 +2,19 @@
    Typesense Pro - collection edit screen: Synonyms section
    =========================================================================
    Lists a control-panel-managed collection's synonyms as a VueAdminTable
-   (matching vendor/craftcms/cms/src/templates/settings/assets/transforms/
-   _index.twig): the row name links to the editor, and rows delete through the
-   core delete affordance. A collection that declares its synonyms in config is
-   read-only with the config notice.
+   (matching vendor/craftcms/cms/src/templates/settings/sections/_index.twig):
+   the row name links to the editor, and rows delete through the core delete
+   affordance. A synonym list is unbounded per collection, so the rows are paged
+   server-side through a tableDataEndpoint (searchable, with the count footer).
+   A collection that declares its synonyms in config is read-only with the config
+   notice.
 
-   @var synonyms   array
-   @var editable   bool   whether this collection's synonyms are control-panel-owned
-   @var editBase   string the section URL base (managed uid or config/<name>)
-   @var editKey    string the post/row-id key for this collection
-   @var screenName string the collection display name
-   @var navItems   array  the collection screen's permission-filtered nav
+   @var editable          bool   whether this collection's synonyms are control-panel-owned
+   @var editBase          string the section URL base (managed uid or config/<name>)
+   @var editKey           string the post/row-id key for this collection
+   @var screenName        string the collection display name
+   @var navItems          array  the collection screen's permission-filtered nav
+   @var tableDataEndpoint string the paged JSON page source for this collection
    ========================================================================= #}
 {% extends 'typesense/collections/_layout' %}
 {% set selectedNavItem = 'synonyms' %}
@@ -34,31 +36,18 @@
     {% do view.registerAssetBundle('craft\\web\\assets\\admintable\\AdminTableAsset') %}
     <div id="ts-synonyms-table"></div>
 
-    {% set tableData = [] %}
-    {% for synonym in synonyms %}
-        {% set type = (synonym.root is defined and synonym.root) ? 'One-way'|t('typesense') : 'Multi-way'|t('typesense') %}
-        {% set terms = (synonym.root is defined and synonym.root ? synonym.root ~ ' -> ' : '') ~ (synonym.synonyms ?? [])|join(', ') %}
-        {% set tableData = tableData|merge([{
-            id: editKey ~ '|' ~ synonym.id,
-            title: synonym.id,
-            url: editable ? url(editBase ~ '/synonyms/synonym/' ~ synonym.id) : null,
-            type: type,
-            terms: terms,
-        }]) %}
-    {% endfor %}
-
     {% js %}
-        var columns = [
-            { name: '__slot:title', title: Craft.t('typesense', 'Synonym') },
-            { name: 'type', title: Craft.t('typesense', 'Type') },
-            { name: 'terms', title: Craft.t('typesense', 'Terms') },
-        ];
-
         var config = {
-            columns: columns,
+            columns: [
+                { name: '__slot:title', title: Craft.t('typesense', 'Synonym') },
+                { name: 'type', title: Craft.t('typesense', 'Type') },
+                { name: 'terms', title: Craft.t('typesense', 'Terms') },
+            ],
             container: '#ts-synonyms-table',
             emptyMessage: Craft.t('typesense', 'No synonyms yet.'),
-            tableData: {{ tableData|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            tableDataEndpoint: {{ tableDataEndpoint|json_encode(constant('JSON_HEX_TAG'))|raw }},
+            search: true,
+            pagination: true,
         };
 
         {% if editable %}

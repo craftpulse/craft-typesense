@@ -71,7 +71,7 @@
                         <tbody>
                             {% for row in readout.rows %}
                                 <tr>
-                                    <td>{{ row.q }}</td>
+                                    <td><code>{{ row.q }}</code></td>
                                     <td>{{ row.count }}</td>
                                 </tr>
                             {% endfor %}
@@ -99,7 +99,7 @@
                     <tbody>
                         {% for variant in experiment.variants %}
                             <tr>
-                                <td>{{ variant.name ?? variant.handle }}</td>
+                                <td><strong>{{ variant.name ?? variant.handle }}</strong></td>
                                 <td>{{ variant.weight ?? 1 }}</td>
                                 <td>{% if variant.analyticsTag %}<code>{{ variant.analyticsTag }}</code>{% else %}{{ 'None'|t('typesense') }}{% endif %}</td>
                             </tr>

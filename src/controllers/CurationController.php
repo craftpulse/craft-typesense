@@ -11,6 +11,7 @@
 namespace craftpulse\typesense\controllers;
 
 use Craft;
+use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\Typesense;
@@ -84,15 +85,61 @@ class CurationController extends ProController
         }
 
         $curation = Typesense::$plugin->getCuration();
+        $endpointParams = $uid !== null ? ['uid' => $uid] : ['name' => $name];
 
         return $this->renderTemplate('typesense/curation/_rules', [
-            'rules' => $curation->all($collection),
             'editable' => !$curation->isConfigOwned($collection),
             'editBase' => $screen['editBase'],
             'editKey' => $screen['editKey'],
             'screenName' => $screen['screenName'],
             'navItems' => $screen['navItems'],
+            'tableDataEndpoint' => 'typesense/curation/table-data?' . http_build_query($endpointParams),
         ]);
+    }
+
+    /**
+     * The VueAdminTable data endpoint for a collection's curation rules: a
+     * searchable, paged JSON page source (server-side paging, so an unbounded
+     * rule list never ships in full). Same gate as the section screen. The
+     * collection is read from the request (query params, which VueAdminTable
+     * appends), not from a route segment.
+     *
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionTableData(): Response
+    {
+        $uid = $this->request->getParam('uid');
+        $name = $this->request->getParam('name');
+        $screen = CollectionsController::resolveSectionScreen(
+            is_string($uid) ? $uid : null,
+            is_string($name) ? $name : null,
+        );
+        $collection = $screen['collection'];
+
+        if ($collection === null) {
+            return $this->asJson(['data' => [], 'pagination' => ['total' => 0]]);
+        }
+
+        $curation = Typesense::$plugin->getCuration();
+        $editable = !$curation->isConfigOwned($collection);
+        $rows = [];
+
+        foreach ($curation->all($collection) as $rule) {
+            $ruleId = (string)($rule['id'] ?? '');
+            $rows[] = [
+                'id' => $screen['editKey'] . '|' . $ruleId,
+                'title' => $ruleId,
+                'url' => $editable ? UrlHelper::url($screen['editBase'] . '/curation/rule/' . $ruleId) : null,
+                'query' => (string)($rule['rule']['query'] ?? ''),
+                'match' => (string)($rule['rule']['match'] ?? 'exact'),
+                'pins' => count($rule['includes'] ?? []),
+            ];
+        }
+
+        return $this->paginatedTableData($rows, ['title', 'query']);
     }
 
     /**

@@ -11,6 +11,7 @@
 namespace craftpulse\typesense\controllers;
 
 use Craft;
+use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\helpers\Locale;
@@ -83,15 +84,62 @@ class SynonymsController extends ProController
         }
 
         $synonyms = Typesense::$plugin->getSynonyms();
+        $endpointParams = $uid !== null ? ['uid' => $uid] : ['name' => $name];
 
         return $this->renderTemplate('typesense/synonyms/_list', [
-            'synonyms' => $synonyms->all($collection),
             'editable' => !$synonyms->isConfigOwned($collection),
             'editBase' => $screen['editBase'],
             'editKey' => $screen['editKey'],
             'screenName' => $screen['screenName'],
             'navItems' => $screen['navItems'],
+            'tableDataEndpoint' => 'typesense/synonyms/table-data?' . http_build_query($endpointParams),
         ]);
+    }
+
+    /**
+     * The VueAdminTable data endpoint for a collection's synonyms: a searchable,
+     * paged JSON page source (server-side paging, so an unbounded synonym list
+     * never ships in full). Same gate as the section screen. The collection is
+     * read from the request (query params, which VueAdminTable appends), not from
+     * a route segment.
+     *
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionTableData(): Response
+    {
+        $uid = $this->request->getParam('uid');
+        $name = $this->request->getParam('name');
+        $screen = CollectionsController::resolveSectionScreen(
+            is_string($uid) ? $uid : null,
+            is_string($name) ? $name : null,
+        );
+        $collection = $screen['collection'];
+
+        if ($collection === null) {
+            return $this->asJson(['data' => [], 'pagination' => ['total' => 0]]);
+        }
+
+        $synonyms = Typesense::$plugin->getSynonyms();
+        $editable = !$synonyms->isConfigOwned($collection);
+        $rows = [];
+
+        foreach ($synonyms->all($collection) as $synonym) {
+            $synonymId = (string)($synonym['id'] ?? '');
+            $root = (string)($synonym['root'] ?? '');
+            $terms = ($root !== '' ? $root . ' -> ' : '') . implode(', ', $synonym['synonyms'] ?? []);
+            $rows[] = [
+                'id' => $screen['editKey'] . '|' . $synonymId,
+                'title' => $synonymId,
+                'url' => $editable ? UrlHelper::url($screen['editBase'] . '/synonyms/synonym/' . $synonymId) : null,
+                'type' => $root !== '' ? Craft::t('typesense', 'One-way') : Craft::t('typesense', 'Multi-way'),
+                'terms' => $terms,
+            ];
+        }
+
+        return $this->paginatedTableData($rows, ['title', 'terms']);
     }
 
     /**

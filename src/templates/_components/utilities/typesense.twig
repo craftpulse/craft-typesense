@@ -75,7 +75,7 @@
                 <tr>
                     <td>
                         <strong>{{ row.name }}</strong><br>
-                        <code class="light">{{ row.target }}</code>
+                        <span class="ts-copytext" data-value="{{ row.target }}"></span>
                     </td>
                     <td>{{ row.documents is null ? '—' : row.documents|number }}</td>
                     <td>
@@ -251,3 +251,14 @@
         </div>
     {% endif %}
 {% endif %}
+
+{% js %}
+    // Render Craft's copy-text button into each Typesense collection-name cell
+    // (the same control a VueAdminTable handle column uses).
+    $('.ts-copytext').each(function() {
+        var value = $(this).data('value');
+        if (value) {
+            $(this).append(Craft.ui.createCopyTextBtn({ value: value, class: 'code light' }));
+        }
+    });
+{% endjs %}
