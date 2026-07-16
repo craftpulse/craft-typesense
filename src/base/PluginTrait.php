@@ -11,6 +11,7 @@
 namespace craftpulse\typesense\base;
 
 use craftpulse\typesense\services\AiModels;
+use craftpulse\typesense\services\AiProviders;
 use craftpulse\typesense\services\Aliases;
 use craftpulse\typesense\services\Analytics;
 use craftpulse\typesense\services\Client;
@@ -323,6 +324,19 @@ trait PluginTrait
     }
 
     /**
+     * @return AiProviders
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getAiProviders(): AiProviders
+    {
+        /** @var AiProviders $aiProviders */
+        $aiProviders = $this->get('aiProviders');
+
+        return $aiProviders;
+    }
+
+    /**
      * @return Aliases
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -472,6 +486,7 @@ trait PluginTrait
             'presets' => Presets::class,
             'relevance' => Relevance::class,
             'aiModels' => AiModels::class,
+            'aiProviders' => AiProviders::class,
             'aliases' => Aliases::class,
             'analytics' => Analytics::class,
             'embeddings' => Embeddings::class,

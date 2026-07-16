@@ -164,6 +164,22 @@ class Settings extends Model
     public array $collections = [];
 
     /**
+     * @var array<int|string, mixed> The AI providers declared in the config file
+     * (config-owned setups), each an AiProvider instance or a plain array keyed by
+     * handle. Read-only in the control panel (presence-based ownership).
+     * @since 5.9.0
+     */
+    public array $aiProviders = [];
+
+    /**
+     * @var array<int|string, mixed> The conversation model instances declared in
+     * the config file, each a ConversationModel instance or a plain array keyed by
+     * handle. Read-only in the control panel (presence-based ownership).
+     * @since 5.9.0
+     */
+    public array $conversationModels = [];
+
+    /**
      * @var array<string, mixed> The front-end theme config: per-component class
      * and attribute overrides applied to the search render components, keyed by
      * component (for example `facetItem`, `resultCard`). A `resetClasses` key
@@ -210,19 +226,20 @@ class Settings extends Model
     /**
      * @inheritdoc
      *
-     * Excludes `collections` from the serialised representation: on a fluent
-     * config install it holds Collection builder objects that carry closures
-     * (elementQuery, transform), which cannot be serialised into project config.
-     * The config-file collections are never persisted; they always come from
-     * `config/typesense.php`. Dropping the field here keeps `toArray()` (and thus
-     * `savePluginSettings()`) safe on every install.
+     * Excludes `collections` (and the config-file `aiProviders` and
+     * `conversationModels`) from the serialised representation: on a fluent config
+     * install `collections` holds Collection builder objects that carry closures
+     * (elementQuery, transform), which cannot be serialised into project config,
+     * and the AI declarations are config-owned and must never be persisted. They
+     * always come from `config/typesense.php`. Dropping the fields here keeps
+     * `toArray()` (and thus `savePluginSettings()`) safe on every install.
      *
      * @return array<int|string, mixed>
      */
     public function fields(): array
     {
         $fields = parent::fields();
-        unset($fields['collections']);
+        unset($fields['collections'], $fields['aiProviders'], $fields['conversationModels']);
 
         return $fields;
     }
