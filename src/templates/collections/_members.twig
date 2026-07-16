@@ -1,0 +1,66 @@
+{# =========================================================================
+   Typesense Pro - union collection members
+   =========================================================================
+   A union collection indexes several member sources into one collection. This
+   section lists the members (each an element source with a unique handle, the
+   _elementType discriminator value) and gives each its own mapping field-layout
+   designer, visually separated as anchor panes. Each designer is namespaced and
+   scoped to its member's source through a member field-layout provider, so the
+   palette shows that member's fields.
+
+   @var definition   craftpulse\typesense\models\CollectionDefinition
+   @var memberRows   array   the current members ({handle, source}) for the table
+   @var designers    array   handle => rendered (namespaced) FieldLayoutDesigner
+   @var sourceOptions array
+   @var readOnly     bool
+   @var navItems     array
+   ========================================================================= #}
+{% extends 'typesense/collections/_layout' %}
+{% import '_includes/forms.twig' as forms %}
+{% set selectedNavItem = 'members' %}
+{% set fullPageForm = not readOnly %}
+
+{% set tabs = {} %}
+{% for handle in designers|keys %}
+    {% set tabs = tabs|merge({ (handle): { label: handle, url: '#ts-member-' ~ handle } }) %}
+{% endfor %}
+
+{% block content %}
+    {% if readOnly %}
+        <blockquote class="note">{{ 'Members are read-only because allowAdminChanges is disabled in this environment.'|t('typesense') }}</blockquote>
+        <hr>
+    {% endif %}
+
+    {{ actionInput('typesense/collections/save-members') }}
+    {{ hiddenInput('uid', definition.uid) }}
+
+    <p class="light">{{ 'Add each element source as a member. Each member gets a unique handle (its _elementType value) and its own field mapping below. A large number of members grows the union schema in memory, so keep the set focused.'|t('typesense') }}</p>
+
+    {{ forms.editableTableField({
+        label: 'Members'|t('typesense'),
+        instructions: 'The element sources this union indexes.'|t('typesense'),
+        id: 'members',
+        name: 'members',
+        cols: {
+            source: { heading: 'Source'|t('typesense'), type: 'select', options: sourceOptions },
+            handle: { heading: 'Handle'|t('typesense'), type: 'singleline', code: true },
+        },
+        rows: memberRows,
+        addRowLabel: 'Add a member'|t('typesense'),
+        static: readOnly,
+    }) }}
+
+    {% if designers is not empty %}
+        <hr>
+        <h2>{{ 'Member mappings'|t('typesense') }}</h2>
+
+        {% for handle, designerHtml in designers %}
+            <div id="ts-member-{{ handle }}"{% if not loop.first %} class="hidden"{% endif %}>
+                <p class="light">{{ 'Fields for member'|t('typesense') }} <code>{{ handle }}</code></p>
+                {{ designerHtml|raw }}
+            </div>
+        {% endfor %}
+    {% else %}
+        <p class="light">{{ 'Add members and save, then map each member here.'|t('typesense') }}</p>
+    {% endif %}
+{% endblock %}

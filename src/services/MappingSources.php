@@ -25,6 +25,7 @@ use craftpulse\typesense\fieldlayoutelements\MappingField;
 use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
 use craftpulse\typesense\helpers\Locale;
 use craftpulse\typesense\models\CollectionDefinition;
+use craftpulse\typesense\models\CollectionMember;
 use craftpulse\typesense\Typesense;
 
 /**
@@ -127,13 +128,14 @@ class MappingSources extends Component
     }
 
     /**
-     * The custom fields of a definition's element source, de-duplicated by UID.
+     * The custom fields of a definition's (or a union member's) element source,
+     * de-duplicated by UID.
      *
-     * @param CollectionDefinition $definition
+     * @param CollectionDefinition|CollectionMember $definition
      * @return array<int, FieldInterface>
      * @author CraftPulse
      */
-    public function customFieldsFor(CollectionDefinition $definition): array
+    public function customFieldsFor(CollectionDefinition|CollectionMember $definition): array
     {
         return $this->_layoutFields($definition);
     }
@@ -177,11 +179,11 @@ class MappingSources extends Component
     /**
      * The Commerce variant fields for a product-type source, when installed.
      *
-     * @param CollectionDefinition $definition
+     * @param CollectionDefinition|CollectionMember $definition
      * @return array<int, FieldInterface>
      * @author CraftPulse
      */
-    public function variantFieldsFor(CollectionDefinition $definition): array
+    public function variantFieldsFor(CollectionDefinition|CollectionMember $definition): array
     {
         return $this->_variantFields($definition);
     }
@@ -400,13 +402,14 @@ class MappingSources extends Component
     }
 
     /**
-     * The custom fields of a definition's element source, de-duplicated by UID.
+     * The custom fields of a definition's (or member's) element source,
+     * de-duplicated by UID.
      *
-     * @param CollectionDefinition $definition
+     * @param CollectionDefinition|CollectionMember $definition
      * @return array<int, FieldInterface>
      * @author CraftPulse
      */
-    private function _layoutFields(CollectionDefinition $definition): array
+    private function _layoutFields(CollectionDefinition|CollectionMember $definition): array
     {
         $layouts = [];
         $source = $definition->source;
@@ -555,11 +558,11 @@ class MappingSources extends Component
      * The Commerce variant fields for a product-type source, when Commerce is
      * installed. Surfaced on the product card.
      *
-     * @param CollectionDefinition $definition
+     * @param CollectionDefinition|CollectionMember $definition
      * @return array<int, FieldInterface>
      * @author CraftPulse
      */
-    private function _variantFields(CollectionDefinition $definition): array
+    private function _variantFields(CollectionDefinition|CollectionMember $definition): array
     {
         // Commerce is an optional dependency, so its symbols are referenced by
         // string and the instance is treated as mixed.

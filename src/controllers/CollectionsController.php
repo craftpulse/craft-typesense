@@ -83,10 +83,20 @@ class CollectionsController extends ProController
                 'label' => Craft::t('typesense', 'Settings'),
                 'url' => UrlHelper::cpUrl("typesense/collections/{$uid}"),
             ];
-            $items['mapping'] = [
-                'label' => Craft::t('typesense', 'Mapping'),
-                'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/mapping"),
-            ];
+
+            // A union collection maps each member source separately (the Members
+            // section); a regular collection maps its single source.
+            if ($definition->isUnion()) {
+                $items['members'] = [
+                    'label' => Craft::t('typesense', 'Members'),
+                    'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/members"),
+                ];
+            } else {
+                $items['mapping'] = [
+                    'label' => Craft::t('typesense', 'Mapping'),
+                    'url' => UrlHelper::cpUrl("typesense/collections/{$uid}/mapping"),
+                ];
+            }
         }
 
         if ($user->checkPermission(RelevanceController::PERMISSION_MANAGE_RELEVANCE)) {
@@ -569,8 +579,167 @@ class CollectionsController extends ProController
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/mapping');
     }
 
+    /**
+     * The Members section of a union collection: the member source list and one
+     * mapping field-layout designer per member (visually separated), each scoped
+     * to its member's source via a member field-layout provider.
+     *
+     * @param string $uid
+     * @return Response
+     * @throws NotFoundHttpException
+     * @throws \yii\base\Exception
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function actionMembers(string $uid): Response
+    {
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
+
+        if ($definition === null || !$definition->isUnion()) {
+            throw new NotFoundHttpException('Union collection not found.');
+        }
+
+        $this->getView()->registerAssetBundle(CpAsset::class);
+        $readOnly = !Craft::$app->getConfig()->getGeneral()->allowAdminChanges;
+
+        $memberRows = [];
+        $designers = [];
+
+        foreach ($definition->getMemberModels() as $member) {
+            $memberRows[] = [
+                'handle' => $member->handle,
+                'source' => $member->elementType . ':' . ($member->sourceType === CollectionDefinition::SOURCE_TYPE_ENTRY_TYPE ? 'type:' : '') . ($member->source ?? ''),
+            ];
+
+            $designers[$member->handle] = Craft::$app->getView()->namespaceInputs(
+                static fn(): string => Cp::fieldLayoutDesignerHtml($member->getFieldLayout(), [
+                    'customizableTabs' => false,
+                    'customizableUi' => false,
+                    'pretendTabName' => Craft::t('typesense', 'Mapping'),
+                    'disabled' => $readOnly,
+                ]),
+                'member-' . $member->handle,
+            );
+        }
+
+        return $this->renderTemplate('typesense/collections/_members', [
+            'definition' => $definition,
+            'memberRows' => $memberRows,
+            'designers' => $designers,
+            'sourceOptions' => $this->_sourceOptions(),
+            'readOnly' => $readOnly,
+            'navItems' => self::editScreenNavItems($definition),
+        ]);
+    }
+
+    /**
+     * Persists a union collection's member sources and each member's mapping
+     * layout. The member list (source + handle rows) is rebuilt from the post, and
+     * each rendered member's namespaced field layout is assembled and stored
+     * inline. New members get an empty layout to map on the next load.
+     *
+     * @return Response|null
+     * @throws NotFoundHttpException
+     * @throws \yii\web\BadRequestHttpException
+     * @throws \Throwable
+     * @author CraftPulse
+     */
+    public function actionSaveMembers(): ?Response
+    {
+        $this->requirePostRequest();
+        $this->requirePermission(self::PERMISSION_MANAGE_COLLECTIONS);
+
+        $uid = (string)$this->request->getRequiredBodyParam('uid');
+        $definition = Typesense::$plugin->getManagedCollections()->getByUid($uid);
+
+        if ($definition === null || !$definition->isUnion()) {
+            throw new NotFoundHttpException('Union collection not found.');
+        }
+
+        $existing = [];
+
+        foreach ($definition->members as $member) {
+            if (is_array($member) && isset($member['handle'])) {
+                $existing[(string)$member['handle']] = $member;
+            }
+        }
+
+        $rows = $this->request->getBodyParam('members', []);
+        $members = [];
+        $seen = [];
+
+        foreach (is_array($rows) ? $rows : [] as $index => $row) {
+            [$elementType, $source, $sourceType] = $this->_parseSource((string)($row['source'] ?? ''));
+
+            if ($elementType === null) {
+                continue;
+            }
+
+            $handle = $this->_memberHandle((string)($row['handle'] ?? ''), $index, $seen);
+            $seen[$handle] = true;
+
+            $member = [
+                'handle' => $handle,
+                'elementType' => $elementType,
+                'source' => $source,
+                'sourceType' => $sourceType,
+                'fieldLayoutUid' => $existing[$handle]['fieldLayoutUid'] ?? StringHelper::UUID(),
+            ];
+
+            // Assemble this member's namespaced layout when its designer was
+            // rendered; otherwise carry the stored layout (or leave it empty for a
+            // freshly added member, to map on the next load).
+            if ($this->request->getBodyParam("member-{$handle}") !== null) {
+                $layout = Craft::$app->getFields()->assembleLayoutFromPost("member-{$handle}");
+                $layout->uid = $member['fieldLayoutUid'];
+                $member['fieldLayout'] = $layout->getConfig();
+            } elseif (isset($existing[$handle]['fieldLayout'])) {
+                $member['fieldLayout'] = $existing[$handle]['fieldLayout'];
+            }
+
+            $members[] = $member;
+        }
+
+        $definition->members = $members;
+
+        if (!Typesense::$plugin->getManagedCollections()->save($definition)) {
+            return $this->asModelFailure($definition, Craft::t('typesense', 'Could not save the members.'), 'definition');
+        }
+
+        return $this->asModelSuccess($definition, Craft::t('typesense', 'Members saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/members');
+    }
+
     // Private Methods
     // =========================================================================
+
+    /**
+     * A unique member handle: the posted handle when valid and unused, else one
+     * derived from the row index, de-duplicated against the handles already seen.
+     *
+     * @param string $posted
+     * @param int|string $index
+     * @param array<string, bool> $seen
+     * @return string
+     * @author CraftPulse
+     */
+    private function _memberHandle(string $posted, int|string $index, array $seen): string
+    {
+        $handle = preg_replace('/[^a-zA-Z0-9_\-]/', '', $posted) ?: 'member' . ((int)$index + 1);
+
+        if (!preg_match('/^[a-zA-Z]/', $handle)) {
+            $handle = 'm' . $handle;
+        }
+
+        $base = $handle;
+        $n = 2;
+
+        while (isset($seen[$handle])) {
+            $handle = $base . $n;
+            $n++;
+        }
+
+        return $handle;
+    }
 
     /**
      * The URL suffix of the current user's first accessible collection section,

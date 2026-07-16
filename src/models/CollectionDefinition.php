@@ -292,6 +292,44 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     }
 
     /**
+     * The hydrated union member models, each a field-layout provider scoped to its
+     * own source, built from the stored `members` array (including each member's
+     * inline mapping layout config). Empty for a regular collection.
+     *
+     * @return array<int, CollectionMember>
+     * @author CraftPulse
+     */
+    public function getMemberModels(): array
+    {
+        if (!$this->isUnion()) {
+            return [];
+        }
+
+        $models = [];
+
+        foreach ($this->getMembers() as $member) {
+            $model = new CollectionMember();
+            $model->handle = (string)$member['handle'];
+            $model->elementType = $member['elementType'];
+            $model->source = $member['source'];
+            $model->sourceType = $member['sourceType'];
+            $model->fieldLayoutUid = $member['fieldLayoutUid'];
+
+            $config = $this->_memberLayoutConfig($model->handle);
+
+            if ($config !== null) {
+                $layout = FieldLayout::createFromConfig($config);
+                $layout->uid = $model->fieldLayoutUid ?? StringHelper::UUID();
+                $model->setFieldLayout($layout);
+            }
+
+            $models[] = $model;
+        }
+
+        return $models;
+    }
+
+    /**
      * Whether this is a union collection (many member sources into one collection).
      *
      * @return bool
@@ -358,5 +396,26 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         $fieldLayout->provider = $this;
         $this->fieldLayoutUid = $fieldLayout->uid ?? null;
         $this->_fieldLayout = $fieldLayout;
+    }
+
+    // Private Methods
+    // =========================================================================
+
+    /**
+     * The stored field-layout config for a union member, by handle, or null.
+     *
+     * @param string $handle
+     * @return array<string, mixed>|null
+     * @author CraftPulse
+     */
+    private function _memberLayoutConfig(string $handle): ?array
+    {
+        foreach ($this->members as $member) {
+            if (is_array($member) && (string)($member['handle'] ?? '') === $handle) {
+                return is_array($member['fieldLayout'] ?? null) ? $member['fieldLayout'] : null;
+            }
+        }
+
+        return null;
     }
 }

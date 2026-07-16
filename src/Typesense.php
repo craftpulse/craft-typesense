@@ -62,6 +62,7 @@ use craftpulse\typesense\fieldlayoutelements\NativeMappingField;
 use craftpulse\typesense\gql\queries\SearchQuery;
 use craftpulse\typesense\helpers\FileLog;
 use craftpulse\typesense\models\CollectionDefinition;
+use craftpulse\typesense\models\CollectionMember;
 use craftpulse\typesense\models\Settings;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\utilities\TypesenseUtility;
@@ -498,6 +499,7 @@ class Typesense extends Plugin
             $routes['typesense/collections/config/<name:[\w\-]+>/curation'] = 'typesense/curation/list';
             $routes['typesense/collections/config/<name:[\w\-]+>'] = 'typesense/collections/config-overview';
             $routes['typesense/collections/<uid:[\w\-]+>/mapping'] = 'typesense/collections/mapping';
+            $routes['typesense/collections/<uid:[\w\-]+>/members'] = 'typesense/collections/members';
             $routes['typesense/collections/<uid:[\w\-]+>/relevance'] = 'typesense/relevance/edit';
             $routes['typesense/collections/<uid:[\w\-]+>/vector'] = 'typesense/relevance/vector';
             $routes['typesense/collections/<uid:[\w\-]+>/synonyms/new'] = 'typesense/synonyms/edit-synonym';
@@ -671,7 +673,9 @@ class Typesense extends Plugin
             function(DefineFieldLayoutCustomFieldsEvent $event) {
                 $provider = $event->sender->provider ?? null;
 
-                if (!$provider instanceof CollectionDefinition) {
+                // Either a whole (regular) collection or a single union member;
+                // both are mapping-source providers scoped to one element source.
+                if (!$provider instanceof CollectionDefinition && !$provider instanceof CollectionMember) {
                     return;
                 }
 
@@ -696,7 +700,7 @@ class Typesense extends Plugin
             function(DefineFieldLayoutFieldsEvent $event) {
                 $provider = $event->sender->provider ?? null;
 
-                if (!$provider instanceof CollectionDefinition) {
+                if (!$provider instanceof CollectionDefinition && !$provider instanceof CollectionMember) {
                     return;
                 }
 
