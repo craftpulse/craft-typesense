@@ -179,19 +179,30 @@ class AiProviders extends Component
     }
 
     /**
-     * Validates a provider and writes it to project config.
+     * Validates a provider and writes it to project config. When `$originalHandle`
+     * differs from the provider's handle (a create, or a rename) the target handle
+     * must be free: the handle is the storage key (unlike a UUID-keyed
+     * collection), so writing onto an existing handle would silently clobber the
+     * other record.
      *
      * @param AiProvider $provider
-     * @return bool false when the provider fails validation
+     * @param string|null $originalHandle the handle being edited, or null on create
+     * @return bool false when the provider fails validation or the handle is taken
      * @throws \yii\base\ErrorException
      * @throws \yii\base\Exception
      * @throws \yii\base\NotSupportedException
      * @throws \yii\web\ServerErrorHttpException
      * @author CraftPulse
      */
-    public function saveProvider(AiProvider $provider): bool
+    public function saveProvider(AiProvider $provider, ?string $originalHandle = null): bool
     {
         if (!$provider->validate() || $this->validateProvider($provider) !== []) {
+            return false;
+        }
+
+        if ($provider->handle !== $originalHandle && $this->getProvider($provider->handle) !== null) {
+            $provider->addError('handle', Craft::t('typesense', 'That handle is already in use.'));
+
             return false;
         }
 
@@ -370,18 +381,28 @@ class AiProviders extends Component
 
     /**
      * Validates a conversation model instance and writes it to project config.
+     * When `$originalHandle` differs from the instance's handle (a create, or a
+     * rename) the target handle must be free: the handle is the storage key, so
+     * writing onto an existing handle would silently clobber the other record.
      *
      * @param ConversationModel $model
-     * @return bool false when the instance fails validation
+     * @param string|null $originalHandle the handle being edited, or null on create
+     * @return bool false when the instance fails validation or the handle is taken
      * @throws \yii\base\ErrorException
      * @throws \yii\base\Exception
      * @throws \yii\base\NotSupportedException
      * @throws \yii\web\ServerErrorHttpException
      * @author CraftPulse
      */
-    public function saveConversationModel(ConversationModel $model): bool
+    public function saveConversationModel(ConversationModel $model, ?string $originalHandle = null): bool
     {
         if (!$model->validate() || $this->validateConversationModel($model) !== []) {
+            return false;
+        }
+
+        if ($model->handle !== $originalHandle && $this->getConversationModel($model->handle) !== null) {
+            $model->addError('handle', Craft::t('typesense', 'That handle is already in use.'));
+
             return false;
         }
 

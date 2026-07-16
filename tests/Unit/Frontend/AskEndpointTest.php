@@ -16,6 +16,7 @@
 use craft\elements\Entry;
 use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\Typesense;
 use starfederation\datastar\enums\ElementPatchMode;
@@ -75,7 +76,8 @@ it('answers one-shot without a 500 when opted in (fail-soft with no live model)'
         ->elementType(Entry::class)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)
         ->searchable()
-        ->ask('conv-model-x');
+        ->ask('conv-model-x')
+        ->fields(Field::string('title'));
 
     withAskCollection($declared, function() {
         $body = (string)$this->get(UrlHelper::actionUrl('typesense/search/ask', [
@@ -116,7 +118,8 @@ it('throttles the ask endpoint past the configured cap (developer knob)', functi
         ->elementType(Entry::class)
         ->multisite(MultisiteStrategy::SharedWithSiteFilter)
         ->searchable()
-        ->ask('conv-model-x');
+        ->ask('conv-model-x')
+        ->fields(Field::string('title'));
 
     try {
         withAskCollection($declared, function() {

@@ -276,6 +276,13 @@ class SearchController extends Controller
 
         $modelId = (string)$collection->getConversationModelId();
         $queryBy = (string)$request->getParam('queryBy', '');
+
+        // Trust-boundary defense (same as actionResults): the anonymous caller may
+        // not query fields the collection never declared. Guarded here, before the
+        // search is built, so both the streaming and one-shot branches are covered.
+        // Ask has no sort or facet params, so only queryBy is checked.
+        $this->_assertDeclaredFields($collection, ['queryBy' => $queryBy, 'sort' => '', 'facetBy' => '']);
+
         $search = array_filter(['q' => $question, 'query_by' => $queryBy], static fn(string $value): bool => $value !== '');
         $streams = Typesense::$plugin->getClient()->getServerCapabilities()?->conversationStream() ?? false;
 

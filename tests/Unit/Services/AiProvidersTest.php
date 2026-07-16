@@ -203,6 +203,29 @@ it('treats config-file declarations as read-only and lets them win over managed 
     }
 });
 
+it('refuses to save a provider onto an existing handle (no silent clobber)', function() {
+    putenv('TS_TEST_PROVIDER_KEY=sk-live');
+
+    try {
+        aiProviders()->saveProvider(anEmbeddingProvider('clash_a'));
+        aiProviders()->saveProvider(anEmbeddingProvider('clash_b'));
+
+        // A rename of clash_b onto the existing clash_a (target handle taken) must
+        // fail with a handle error, not clobber clash_a.
+        $rename = anEmbeddingProvider('clash_a');
+        expect(aiProviders()->saveProvider($rename, 'clash_b'))->toBeFalse()
+            ->and($rename->getErrors('handle'))->not->toBeEmpty();
+
+        // A genuine in-place update (handle unchanged from the original) succeeds.
+        expect(aiProviders()->saveProvider(anEmbeddingProvider('clash_a'), 'clash_a'))->toBeTrue();
+
+        aiProviders()->deleteProvider('clash_a');
+        aiProviders()->deleteProvider('clash_b');
+    } finally {
+        putenv('TS_TEST_PROVIDER_KEY');
+    }
+});
+
 it('carries the anthropic gateway preset as a distinct conversation type over the custom shape', function() {
     $catalog = AiProviders::TYPES[AiProviders::KIND_CONVERSATION];
 

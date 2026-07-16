@@ -12,7 +12,10 @@
  */
 
 use craft\helpers\UrlHelper;
+use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\builders\Field;
 use craftpulse\typesense\twig\tags\SearchFormTag;
+use craftpulse\typesense\Typesense;
 
 it('returns the results, facets and pagination fragments with real hits', function() {
     $url = UrlHelper::actionUrl('typesense/search/results', [
@@ -57,6 +60,41 @@ it('returns the plain fragment HTML for a non-Datastar request (no-JS and back-c
         ->and($body)->toContain('id="ts-pagination"')
         ->and($body)->toContain('Found 11 results')
         ->and($body)->not->toContain('event: datastar-patch-elements');
+});
+
+it('rejects an ask request with an undeclared queryBy field on both paths', function() {
+    // A searchable, ask-enabled collection declaring only a `title` field.
+    $declared = Collection::make('ts_ask_guard')
+        ->searchable()
+        ->ask('advisor')
+        ->preset(['query_by' => 'title'])
+        ->fields(Field::string('title'));
+
+    $settings = Typesense::$plugin->getSettings();
+    $original = $settings->collections;
+    $settings->collections = [$declared];
+
+    try {
+        $url = UrlHelper::actionUrl('typesense/search/ask', [
+            'collection' => 'ts_ask_guard',
+            'q' => 'hi',
+            'queryBy' => 'not_a_field',
+        ]);
+
+        // One-shot path (no Datastar header): the anonymous trust-boundary guard
+        // rejects an undeclared field with a 400 before any search is built.
+        $this->withExceptionHandling()->get($url)->assertStatus(400);
+
+        // Streaming path (Datastar header): the guard sits before the
+        // stream/one-shot branch, so the undeclared field is rejected either way.
+        $this->withExceptionHandling();
+        $this->http('get', $url)
+            ->addHeader('Datastar-Request', 'true')
+            ->send()
+            ->assertStatus(400);
+    } finally {
+        $settings->collections = $original;
+    }
 });
 
 it('streams SSE patch events for a Datastar request', function() {

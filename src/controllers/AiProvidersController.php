@@ -133,6 +133,12 @@ class AiProvidersController extends ProController
         $request = $this->request;
         $original = trim((string)$request->getBodyParam('originalHandle', ''));
 
+        // A config-file provider is read-only; writing to project config under its
+        // handle would be shadowed by config on read (a silent inert write).
+        if ($original !== '' && (Typesense::$plugin->getAiProviders()->getProvider($original)?->readOnly ?? false)) {
+            return $this->asFailure(Craft::t('typesense', 'This provider is declared in config/typesense.php and is read only.'));
+        }
+
         $provider = new AiProvider();
         $provider->handle = $original !== '' ? $original : trim((string)$request->getBodyParam('handle', ''));
         $provider->name = (string)$request->getBodyParam('name', '');
@@ -152,7 +158,9 @@ class AiProvidersController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Provider: {error}', ['error' => reset($errors)]));
         }
 
-        Typesense::$plugin->getAiProviders()->saveProvider($provider);
+        if (!Typesense::$plugin->getAiProviders()->saveProvider($provider, $original !== '' ? $original : null)) {
+            return $this->asModelFailure($provider, Craft::t('typesense', 'Could not save the provider.'), 'provider');
+        }
 
         return $this->asModelSuccess($provider, Craft::t('typesense', 'Provider saved.'), 'provider', [], 'typesense/ai-providers');
     }
@@ -215,6 +223,12 @@ class AiProvidersController extends ProController
         $request = $this->request;
         $original = trim((string)$request->getBodyParam('originalHandle', ''));
 
+        // A config-file conversation model is read-only; a write under its handle
+        // would be shadowed by config on read (a silent inert write).
+        if ($original !== '' && (Typesense::$plugin->getAiProviders()->getConversationModel($original)?->readOnly ?? false)) {
+            return $this->asFailure(Craft::t('typesense', 'This conversation model is declared in config/typesense.php and is read only.'));
+        }
+
         $model = new ConversationModel();
         $model->handle = $original !== '' ? $original : trim((string)$request->getBodyParam('handle', ''));
         $model->name = (string)$request->getBodyParam('name', '');
@@ -235,7 +249,9 @@ class AiProvidersController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Conversation model: {error}', ['error' => reset($errors)]));
         }
 
-        Typesense::$plugin->getAiProviders()->saveConversationModel($model);
+        if (!Typesense::$plugin->getAiProviders()->saveConversationModel($model, $original !== '' ? $original : null)) {
+            return $this->asModelFailure($model, Craft::t('typesense', 'Could not save the conversation model.'), 'model');
+        }
 
         return $this->asModelSuccess($model, Craft::t('typesense', 'Conversation model saved. Push it to the server to make it answerable.'), 'model', [], 'typesense/ai-providers');
     }

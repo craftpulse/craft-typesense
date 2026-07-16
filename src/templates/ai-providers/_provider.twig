@@ -64,7 +64,7 @@
     {% for handle, spec in types %}
         <div id="type-{{ handle }}"{% if provider.type != handle %} class="hidden"{% endif %}>
             {% if spec.docUrl is defined %}
-                <p class="light">{{ 'See the {name} walkthrough.'|t('typesense', { name: spec.label })|raw }} <a href="{{ spec.docUrl }}" rel="noopener" target="_blank">{{ spec.docUrl }}</a></p>
+                <p class="light">{{ 'See the {name} walkthrough.'|t('typesense', { name: spec.label }) }} <a href="{{ spec.docUrl }}" rel="noopener" target="_blank">{{ spec.docUrl }}</a></p>
             {% endif %}
 
             {% if spec.endpoint %}
