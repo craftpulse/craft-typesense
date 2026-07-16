@@ -63,6 +63,35 @@ class Analytics extends Component
     // =========================================================================
 
     /**
+     * Wires native personalization for a collection by creating the analytics
+     * `log` rule that records the interaction events personalization models learn
+     * from. Version-gated (v30.2+); returns false on servers without native
+     * personalization (hide, never badge). Personalization is undocumented
+     * upstream and its rule shape shifts across v30 builds, so the gate is
+     * authoritative and the log-rule wiring is best-effort (fail-soft).
+     *
+     * @param string $collection The source collection handle.
+     * @param string $destination The log destination collection.
+     * @return bool
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    public function configurePersonalizationLog(string $collection, string $destination): bool
+    {
+        if (!(Typesense::$plugin->getClient()->getServerCapabilities()?->personalizationModels() ?? false)) {
+            return false;
+        }
+
+        $this->ensureDestination($destination);
+        $this->upsertRule("{$collection}_personalization_log", self::TYPE_LOG, [
+            'source' => ['collections' => [$collection]],
+            'destination' => ['collection' => $destination],
+        ]);
+
+        return true;
+    }
+
+    /**
      * Deletes an analytics rule (fail-soft).
      *
      * @param string $name

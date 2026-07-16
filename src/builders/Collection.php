@@ -418,19 +418,21 @@ class Collection
 
     /**
      * Opts this collection into the anonymous conversational (RAG) ask endpoint,
-     * answering free-form questions with the given conversation model. Off by
+     * answering free-form questions with the named conversation model. Off by
      * default. Every request is a per-question LLM call, so this carries a real
      * cost: the site developer sets the throttle and on/off policy (see the plugin
      * settings). Requires the collection to also be searchable and the server to
      * support conversations.
      *
-     * @param string $modelId the Typesense conversation model id
+     * @param string $model the conversation model instance handle (also its
+     * Typesense server model id); for a config-owned setup, a handle declared in
+     * `conversationModels` in config/typesense.php.
      * @return self
      * @author CraftPulse
      */
-    public function ask(string $modelId): self
+    public function ask(string $model): self
     {
-        $this->_conversationModelId = $modelId;
+        $this->_conversationModelId = $model;
 
         return $this;
     }

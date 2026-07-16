@@ -1,75 +1,150 @@
 {# =========================================================================
-   Typesense Pro - collection edit screen: Vector / AI tab
+   Typesense Pro - collection edit screen: Vector / AI section
    =========================================================================
-   @var definition           craftpulse\typesense\models\CollectionDefinition
-   @var embedding            array
-   @var modelOptions         array
-   @var providers            array
-   @var experimentalFeatures array
-   @var navItems             array  the collection edit screen's permission-filtered nav
+   Two anchor panes in one form (a single Save persists both): Embedding (the
+   auto-embedding config, built-in or a referenced embedding provider) and
+   Conversation (the conversational ask opt-in, a referenced conversation model
+   instance). Follows the anchor-tab pattern in the craftcms skill's cp.md.
+
+   @var definition          craftpulse\typesense\models\CollectionDefinition
+   @var embedding           array
+   @var conversation        array
+   @var builtinOptions      array  built-in model select options
+   @var providerOptions     array  embedding-kind provider select options
+   @var conversationOptions array  conversation model instance select options
+   @var navItems            array  the collection edit screen's permission-filtered nav
    ========================================================================= #}
 {% extends 'typesense/collections/_layout' %}
 {% import '_includes/forms.twig' as forms %}
 {% set selectedNavItem = 'vector' %}
 {% set fullPageForm = true %}
 
+{% set tabs = {
+    tsEmbedding: { label: 'Embedding'|t('typesense'), url: '#ts-embedding' },
+    tsConversation: { label: 'Conversation'|t('typesense'), url: '#ts-conversation' },
+} %}
+
+{% set isProvider = (embedding.builtIn ?? true) == false %}
+
 {% block content %}
     {{ actionInput('typesense/relevance/save-vector') }}
     {{ hiddenInput('uid', definition.uid) }}
 
-    <h2>{{ 'Vector / auto-embedding'|t('typesense') }}</h2>
-    <blockquote class="note">
-        {{ 'Auto-embedding generates vectors server-side at index time, so it powers semantic and hybrid search. Changing the model or source fields re-embeds every document: re-sync the collection after saving. Built-in ts/* models run on the server CPU (no key); remote providers make an API call per document at index time (cost).'|t('typesense') }}
-    </blockquote>
+    <div id="ts-embedding">
+        <blockquote class="note">
+            {{ 'Auto-embedding generates vectors server-side at index time, powering semantic and hybrid search. Changing the model or source fields re-embeds every document: re-sync the collection after saving. Built-in ts/* models run on the server CPU (no key); a provider makes an API call per document at index time (cost).'|t('typesense') }}
+        </blockquote>
 
-    {{ forms.lightswitchField({
-        label: 'Enable auto-embedding'|t('typesense'),
-        id: 'embedEnabled',
-        name: 'embedEnabled',
-        on: embedding.enabled ?? false,
-    }) }}
+        {{ forms.lightswitchField({
+            label: 'Enable auto-embedding'|t('typesense'),
+            id: 'embedEnabled',
+            name: 'embedEnabled',
+            on: embedding.enabled ?? false,
+        }) }}
 
-    {{ forms.selectField({
-        label: 'Built-in model'|t('typesense'),
-        instructions: 'A local ONNX model (no API key). CLIP embeds images (see the image source below).'|t('typesense'),
-        id: 'embedModel',
-        name: 'embedModel',
-        options: modelOptions,
-        value: embedding.model ?? '',
-    }) }}
+        {{ forms.selectField({
+            label: 'Model source'|t('typesense'),
+            instructions: 'A built-in local model, or a remote model served by an AI provider.'|t('typesense'),
+            id: 'embedBranch',
+            name: 'embedBranch',
+            options: [
+                { label: 'Built-in model'|t('typesense'), value: 'builtin' },
+                { label: 'Provider model'|t('typesense'), value: 'provider' },
+            ],
+            value: isProvider ? 'provider' : 'builtin',
+            toggle: true,
+            targetPrefix: 'embed-branch-',
+        }) }}
 
-    {{ forms.textField({
-        label: 'Remote model (optional)'|t('typesense'),
-        instructions: 'A provider model id (for example openai/text-embedding-3-small). When set, this overrides the built-in choice above.'|t('typesense'),
-        id: 'embedModelRemote',
-        name: 'embedModelRemote',
-        value: embedding.model is defined and (embedding.model starts with 'ts/') ? '' : (embedding.model ?? ''),
-        placeholder: 'openai/text-embedding-3-small',
-    }) }}
+        <div id="embed-branch-builtin"{% if isProvider %} class="hidden"{% endif %}>
+            {{ forms.selectField({
+                label: 'Built-in model'|t('typesense'),
+                instructions: 'A local ONNX model (no API key). CLIP embeds images (use the asset image field as the source).'|t('typesense'),
+                id: 'embedBuiltinModel',
+                name: 'embedBuiltinModel',
+                options: builtinOptions,
+                value: not isProvider ? (embedding.model ?? '') : '',
+            }) }}
+        </div>
 
-    {{ forms.textareaField({
-        label: 'Source fields'|t('typesense'),
-        instructions: 'The document field handles to embed, one per line (or comma-separated). For CLIP image search, use the asset image field.'|t('typesense'),
-        id: 'embedFrom',
-        name: 'embedFrom',
-        value: (embedding.from ?? [])|join("\n"),
-        rows: 3,
-    }) }}
+        <div id="embed-branch-provider"{% if not isProvider %} class="hidden"{% endif %}>
+            {{ forms.selectField({
+                label: 'Embedding provider'|t('typesense'),
+                instructions: 'The AI provider supplying the credentials and endpoint. Create one on the AI providers screen first.'|t('typesense'),
+                id: 'embedProvider',
+                name: 'embedProvider',
+                options: providerOptions,
+                value: embedding.providerHandle ?? '',
+            }) }}
 
-    <p class="light">{{ 'Remote providers read their credentials from environment variables. Enter the environment reference (for example $OPENAI_API_KEY), never the raw key.'|t('typesense') }}</p>
-    {{ forms.textField({ label: 'api_key (env reference)'|t('typesense'), id: 'embed_api_key', name: 'embed_api_key', value: embedding.config.api_key ?? '' }) }}
-    {{ forms.textField({ label: 'url (Azure / Cloudflare)'|t('typesense'), id: 'embed_url', name: 'embed_url', value: embedding.config.url ?? '' }) }}
-    {{ forms.textField({ label: 'openai_url (custom endpoint)'|t('typesense'), id: 'embed_openai_url', name: 'embed_openai_url', value: embedding.config.openai_url ?? '' }) }}
+            {{ forms.autosuggestField({
+                label: 'Model name'|t('typesense'),
+                instructions: 'The remote model name Typesense expects, for example openai/text-embedding-3-small.'|t('typesense'),
+                id: 'embedModelName',
+                name: 'embedModelName',
+                class: 'code',
+                value: isProvider ? (embedding.model ?? '') : '',
+                placeholder: 'openai/text-embedding-3-small',
+            }) }}
 
-    {% if experimentalFeatures is not empty %}
-        <hr>
-        <h2>{{ 'Experimental AI features'|t('typesense') }}</h2>
-        <p class="light">{{ 'Available on this server, shown with their honest trade-offs. Configure conversation (RAG) models and use the search helpers (craft.typesense.ask, naturalLanguageSearch); each is opt-in.'|t('typesense') }}</p>
-        {% for feature in experimentalFeatures %}
-            <blockquote class="note warning">
-                <strong>{{ feature.label }}</strong>: {{ feature.reason }}
-            </blockquote>
-        {% endfor %}
-        <p><a class="go" href="{{ url('typesense/collections/' ~ definition.uid ~ '/conversation-models') }}">{{ 'Manage conversation (RAG) models'|t('typesense') }}</a></p>
-    {% endif %}
+            {{ forms.textField({
+                label: 'Output dimensions'|t('typesense'),
+                instructions: 'The vector size the remote model outputs (for example 1536 for text-embedding-3-small).'|t('typesense'),
+                type: 'number',
+                id: 'embedDims',
+                name: 'embedDims',
+                value: embedding.dims ?? '',
+                size: 8,
+            }) }}
+        </div>
+
+        {{ forms.textareaField({
+            label: 'Source fields'|t('typesense'),
+            instructions: 'The document field handles to embed, one per line (or comma-separated). For CLIP image search, use the asset image field.'|t('typesense'),
+            id: 'embedFrom',
+            name: 'embedFrom',
+            value: (embedding.from ?? [])|join("\n"),
+            rows: 3,
+        }) }}
+
+        {{ forms.textField({
+            label: 'Indexing prefix'|t('typesense'),
+            instructions: 'Optional prefix prepended to documents before embedding (some models, for example E5, expect one).'|t('typesense'),
+            id: 'embedIndexingPrefix',
+            name: 'embedIndexingPrefix',
+            value: embedding.indexingPrefix ?? '',
+        }) }}
+
+        {{ forms.textField({
+            label: 'Query prefix'|t('typesense'),
+            instructions: 'Optional prefix prepended to the query before embedding.'|t('typesense'),
+            id: 'embedQueryPrefix',
+            name: 'embedQueryPrefix',
+            value: embedding.queryPrefix ?? '',
+        }) }}
+    </div>
+
+    <div id="ts-conversation" class="hidden">
+        <blockquote class="note warning">
+            {{ 'Conversational ask answers free-form questions from this collection with an LLM. Every question is a paid model call, so opt in deliberately and set your abuse policy at the edge (a CDN or WAF rate rule). The endpoint is off unless a model is chosen here and pushed to the server.'|t('typesense') }}
+        </blockquote>
+
+        {{ forms.lightswitchField({
+            label: 'Enable conversational ask'|t('typesense'),
+            id: 'askEnabled',
+            name: 'askEnabled',
+            on: conversation.enabled ?? false,
+        }) }}
+
+        {{ forms.selectField({
+            label: 'Conversation model'|t('typesense'),
+            instructions: 'The conversation model instance this collection answers with. Authored on the AI providers screen.'|t('typesense'),
+            id: 'askModel',
+            name: 'askModel',
+            options: conversationOptions,
+            value: conversation.modelHandle ?? '',
+        }) }}
+
+        <p><a class="go" href="{{ url('typesense/ai-providers') }}">{{ 'Manage AI providers and conversation models'|t('typesense') }}</a></p>
+    </div>
 {% endblock %}

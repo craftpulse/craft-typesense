@@ -135,6 +135,16 @@ class Compiler extends Component
             }
         }
 
+        // Conversational ask: opt the collection into the ask endpoint with the
+        // chosen conversation model instance (its handle is the server model id).
+        if (!empty($definition->conversation['enabled'])) {
+            $modelHandle = trim((string)($definition->conversation['modelHandle'] ?? ''));
+
+            if ($modelHandle !== '') {
+                $collection->ask($modelHandle);
+            }
+        }
+
         $collection->fields(...$fields)->mapping(...$mappings);
 
         $preset = [];

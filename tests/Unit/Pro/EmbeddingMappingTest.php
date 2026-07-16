@@ -63,7 +63,8 @@ it('round-trips a built-in embedding config through the editor', function() {
             ->post(UrlHelper::actionUrl('typesense/relevance/save-vector'), [
                 'uid' => $definition->uid,
                 'embedEnabled' => '1',
-                'embedModel' => 'ts/all-MiniLM-L12-v2',
+                'embedBranch' => 'builtin',
+                'embedBuiltinModel' => 'ts/all-MiniLM-L12-v2',
                 'embedFrom' => "title\nbody",
             ])
             ->assertRedirect();
@@ -89,7 +90,9 @@ it('rejects an enabled remote embedding config with no credentials', function() 
             ->post(UrlHelper::actionUrl('typesense/relevance/save-vector'), [
                 'uid' => $definition->uid,
                 'embedEnabled' => '1',
-                'embedModelRemote' => 'openai/text-embedding-3-small',
+                'embedBranch' => 'provider',
+                'embedModelName' => 'openai/text-embedding-3-small',
+                'embedProvider' => 'ts_missing_provider',
                 'embedFrom' => 'title',
             ]);
 
@@ -107,6 +110,7 @@ it('compiles a CLIP embedding into an image source field marked for base64', fun
     $definition->multisite = 'sharedWithSiteFilter';
     $definition->embedding = [
         'enabled' => true,
+        'builtIn' => true,
         'model' => 'ts/clip-vit-b-p32',
         'from' => ['image'],
     ];

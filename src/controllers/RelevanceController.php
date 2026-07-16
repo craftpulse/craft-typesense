@@ -13,6 +13,7 @@ namespace craftpulse\typesense\controllers;
 use Craft;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
+use craftpulse\typesense\services\AiProviders;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -91,9 +92,10 @@ class RelevanceController extends ProController
     }
 
     /**
-     * The Vector / AI tab of a CP-managed collection's edit screen:
-     * auto-embedding config plus the experimental-AI features and the link to the
-     * conversation (RAG) model manager.
+     * The Vector / AI section of a CP-managed collection's edit screen: the
+     * auto-embedding config (built-in or a referenced embedding provider) and the
+     * conversational ask opt-in (a referenced conversation model instance),
+     * rendered as the Embedding and Conversation anchor panes.
      *
      * @param string $uid
      * @return Response
@@ -105,19 +107,33 @@ class RelevanceController extends ProController
     public function actionVector(string $uid): Response
     {
         $definition = $this->_requireDefinition($uid);
-        $embeddings = Typesense::$plugin->getEmbeddings();
-        $modelOptions = [['label' => Craft::t('typesense', 'Choose a model'), 'value' => '']];
+        $providers = Typesense::$plugin->getAiProviders();
 
-        foreach ($embeddings::BUILTIN_MODELS as $id => $model) {
-            $modelOptions[] = ['label' => $model['label'] . ' (' . $id . ')', 'value' => $id];
+        $builtinOptions = [['label' => Craft::t('typesense', 'Choose a model'), 'value' => '']];
+
+        foreach (Typesense::$plugin->getEmbeddings()::BUILTIN_MODELS as $id => $model) {
+            $builtinOptions[] = ['label' => $model['label'] . ' (' . $id . ')', 'value' => $id];
+        }
+
+        $providerOptions = [['label' => Craft::t('typesense', 'Choose a provider'), 'value' => '']];
+
+        foreach ($providers->getProviders(AiProviders::KIND_EMBEDDING) as $provider) {
+            $providerOptions[] = ['label' => $provider->name, 'value' => $provider->handle];
+        }
+
+        $conversationOptions = [['label' => Craft::t('typesense', 'Choose a model'), 'value' => '']];
+
+        foreach ($providers->getConversationModels() as $model) {
+            $conversationOptions[] = ['label' => $model->name, 'value' => $model->handle];
         }
 
         return $this->renderTemplate('typesense/relevance/_vector', [
             'definition' => $definition,
             'embedding' => $definition->embedding,
-            'modelOptions' => $modelOptions,
-            'providers' => $embeddings::PROVIDERS,
-            'experimentalFeatures' => Typesense::$plugin->getAiModels()->experimentalFeatures(),
+            'conversation' => $definition->conversation,
+            'builtinOptions' => $builtinOptions,
+            'providerOptions' => $providerOptions,
+            'conversationOptions' => $conversationOptions,
             'navItems' => CollectionsController::editScreenNavItems($definition),
         ]);
     }
@@ -161,9 +177,10 @@ class RelevanceController extends ProController
 
         $definition = $this->_requireDefinition((string)$this->request->getRequiredBodyParam('uid'));
         $embedding = $this->_embeddingBody();
+        $conversation = $this->_conversationBody();
 
-        // Validate a remote embedding config's shape before persisting (never a
-        // live call); a bad config would break the collection's next rebuild.
+        // Validate the embedding config's shape before persisting (never a live
+        // call); a bad config would break the collection's next rebuild.
         if (!empty($embedding['enabled'])) {
             $errors = Typesense::$plugin->getEmbeddings()->validateModelConfig($embedding);
 
@@ -172,96 +189,31 @@ class RelevanceController extends ProController
             }
         }
 
+        // A conversational opt-in must reference an existing conversation model
+        // instance (authored on the AI providers screen).
+        if (!empty($conversation['enabled'])) {
+            $handle = (string)($conversation['modelHandle'] ?? '');
+
+            if ($handle === '' || Typesense::$plugin->getAiProviders()->getConversationModel($handle) === null) {
+                return $this->asFailure(Craft::t('typesense', 'Choose a conversation model that exists.'));
+            }
+        }
+
         $definition->embedding = $embedding;
+        $definition->conversation = $conversation;
         Typesense::$plugin->getManagedCollections()->save($definition);
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply embedding changes.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/vector');
-    }
-
-    /**
-     * The conversation (RAG) model management screen, reached from a collection's
-     * Vector / AI tab. Conversation models are global (not per-collection); the
-     * collection uid only threads the back-link to the originating tab.
-     *
-     * @param string $uid
-     * @return Response
-     * @throws NotFoundHttpException
-     * @throws \yii\base\Exception
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    public function actionConversationModels(string $uid): Response
-    {
-        $definition = $this->_requireDefinition($uid);
-
-        return $this->renderTemplate('typesense/relevance/_conversation-models', [
-            'definition' => $definition,
-            'models' => Typesense::$plugin->getAiModels()->conversationModels(),
-        ]);
-    }
-
-    /**
-     * Deletes a conversation (RAG) model.
-     *
-     * @return Response|null
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    public function actionDeleteConversationModel(): ?Response
-    {
-        $this->requirePostRequest();
-        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
-
-        Typesense::$plugin->getAiModels()->deleteConversationModel((string)$this->request->getRequiredBodyParam('id'));
-
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model deleted.'), [], $this->request->getReferrer() ?: 'typesense/collections');
-    }
-
-    /**
-     * Creates a conversation (RAG) model from the vector/AI editor. The api key
-     * is an environment reference, validated (shape + resolution) before any
-     * request; no live LLM call is made.
-     *
-     * @return Response|null
-     * @throws \yii\web\BadRequestHttpException
-     * @throws \yii\base\InvalidConfigException
-     * @author CraftPulse
-     */
-    public function actionSaveConversationModel(): ?Response
-    {
-        $this->requirePostRequest();
-        $this->requirePermission(self::PERMISSION_MANAGE_RELEVANCE);
-
-        $request = $this->request;
-        $config = [
-            'id' => trim((string)$request->getBodyParam('id', '')),
-            'model_name' => trim((string)$request->getBodyParam('model_name', '')),
-            'api_key' => trim((string)$request->getBodyParam('api_key', '')),
-            'history_collection' => trim((string)$request->getBodyParam('history_collection', '')),
-            'system_prompt' => trim((string)$request->getBodyParam('system_prompt', '')),
-        ];
-
-        $errors = Typesense::$plugin->getAiModels()->validateConversationModel($config);
-
-        if ($errors !== []) {
-            return $this->asFailure(Craft::t('typesense', 'Conversation model: {error}', ['error' => reset($errors)]));
-        }
-
-        if (Typesense::$plugin->getAiModels()->upsertConversationModel($config) === null) {
-            return $this->asFailure(Craft::t('typesense', 'Could not create the conversation model.'));
-        }
-
-        return $this->asSuccess(Craft::t('typesense', 'Conversation model created.'), [], $this->request->getReferrer() ?: 'typesense/collections');
     }
 
     // Private Methods
     // =========================================================================
 
     /**
-     * Builds the auto-embedding config from the posted fields: the model, the
-     * source field handles, and (for a remote provider) the credential env-var
-     * references.
+     * Builds the auto-embedding config from the posted fields: the branch
+     * (built-in or provider), the model, the referenced embedding provider, the
+     * source field handles, the output dimensions, and the optional prefixes.
+     * Credentials are never posted here: they live on the referenced provider.
      *
      * @return array<string, mixed>
      * @author CraftPulse
@@ -274,26 +226,35 @@ class RelevanceController extends ProController
             preg_split('/[\r\n,]+/', (string)$request->getBodyParam('embedFrom', '')) ?: [],
         ), static fn(string $handle): bool => $handle !== ''));
 
-        $config = [];
-
-        foreach (['api_key', 'url', 'openai_url', 'access_token', 'refresh_token', 'client_id', 'client_secret', 'project_id'] as $key) {
-            $value = trim((string)$request->getBodyParam('embed_' . $key, ''));
-
-            if ($value !== '') {
-                $config[$key] = $value;
-            }
-        }
-
-        // A typed remote model id (for example openai/text-embedding-3-small)
-        // wins over the built-in select when provided.
-        $remote = trim((string)$request->getBodyParam('embedModelRemote', ''));
-        $model = $remote !== '' ? $remote : trim((string)$request->getBodyParam('embedModel', ''));
+        $builtIn = (string)$request->getBodyParam('embedBranch', 'builtin') !== 'provider';
 
         return [
             'enabled' => (bool)$request->getBodyParam('embedEnabled', false),
-            'model' => $model,
+            'builtIn' => $builtIn,
+            'model' => $builtIn
+                ? trim((string)$request->getBodyParam('embedBuiltinModel', ''))
+                : trim((string)$request->getBodyParam('embedModelName', '')),
+            'providerHandle' => trim((string)$request->getBodyParam('embedProvider', '')),
+            'dims' => max(0, (int)$request->getBodyParam('embedDims', 0)),
             'from' => $from,
-            'config' => $config,
+            // Prefixes carry meaningful trailing spaces, so they are not trimmed.
+            'indexingPrefix' => (string)$request->getBodyParam('embedIndexingPrefix', ''),
+            'queryPrefix' => (string)$request->getBodyParam('embedQueryPrefix', ''),
+        ];
+    }
+
+    /**
+     * Builds the conversational ask config from the posted fields: the opt-in flag
+     * and the referenced conversation model instance handle.
+     *
+     * @return array<string, mixed>
+     * @author CraftPulse
+     */
+    private function _conversationBody(): array
+    {
+        return [
+            'enabled' => (bool)$this->request->getBodyParam('askEnabled', false),
+            'modelHandle' => trim((string)$this->request->getBodyParam('askModel', '')),
         ];
     }
 

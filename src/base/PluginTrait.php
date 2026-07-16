@@ -10,7 +10,6 @@
 
 namespace craftpulse\typesense\base;
 
-use craftpulse\typesense\services\AiModels;
 use craftpulse\typesense\services\AiProviders;
 use craftpulse\typesense\services\Aliases;
 use craftpulse\typesense\services\Analytics;
@@ -311,19 +310,6 @@ trait PluginTrait
     }
 
     /**
-     * @return AiModels
-     * @throws InvalidConfigException
-     * @author CraftPulse
-     */
-    public function getAiModels(): AiModels
-    {
-        /** @var AiModels $aiModels */
-        $aiModels = $this->get('aiModels');
-
-        return $aiModels;
-    }
-
-    /**
      * @return AiProviders
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -485,7 +471,6 @@ trait PluginTrait
             'curationIndex' => CurationIndex::class,
             'presets' => Presets::class,
             'relevance' => Relevance::class,
-            'aiModels' => AiModels::class,
             'aiProviders' => AiProviders::class,
             'aliases' => Aliases::class,
             'analytics' => Analytics::class,

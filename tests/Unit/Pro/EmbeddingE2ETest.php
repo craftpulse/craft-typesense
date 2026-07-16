@@ -22,6 +22,7 @@ const EMBED_TEST_COLLECTION = 'ts_embed_test';
 
 it('auto-embeds with a built-in model and serves hybrid and similar search', function() {
     $embedField = Typesense::$plugin->getEmbeddings()->embedField('embedding', [
+        'builtIn' => true,
         'model' => 'ts/all-MiniLM-L12-v2',
         'from' => ['title'],
     ]);

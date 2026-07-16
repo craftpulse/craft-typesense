@@ -161,6 +161,7 @@ class ManagedCollections extends Component
         $definition->metadata = is_array($config['metadata'] ?? null) ? $config['metadata'] : [];
         $definition->relevance = is_array($config['relevance'] ?? null) ? $config['relevance'] : [];
         $definition->embedding = is_array($config['embedding'] ?? null) ? $config['embedding'] : [];
+        $definition->conversation = is_array($config['conversation'] ?? null) ? $config['conversation'] : [];
         $definition->fieldLayoutUid = isset($config['fieldLayoutUid']) ? (string)$config['fieldLayoutUid'] : null;
 
         if (is_array($config['fieldLayout'] ?? null)) {

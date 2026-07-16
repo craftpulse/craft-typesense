@@ -110,12 +110,22 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
     public array $metadata = [];
 
     /**
-     * @var array<string, mixed> Auto-embedding config authored in the mapping UI:
-     * `enabled`, `model` (a ts/* id or `provider/name`), `from` (source field
-     * handles, or the asset image field for CLIP), and `config` (remote provider
-     * credential env-var references).
+     * @var array<string, mixed> Auto-embedding config authored on the Vector / AI
+     * section: `enabled`, `builtIn` (the built-in vs provider branch), `model` (a
+     * ts/* id, or the remote model name), `providerHandle` (the embedding-kind AI
+     * provider supplying credentials, for the remote branch), `from` (source field
+     * handles, or the asset image field for CLIP), `dims` (remote model output
+     * dimensions), and the optional `indexingPrefix` / `queryPrefix`.
      */
     public array $embedding = [];
+
+    /**
+     * @var array<string, mixed> Conversational ask config authored on the Vector /
+     * AI section: `enabled` and `modelHandle` (the conversation model instance the
+     * collection answers questions with). Off by default; every question is an LLM
+     * call (cost), so the author opts in deliberately.
+     */
+    public array $conversation = [];
 
     /**
      * @var array<string, mixed> Relevance tuning authored in the presets editor:
@@ -143,7 +153,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
         $rules[] = [['displayName'], 'string'];
         $rules[] = [['multisite'], 'in', 'range' => array_map(static fn(MultisiteStrategy $s): string => $s->value, MultisiteStrategy::cases())];
         $rules[] = [['enabled', 'searchable'], 'boolean'];
-        $rules[] = [['mappings', 'metadata', 'relevance', 'embedding'], 'safe'];
+        $rules[] = [['mappings', 'metadata', 'relevance', 'embedding', 'conversation'], 'safe'];
         $rules[] = [['fieldLayoutUid'], 'safe'];
 
         return $rules;
@@ -168,6 +178,7 @@ class CollectionDefinition extends Model implements FieldLayoutProviderInterface
             'metadata' => $this->metadata,
             'relevance' => $this->relevance,
             'embedding' => $this->embedding,
+            'conversation' => $this->conversation,
         ];
 
         $layout = $this->getFieldLayout();

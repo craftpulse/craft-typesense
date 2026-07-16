@@ -147,7 +147,6 @@ it('returns real hits from a search on the 30.2 server', function() {
 
 it('opens the native personalization gate on the 30.2 server', function() {
     withV302(function() {
-        $aiModels = Typesense::$plugin->getAiModels();
         $analytics = Typesense::$plugin->getAnalytics();
         $destination = 'ts_v302_personalization_log';
 
@@ -155,7 +154,7 @@ it('opens the native personalization gate on the 30.2 server', function() {
         // wiring is best-effort for an undocumented feature, so the gate result
         // is what is pinned, not the server's acceptance of the rule shape.
         expect(Typesense::$plugin->getClient()->getServerCapabilities()?->personalizationModels())->toBeTrue()
-            ->and($aiModels->configurePersonalizationLog('ts_v302_test', $destination))->toBeTrue();
+            ->and($analytics->configurePersonalizationLog('ts_v302_test', $destination))->toBeTrue();
 
         $analytics->deleteRule('ts_v302_test_personalization_log');
 
