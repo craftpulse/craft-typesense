@@ -14,7 +14,7 @@ use Craft;
 use craft\helpers\Html;
 use craft\helpers\Json;
 use craft\helpers\UrlHelper;
-use craft\web\View;
+use craftpulse\typesense\helpers\FrontendTemplates;
 use craftpulse\typesense\Typesense;
 
 /**
@@ -266,19 +266,24 @@ class SearchFormTag extends BaseTag
      */
     private function _regionsHtml(string $collection, string $endpoint, array $options, array $result): string
     {
-        $view = Craft::$app->getView();
+        /** @var \craftpulse\typesense\models\Settings $settings */
+        $settings = Typesense::$plugin->getSettings();
         $variables = compact('collection', 'endpoint', 'options', 'result');
+        $variables['theme'] = $settings->frontendThemeConfig;
 
+        // Route each region through the override resolver so the initial paint
+        // uses the same overridden/themed templates the SSE morph will, and the
+        // morph contract (region ids) is enforced identically.
         $facets = '';
 
         if (($options['facetBy'] ?? '') !== '') {
-            $facets = Html::tag('aside', $view->renderTemplate('_typesense/facets', $variables, View::TEMPLATE_MODE_SITE), [
+            $facets = Html::tag('aside', FrontendTemplates::renderRegion('facets', 'ts-facets', $variables), [
                 'class' => 'ts-search__facets',
             ]);
         }
 
-        $main = Html::tag('div', $view->renderTemplate('_typesense/results', $variables, View::TEMPLATE_MODE_SITE)
-            . $view->renderTemplate('_typesense/pagination', $variables, View::TEMPLATE_MODE_SITE), [
+        $main = Html::tag('div', FrontendTemplates::renderRegion('results', 'ts-results', $variables)
+            . FrontendTemplates::renderRegion('pagination', 'ts-pagination', $variables), [
                 'class' => 'ts-search__main flex-1',
             ]);
 

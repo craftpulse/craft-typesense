@@ -1,0 +1,38 @@
+{# =========================================================================
+   Typesense front-end atom: one facet checkbox
+   =========================================================================
+   One facet value + count, composed by the facets region. Override it by
+   copying this file into your configured front-end templates directory (the
+   `facets` region keeps its `#ts-facets` id, so the morph contract is
+   unaffected when you only restyle the item).
+
+   Progressive enhancement: the checkbox submits as `facets[]` with no JS and
+   carries the Datastar bind + change refetch when present.
+
+   Variables:
+   - value:    the facet value
+   - count:    the facet count for this value
+   - id:       the input id (unique per facet + value)
+   - selected: whether this value is in the current selection
+   - endpoint: the fragment endpoint for the Datastar refetch
+   - theme:    the merged theme config
+
+   Theme keys: `facetItem` (the <li>), `facetLabel` (the <label>),
+   `facetCount` (the count span).
+   ========================================================================= #}
+{%- set theme = theme ?? {} -%}
+<li{{ craft.typesense.attr(theme, 'facetItem', 'ts-facets__item') }}>
+    <label{{ craft.typesense.attr(theme, 'facetLabel', 'ts-facets__label flex items-center gap-2 text-sm text-gray-700') }} for="{{ id }}">
+        <input
+            type="checkbox"
+            id="{{ id }}"
+            name="facets[]"
+            value="{{ value }}"
+            {{ selected ? 'checked' }}
+            data-bind:facets
+            data-on:change="$page = 1; @get('{{ endpoint }}')"
+        >
+        <span>{{ value }}</span>
+        <span{{ craft.typesense.attr(theme, 'facetCount', 'ts-facets__count text-gray-400') }}>({{ count }})</span>
+    </label>
+</li>

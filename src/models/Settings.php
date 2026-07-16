@@ -163,6 +163,25 @@ class Settings extends Model
      */
     public array $collections = [];
 
+    /**
+     * @var array<string, mixed> The front-end theme config: per-component class
+     * and attribute overrides applied to the search render components, keyed by
+     * component (for example `facetItem`, `resultCard`). A `resetClasses` key
+     * strips the structural default classes. Empty by default, so an existing
+     * install renders exactly as before.
+     * @since 5.9.0
+     */
+    public array $frontendThemeConfig = [];
+
+    /**
+     * @var string A site template directory whose files override the plugin's
+     * front-end search components file-by-file (only the files you copy in win;
+     * the rest fall back to the plugin defaults). Empty by default, so an
+     * existing install renders exactly as before.
+     * @since 5.9.0
+     */
+    public string $frontendTemplatesDir = '';
+
     // Public Methods
     // =========================================================================
 

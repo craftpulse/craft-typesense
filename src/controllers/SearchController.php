@@ -14,8 +14,8 @@ use Craft;
 use craft\helpers\Json;
 use craft\helpers\UrlHelper;
 use craft\web\Controller;
-use craft\web\View;
 use craftpulse\typesense\builders\Collection;
+use craftpulse\typesense\helpers\FrontendTemplates;
 use craftpulse\typesense\Typesense;
 use starfederation\datastar\Consts;
 use starfederation\datastar\enums\ElementPatchMode;
@@ -193,6 +193,9 @@ class SearchController extends Controller
         $result = Typesense::$plugin->getSearch()->frontendSearch($handle, $options);
         $elapsedMs = (int)round((microtime(true) - $startedAt) * 1000);
 
+        /** @var \craftpulse\typesense\models\Settings $settings */
+        $settings = Typesense::$plugin->getSettings();
+
         $variables = [
             'collection' => $handle,
             'options' => $options,
@@ -201,19 +204,16 @@ class SearchController extends Controller
             'endpoint' => $this->_endpointUrl($handle, $options),
             'trackEndpoint' => UrlHelper::actionUrl('typesense/search/track-event'),
             'csrfToken' => $request->getCsrfToken(),
+            'theme' => $settings->frontendThemeConfig,
         ];
 
-        $view = Craft::$app->getView();
-        $results = $view->renderTemplate('_typesense/results', $variables, View::TEMPLATE_MODE_SITE);
-        $facetsHtml = $view->renderTemplate('_typesense/facets', $variables, View::TEMPLATE_MODE_SITE);
-        $pagination = $view->renderTemplate('_typesense/pagination', $variables, View::TEMPLATE_MODE_SITE);
-
-        // The morph contract: each region must carry its stable id or Datastar
-        // has nothing to patch. A project template override that drops the id is
-        // a silent no-morph, so name it loudly in the logs.
-        $this->_assertRegionContract($results, 'ts-results', '_typesense/results');
-        $this->_assertRegionContract($facetsHtml, 'ts-facets', '_typesense/facets');
-        $this->_assertRegionContract($pagination, 'ts-pagination', '_typesense/pagination');
+        // Each region renders through the override resolver, which enforces the
+        // morph contract: if a project override drops the required id, it
+        // re-renders the plugin default for that region and warns, so live
+        // updates keep working.
+        $results = FrontendTemplates::renderRegion('results', 'ts-results', $variables);
+        $facetsHtml = FrontendTemplates::renderRegion('facets', 'ts-facets', $variables);
+        $pagination = FrontendTemplates::renderRegion('pagination', 'ts-pagination', $variables);
 
         if ($isDatastar) {
             return $this->_streamFragments($results, $facetsHtml, $pagination, (int)($result['found'] ?? 0), $elapsedMs);
@@ -224,32 +224,6 @@ class SearchController extends Controller
 
     // Private Methods
     // =========================================================================
-
-    /**
-     * Warns when a rendered region has lost its stable id, which is the Datastar
-     * morph target. A project template override that drops the id renders fine on
-     * first load but silently stops morphing, so this names the region and its
-     * required id in the logs rather than failing a public request.
-     *
-     * @param string $html
-     * @param string $id the required element id (the morph selector, without the #)
-     * @param string $template the overridable template path, for the log message
-     * @return void
-     * @author CraftPulse
-     */
-    private function _assertRegionContract(string $html, string $id, string $template): void
-    {
-        if (str_contains($html, 'id="' . $id . '"')) {
-            return;
-        }
-
-        Craft::warning(
-            "The Typesense search fragment \"{$template}\" is missing the required id=\"{$id}\". "
-            . 'Datastar cannot morph a region without it, so live updates will not apply. '
-            . 'Keep the id on the top-level element when overriding this template.',
-            __METHOD__,
-        );
-    }
 
     /**
      * Builds the fragment endpoint URL with the fixed search config baked in as

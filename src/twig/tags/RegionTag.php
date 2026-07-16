@@ -12,7 +12,7 @@ namespace craftpulse\typesense\twig\tags;
 
 use Craft;
 use craft\helpers\UrlHelper;
-use craft\web\View;
+use craftpulse\typesense\helpers\FrontendTemplates;
 use craftpulse\typesense\Typesense;
 
 /**
@@ -138,12 +138,17 @@ class RegionTag extends BaseTag
             'perPage' => (string)$options['perPage'],
         ], static fn(string $value): bool => $value !== ''));
         $result = $collection !== '' ? Typesense::$plugin->getSearch()->frontendSearch($collection, $options) : [];
+        /** @var \craftpulse\typesense\models\Settings $settings */
+        $settings = Typesense::$plugin->getSettings();
         $variables = compact('collection', 'endpoint', 'options', 'result');
+        $variables['theme'] = $settings->frontendThemeConfig;
 
-        $partial = ($this->config['region'] ?? 'results') === 'facets'
-            ? '_typesense/facets'
-            : '_typesense/results';
+        // Route through the override resolver so a standalone region honours the
+        // configured override directory and theme, and its morph id is enforced.
+        [$region, $requiredId] = ($this->config['region'] ?? 'results') === 'facets'
+            ? ['facets', 'ts-facets']
+            : ['results', 'ts-results'];
 
-        return Craft::$app->getView()->renderTemplate($partial, $variables, View::TEMPLATE_MODE_SITE);
+        return FrontendTemplates::renderRegion($region, $requiredId, $variables);
     }
 }

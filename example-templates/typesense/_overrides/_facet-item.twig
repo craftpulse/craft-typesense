@@ -1,0 +1,32 @@
+{# =========================================================================
+   Typesense example templates - custom facet item override (showcase)
+   =========================================================================
+   A restyled facet item: a rounded "pill" instead of the default checkbox row,
+   shown as a live example of overriding a single atomic component. Activate it
+   by pointing the plugin's `frontendTemplatesDir` setting at this folder, for
+   example `typesense/_overrides` (see docs/front-end-theming.md). Only this one
+   component changes; every other component falls back to the plugin default, and
+   the #ts-facets region id (the SSE morph target) is untouched because this is a
+   per-row atom, not the region.
+
+   Variables: value, count, id, selected, endpoint, theme.
+   ========================================================================= #}
+<li class="ts-facets__item inline-block mr-2 mb-2">
+    <label
+        class="ts-demo-pill inline-flex items-center gap-1 rounded-full border px-3 py-1 text-sm cursor-pointer {{ selected ? 'bg-gray-900 text-white border-gray-900' : 'bg-white text-gray-700 border-gray-300' }}"
+        for="{{ id }}"
+    >
+        <input
+            type="checkbox"
+            id="{{ id }}"
+            name="facets[]"
+            value="{{ value }}"
+            class="sr-only"
+            {{ selected ? 'checked' }}
+            data-bind:facets
+            data-on:change="$page = 1; @get('{{ endpoint }}')"
+        >
+        <span>{{ value }}</span>
+        <span class="opacity-60">({{ count }})</span>
+    </label>
+</li>

@@ -11,10 +11,14 @@
 namespace craftpulse\typesense\variables;
 
 use craft\base\ElementInterface;
+use craft\helpers\Template;
 use craft\helpers\UrlHelper;
+use craftpulse\typesense\helpers\FrontendTemplates;
+use craftpulse\typesense\helpers\ThemeConfig;
 use craftpulse\typesense\twig\tags\RegionTag;
 use craftpulse\typesense\twig\tags\SearchFormTag;
 use craftpulse\typesense\Typesense;
+use Twig\Markup;
 
 /**
  * Typesense Variable
@@ -32,6 +36,47 @@ class TypesenseVariable
 {
     // Public Methods
     // =========================================================================
+
+    /**
+     * Renders the theme-config HTML attributes for a search component: the
+     * template's structural default classes merged with the operator's cosmetic
+     * class and attribute overrides for that component key (or reset when
+     * configured). Used inside the atomic search templates.
+     *
+     * {{ craft.typesense.attr(theme, 'facetItem', 'ts-facets__item') }}
+     *
+     * @param array<string, mixed> $theme the merged theme config
+     * @param string $key the component key
+     * @param string $defaultClasses the structural default classes
+     * @return Markup
+     * @author CraftPulse
+     */
+    public function attr(array $theme, string $key, string $defaultClasses = ''): Markup
+    {
+        return Template::raw(ThemeConfig::attributes($theme, $key, $defaultClasses));
+    }
+
+    /**
+     * Renders an atomic search component through the override resolver: the file
+     * from the configured override directory when present, otherwise the plugin
+     * default. Used inside the region templates to compose the per-row atoms
+     * (result card, facet item) so a project can override just those.
+     *
+     * {{ craft.typesense.component('_result-card', { hit: hit, theme: theme }) }}
+     *
+     * @param string $name the component name
+     * @param array<string, mixed> $variables
+     * @return Markup
+     * @throws \Twig\Error\LoaderError
+     * @throws \Twig\Error\RuntimeError
+     * @throws \Twig\Error\SyntaxError
+     * @throws \yii\base\Exception
+     * @author CraftPulse
+     */
+    public function component(string $name, array $variables = []): Markup
+    {
+        return Template::raw(FrontendTemplates::render($name, $variables));
+    }
 
     /**
      * Returns the front-end analytics event endpoint URL. Post a click or

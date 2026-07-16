@@ -31,6 +31,7 @@
 {%- set trackEndpoint = trackEndpoint ?? craft.typesense.eventEndpoint() -%}
 {%- set csrfToken = csrfToken ?? craft.app.request.csrfToken -%}
 {%- set query = options.q ?? '' -%}
+{%- set theme = theme ?? {} -%}
 
 <div id="ts-results" class="ts-results" aria-live="polite">
     <p class="ts-results__count text-sm text-gray-500 mb-4">
@@ -52,13 +53,16 @@
                    than always appending '?'. #}
                 {%- set trackSep = '?' in trackEndpoint ? '&' : '?' -%}
                 {%- set clickUrl = trackEndpoint ~ trackSep ~ 'type=click&name=search_click&docId=' ~ (doc.id ?? '')|url_encode ~ '&q=' ~ query|url_encode -%}
-                <li class="ts-results__item rounded border border-gray-200 bg-white px-4 py-3">
-                    <a class="ts-results__title font-semibold text-gray-900"
-                       href="{{ href }}"
-                       data-on:click="@post('{{ clickUrl }}', {headers: {'X-CSRF-Token': '{{ csrfToken }}'}})">
-                        {{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}
-                    </a>
-                </li>
+                {# The per-row atom resolves through the override directory, so a
+                   project can restyle just the card without touching this region
+                   or the #ts-results morph id. #}
+                {{ craft.typesense.component('_result-card', {
+                    doc: doc,
+                    href: href,
+                    clickUrl: clickUrl,
+                    csrfToken: csrfToken,
+                    theme: theme,
+                }) }}
             {%- endfor -%}
         </ul>
     {%- endif -%}

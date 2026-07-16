@@ -1,0 +1,25 @@
+{# =========================================================================
+   Typesense front-end atom: one result card
+   =========================================================================
+   One search hit, composed by the results region. Override it by copying this
+   file into your configured front-end templates directory (the `results` region
+   keeps its `#ts-results` id, so the morph contract is unaffected when you only
+   restyle the card).
+
+   Variables:
+   - doc:        the Typesense document (doc.title, doc.id, doc.elementId)
+   - href:       the resolved element URL (or '#')
+   - clickUrl:   the analytics click-tracking endpoint URL
+   - csrfToken:  the CSRF token for the tracking beacon
+   - theme:      the merged theme config (per-component class/attribute overrides)
+
+   Theme keys: `resultCard` (the <li>), `resultCardTitle` (the <a>).
+   ========================================================================= #}
+{%- set theme = theme ?? {} -%}
+<li{{ craft.typesense.attr(theme, 'resultCard', 'ts-results__item rounded border border-gray-200 bg-white px-4 py-3') }}>
+    <a{{ craft.typesense.attr(theme, 'resultCardTitle', 'ts-results__title font-semibold text-gray-900') }}
+       href="{{ href }}"
+       data-on:click="@post('{{ clickUrl }}', {headers: {'X-CSRF-Token': '{{ csrfToken }}'}})">
+        {{ doc.title ?? ('Document {id}'|t('typesense', { id: doc.id ?? '?' })) }}
+    </a>
+</li>
