@@ -85,7 +85,37 @@ it('rebuilds the member list from the posted rows with unique handles', function
             ->and($members[1]['elementType'])->toBe(Asset::class)
             ->and($members[1]['handle'])->not->toBe('')
             // The duplicate "news" handle is de-duplicated.
-            ->and($members[2]['handle'])->not->toBe('news');
+            ->and($members[2]['handle'])->not->toBe('news')
+            // Reorder persists: the members are stored in the posted row order.
+            ->and(array_column($members, 'source'))->toBe(['heroes', 'images', 'heroes']);
+    } finally {
+        Typesense::$plugin->getManagedCollections()->delete($definition);
+    }
+});
+
+it('renders the members table with add, delete, and reorder controls', function() {
+    $admin = aUnionMembersAdmin();
+
+    $definition = new CollectionDefinition();
+    $definition->name = 'union_members_ui_' . bin2hex(random_bytes(3));
+    $definition->collectionType = CollectionDefinition::COLLECTION_TYPE_UNION;
+    $definition->multisite = 'sharedWithSiteFilter';
+    $definition->members = [
+        ['handle' => 'news', 'elementType' => Entry::class, 'source' => 'heroes', 'sourceType' => 'section'],
+    ];
+    Typesense::$plugin->getManagedCollections()->save($definition);
+
+    try {
+        $body = (string)$this->actingAs($admin)
+            ->get(UrlHelper::cpUrl('typesense/collections/' . $definition->uid . '/members'))
+            ->content;
+
+        // The editable table enables add/delete/reorder (the regression was all
+        // three defaulting to false, so the table rendered one static row).
+        expect($body)->toContain('Add a member')
+            ->and($body)->toContain('allowAdd: true')
+            ->and($body)->toContain('allowDelete: true')
+            ->and($body)->toContain('allowReorder: true');
     } finally {
         Typesense::$plugin->getManagedCollections()->delete($definition);
     }

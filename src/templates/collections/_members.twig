@@ -34,11 +34,11 @@
     {{ actionInput('typesense/collections/save-members') }}
     {{ hiddenInput('uid', definition.uid) }}
 
-    <p class="light">{{ 'Add each element source as a member. Each member gets a unique handle (its _elementType value) and its own field mapping below. A large number of members grows the union schema in memory, so keep the set focused.'|t('typesense') }}</p>
+    <p class="light">{{ 'Add each element source as a member and give it a handle (its _elementType value). Save to add a member: its own field-mapping pane then appears below. Removing a member drops its fields from the union schema on the next apply. A large number of members grows the union schema in memory, so keep the set focused.'|t('typesense') }}</p>
 
     {{ forms.editableTableField({
         label: 'Members'|t('typesense'),
-        instructions: 'The element sources this union indexes.'|t('typesense'),
+        instructions: 'The element sources this union indexes. Add, remove, and reorder rows; save to (re)build each member and its mapping pane.'|t('typesense'),
         id: 'members',
         name: 'members',
         cols: {
@@ -47,6 +47,9 @@
         },
         rows: memberRows,
         addRowLabel: 'Add a member'|t('typesense'),
+        allowAdd: not readOnly,
+        allowDelete: not readOnly,
+        allowReorder: not readOnly,
         static: readOnly,
     }) }}
 
