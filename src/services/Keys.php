@@ -120,7 +120,16 @@ class Keys extends Component
         }
 
         try {
-            return $client->keys->create($schema);
+            $response = $client->keys->create($schema);
+
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_KEY_CREATED, [
+                'keyId' => isset($response['id']) ? (int)$response['id'] : null,
+                'label' => isset($response['description']) ? (string)$response['description'] : null,
+                'actions' => implode(',', (array)($response['actions'] ?? [])),
+                'collections' => implode(',', (array)($response['collections'] ?? [])),
+            ]);
+
+            return $response;
         } catch (Throwable $e) {
             Craft::error("Could not create a Typesense key: {$e->getMessage()}", 'typesense');
 
@@ -147,6 +156,10 @@ class Keys extends Component
         try {
             $client->keys[$id]->delete();
 
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_KEY_DELETED, [
+                'keyId' => $id,
+            ]);
+
             return true;
         } catch (Throwable $e) {
             Craft::error("Could not delete Typesense key {$id}: {$e->getMessage()}", 'typesense');
@@ -172,6 +185,10 @@ class Keys extends Component
             self::CONFIG_KEY . '.' . $handle,
             "Delete Typesense key profile \u{201C}{$handle}\u{201D}",
         );
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_KEY_PROFILE_DELETED, [
+            'handle' => $handle,
+        ]);
     }
 
     /**
@@ -308,6 +325,10 @@ class Keys extends Component
             $profile->getConfig(),
             "Save Typesense key profile \u{201C}{$profile->handle}\u{201D}",
         );
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_KEY_PROFILE_SAVED, [
+            'handle' => $profile->handle,
+        ]);
 
         return true;
     }

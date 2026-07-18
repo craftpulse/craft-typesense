@@ -12,6 +12,7 @@ namespace craftpulse\typesense\console\controllers;
 
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\services\Drift;
 use craftpulse\typesense\Typesense;
 use craftpulse\typesense\TypesenseCollectionIndex;
@@ -73,6 +74,10 @@ class ConfigController extends Controller
 
             return ExitCode::OK;
         }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_CONFIG_APPLIED, [
+            'collections' => count($expressions),
+        ]);
 
         return $this->_output($generator->file($expressions));
     }

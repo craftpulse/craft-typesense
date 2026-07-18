@@ -12,6 +12,7 @@ namespace craftpulse\typesense\console\controllers;
 
 use Craft;
 use craft\elements\Entry;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -44,6 +45,7 @@ class DefaultController extends Controller
         }
 
         Typesense::$plugin->getSync()->flushAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_FLUSHED, ['scope' => 'all']);
 
         return ExitCode::OK;
     }
@@ -61,6 +63,7 @@ class DefaultController extends Controller
         }
 
         Typesense::$plugin->getSync()->syncAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SYNCED, ['scope' => 'all']);
 
         return ExitCode::OK;
     }

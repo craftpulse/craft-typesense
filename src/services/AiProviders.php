@@ -212,6 +212,12 @@ class AiProviders extends Component
             "Save Typesense AI provider \u{201C}{$provider->handle}\u{201D}",
         );
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_AI_PROVIDER_SAVED, [
+            'handle' => $provider->handle,
+            'type' => $provider->type,
+            'kind' => $provider->kind,
+        ]);
+
         return true;
     }
 
@@ -232,6 +238,10 @@ class AiProviders extends Component
             self::CONFIG_KEY_PROVIDERS . '.' . $handle,
             "Delete Typesense AI provider \u{201C}{$handle}\u{201D}",
         );
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_AI_PROVIDER_DELETED, [
+            'handle' => $handle,
+        ]);
     }
 
     /**
@@ -412,6 +422,12 @@ class AiProviders extends Component
             "Save Typesense conversation model \u{201C}{$model->handle}\u{201D}",
         );
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_AI_MODEL_SAVED, [
+            'handle' => $model->handle,
+            'providerHandle' => $model->providerHandle,
+            'modelName' => $model->modelName,
+        ]);
+
         return true;
     }
 
@@ -433,6 +449,10 @@ class AiProviders extends Component
             self::CONFIG_KEY_MODELS . '.' . $handle,
             "Delete Typesense conversation model \u{201C}{$handle}\u{201D}",
         );
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_AI_MODEL_DELETED, [
+            'handle' => $handle,
+        ]);
     }
 
     /**
@@ -506,7 +526,17 @@ class AiProviders extends Component
 
         $response = Typesense::$plugin->getClient()->request('POST', '/conversations/models', $payload);
 
-        return ($response['id'] ?? null) !== null ? (string)$response['id'] : null;
+        if (($response['id'] ?? null) === null) {
+            return null;
+        }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_AI_MODEL_PUSHED, [
+            'handle' => $model->handle,
+            'providerHandle' => $model->providerHandle,
+            'modelName' => $model->modelName,
+        ]);
+
+        return (string)$response['id'];
     }
 
     /**

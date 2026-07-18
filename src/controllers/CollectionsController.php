@@ -25,6 +25,7 @@ use craft\web\assets\cp\CpAsset;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\ForbiddenHttpException;
 use yii\web\NotFoundHttpException;
@@ -293,6 +294,10 @@ class CollectionsController extends ProController
 
         if ($definition !== null) {
             Typesense::$plugin->getManagedCollections()->delete($definition);
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_COLLECTION_DELETED, [
+                'name' => $definition->name,
+                'uid' => $uid,
+            ]);
         }
 
         return $this->asSuccess(Craft::t('typesense', 'Collection deleted.'));
@@ -519,6 +524,11 @@ class CollectionsController extends ProController
             return $this->asModelFailure($definition, Craft::t('typesense', 'Could not save the collection.'), 'definition');
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_COLLECTION_SAVED, [
+            'name' => $definition->name,
+            'uid' => $definition->uid,
+        ]);
+
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Collection saved.'), 'definition', [], 'typesense/collections');
     }
 
@@ -575,6 +585,10 @@ class CollectionsController extends ProController
         $definition->setFieldLayout($layout);
 
         Typesense::$plugin->getManagedCollections()->save($definition);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_MAPPING_SAVED, [
+            'uid' => $uid,
+        ]);
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Mapping saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/mapping');
     }
@@ -705,6 +719,10 @@ class CollectionsController extends ProController
         if (!Typesense::$plugin->getManagedCollections()->save($definition)) {
             return $this->asModelFailure($definition, Craft::t('typesense', 'Could not save the members.'), 'definition');
         }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_MAPPING_SAVED, [
+            'uid' => $uid,
+        ]);
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Members saved.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/members');
     }

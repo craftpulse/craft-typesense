@@ -41,6 +41,7 @@ use craft\services\Utilities;
 use craft\web\twig\variables\CraftVariable;
 use craft\web\UrlManager;
 use craft\web\View;
+use craftpulse\auditkit\services\EventTypes;
 use craftpulse\typesense\base\PluginTrait;
 use craftpulse\typesense\controllers\AiProvidersController;
 use craftpulse\typesense\controllers\AliasesController;
@@ -201,6 +202,7 @@ class Typesense extends Plugin
         self::$plugin = $this;
 
         $this->_registerComponents();
+        $this->_registerAuditEventTypes();
         $this->installEventListeners();
         $this->getSync()->registerEventListeners();
         $this->_registerSyncFailureAlerts();
@@ -625,6 +627,24 @@ class Typesense extends Plugin
                     $this->getNotifications()->notifyJobFailure($description, (string)$event->error?->getMessage());
                 }
             }
+        );
+    }
+
+    /**
+     * Registers Typesense's audit event-type definitions with craft-audit-kit.
+     * The listener is harmless when Audit Kit is not installed (its registry
+     * event never fires), so registration is unconditional across every request
+     * context, matching the plugin's other component-type registrations.
+     *
+     * @return void
+     * @author CraftPulse
+     */
+    private function _registerAuditEventTypes(): void
+    {
+        Event::on(
+            EventTypes::class,
+            EventTypes::EVENT_REGISTER_AUDIT_EVENTS,
+            [$this->getAudit(), 'registerEventTypes'],
         );
     }
 

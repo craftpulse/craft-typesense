@@ -14,6 +14,7 @@ use Craft;
 use craft\config\GeneralConfig;
 use craft\web\Controller;
 use craftpulse\typesense\models\Settings;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\ForbiddenHttpException;
 use yii\web\Response;
@@ -108,6 +109,7 @@ class SettingsController extends Controller
             ]);
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_SETTINGS_SAVED);
         $this->setSuccessFlash(Craft::t('typesense', 'Settings saved.'));
 
         return $this->redirectToPostedUrl();

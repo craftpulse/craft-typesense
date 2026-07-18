@@ -96,7 +96,16 @@ class Aliases extends Component
             'src_name' => $source,
         ]);
 
-        return ($response['name'] ?? null) === $target;
+        if (($response['name'] ?? null) !== $target) {
+            return false;
+        }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_ALIAS_CLONED, [
+            'source' => $source,
+            'target' => $target,
+        ]);
+
+        return true;
     }
 
     /**

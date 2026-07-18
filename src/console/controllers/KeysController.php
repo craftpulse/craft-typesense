@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\console\controllers;
 
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\base\InvalidConfigException;
 use yii\console\Controller;
@@ -94,6 +95,9 @@ class KeysController extends Controller
             return ExitCode::UNSPECIFIED_ERROR;
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_KEY_SCOPED_GENERATED, [
+            'parameterCount' => count($parameters),
+        ]);
         $this->stdout($key . PHP_EOL);
 
         return ExitCode::OK;

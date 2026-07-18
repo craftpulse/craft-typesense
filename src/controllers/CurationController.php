@@ -14,6 +14,7 @@ use Craft;
 use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -160,6 +161,10 @@ class CurationController extends ProController
         $collection = $this->_editableByKey($key);
         Typesense::$plugin->getCuration()->deleteRule($collection, $ruleId);
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_CURATION_DELETED, [
+            'collection' => $collection->getName(),
+        ]);
+
         return $this->asSuccess(Craft::t('typesense', 'Rule deleted.'));
     }
 
@@ -232,6 +237,10 @@ class CurationController extends ProController
 
         Typesense::$plugin->getCuration()->pin($collection, $query, $documentId, 'exact', max(1, $position));
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_CURATION_SAVED, [
+            'collection' => $collection->getName(),
+        ]);
+
         return $this->asSuccess(Craft::t('typesense', 'Pinned for “{query}”.', ['query' => $query]));
     }
 
@@ -257,6 +266,10 @@ class CurationController extends ProController
         }
 
         Typesense::$plugin->getCuration()->upsert($collection, $id, $this->_ruleBody());
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_CURATION_SAVED, [
+            'collection' => $collection->getName(),
+        ]);
 
         return $this->asSuccess(
             Craft::t('typesense', 'Rule saved.'),

@@ -15,6 +15,7 @@ use craft\helpers\UrlHelper;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\helpers\Locale;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -160,6 +161,10 @@ class SynonymsController extends ProController
         $collection = $this->_editableByKey($key);
         Typesense::$plugin->getSynonyms()->deleteOne($collection, $synonymId);
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_SYNONYMS_DELETED, [
+            'collection' => $collection->getName(),
+        ]);
+
         return $this->asSuccess(Craft::t('typesense', 'Synonym deleted.'));
     }
 
@@ -221,6 +226,10 @@ class SynonymsController extends ProController
         }
 
         Typesense::$plugin->getSynonyms()->upsert($collection, $id, $this->_synonymBody($synonyms));
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_SYNONYMS_SAVED, [
+            'collection' => $collection->getName(),
+        ]);
 
         return $this->asSuccess(
             Craft::t('typesense', 'Synonym saved.'),

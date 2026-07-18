@@ -14,6 +14,7 @@ use Craft;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\models\CollectionDefinition;
 use craftpulse\typesense\services\AiProviders;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -157,6 +158,10 @@ class RelevanceController extends ProController
         $definition->relevance = $this->_relevanceBody();
         Typesense::$plugin->getManagedCollections()->save($definition);
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_RELEVANCE_SAVED, [
+            'uid' => $definition->uid,
+        ]);
+
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply boost changes.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/relevance');
     }
 
@@ -202,6 +207,10 @@ class RelevanceController extends ProController
         $definition->embedding = $embedding;
         $definition->conversation = $conversation;
         Typesense::$plugin->getManagedCollections()->save($definition);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_RELEVANCE_SAVED, [
+            'uid' => $definition->uid,
+        ]);
 
         return $this->asModelSuccess($definition, Craft::t('typesense', 'Saved. Re-sync the collection to apply embedding changes.'), 'definition', [], 'typesense/collections/' . $definition->uid . '/vector');
     }

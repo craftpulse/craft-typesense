@@ -13,6 +13,7 @@ namespace craftpulse\typesense\base;
 use craftpulse\typesense\services\AiProviders;
 use craftpulse\typesense\services\Aliases;
 use craftpulse\typesense\services\Analytics;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\services\Client;
 use craftpulse\typesense\services\Collections;
 use craftpulse\typesense\services\Compatibility;
@@ -349,6 +350,19 @@ trait PluginTrait
     }
 
     /**
+     * @return Audit
+     * @throws InvalidConfigException
+     * @author CraftPulse
+     */
+    public function getAudit(): Audit
+    {
+        /** @var Audit $audit */
+        $audit = $this->get('audit');
+
+        return $audit;
+    }
+
+    /**
      * @return Embeddings
      * @throws InvalidConfigException
      * @author CraftPulse
@@ -474,6 +488,7 @@ trait PluginTrait
             'aiProviders' => AiProviders::class,
             'aliases' => Aliases::class,
             'analytics' => Analytics::class,
+            'audit' => Audit::class,
             'embeddings' => Embeddings::class,
             'experiments' => Experiments::class,
             'dictionaries' => Dictionaries::class,

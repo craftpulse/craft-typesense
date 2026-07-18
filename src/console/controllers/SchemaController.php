@@ -14,6 +14,7 @@ use Craft;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\jobs\ApplySchema;
 use craftpulse\typesense\jobs\RebuildCollection;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -58,6 +59,7 @@ class SchemaController extends Controller
             }
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_SCHEMA_APPLIED, ['queued' => $queued]);
         $this->stdout("Queued {$queued} schema-apply job(s)." . PHP_EOL);
 
         return ExitCode::OK;
@@ -97,6 +99,10 @@ class SchemaController extends Controller
             }
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_COLLECTION_REBUILT, [
+            'collection' => $handle ?? 'all',
+            'queued' => $queued,
+        ]);
         $this->stdout("Queued {$queued} rebuild job(s)." . PHP_EOL);
 
         return ExitCode::OK;

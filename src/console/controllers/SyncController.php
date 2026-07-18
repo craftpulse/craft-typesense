@@ -10,6 +10,7 @@
 
 namespace craftpulse\typesense\console\controllers;
 
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\console\Controller;
 use yii\console\ExitCode;
@@ -36,6 +37,7 @@ class SyncController extends Controller
     public function actionAll(): int
     {
         Typesense::$plugin->getSync()->syncAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SYNCED, ['scope' => 'all']);
         $this->stdout('Queued a full sync of all collections.' . PHP_EOL);
 
         return ExitCode::OK;
@@ -57,6 +59,7 @@ class SyncController extends Controller
         }
 
         Typesense::$plugin->getSync()->syncCollection($handle);
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SYNCED, ['scope' => $handle]);
         $this->stdout("Queued a sync of {$handle}." . PHP_EOL);
 
         return ExitCode::OK;
@@ -71,6 +74,7 @@ class SyncController extends Controller
     public function actionFlush(): int
     {
         Typesense::$plugin->getSync()->flushAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_FLUSHED, ['scope' => 'all']);
         $this->stdout('Queued a flush of all collections.' . PHP_EOL);
 
         return ExitCode::OK;

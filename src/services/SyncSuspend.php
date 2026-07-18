@@ -14,6 +14,7 @@ use craft\base\Component;
 use craft\db\Query;
 use craft\helpers\Db;
 use craftpulse\typesense\db\Table;
+use craftpulse\typesense\Typesense;
 
 /**
  * The runtime sync-suspend state, held in the database (not project config) so
@@ -94,7 +95,13 @@ class SyncSuspend extends Component
      */
     public function resume(?string $collection = null): void
     {
-        Db::delete(Table::SYNC_SUSPEND, ['collection' => $collection ?? self::GLOBAL_KEY]);
+        $affected = Db::delete(Table::SYNC_SUSPEND, ['collection' => $collection ?? self::GLOBAL_KEY]);
+
+        if ($affected > 0) {
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_RESUMED, [
+                'collection' => $collection ?? self::GLOBAL_KEY,
+            ]);
+        }
     }
 
     /**
@@ -113,6 +120,10 @@ class SyncSuspend extends Component
         }
 
         Db::insert(Table::SYNC_SUSPEND, ['collection' => $key]);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SUSPENDED, [
+            'collection' => $key,
+        ]);
     }
 
     /**

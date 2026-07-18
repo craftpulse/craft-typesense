@@ -15,6 +15,7 @@ use craft\helpers\Json;
 use craftpulse\typesense\builders\Collection;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\helpers\Locale;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -74,8 +75,13 @@ class DictionariesController extends ProController
     {
         $this->requirePostRequest();
 
-        $collection = $this->_editableCollection((string)$this->request->getRequiredBodyParam('collection'));
+        $handle = (string)$this->request->getRequiredBodyParam('collection');
+        $collection = $this->_editableCollection($handle);
         Typesense::$plugin->getDictionaries()->deleteStopwords($collection);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_DICTIONARY_DELETED, [
+            'collection' => $handle,
+        ]);
 
         return $this->asSuccess(Craft::t('typesense', 'Stopwords deleted.'));
     }
@@ -99,6 +105,10 @@ class DictionariesController extends ProController
         }
 
         Typesense::$plugin->getDictionaries()->importStemmingDictionary($id, $entries);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_DICTIONARY_SAVED, [
+            'collection' => $id,
+        ]);
 
         return $this->asSuccess(Craft::t('typesense', 'Dictionary imported.'), [], 'typesense/dictionaries/stemming');
     }
@@ -135,6 +145,10 @@ class DictionariesController extends ProController
         $locale = Locale::toTypesense((string)$this->request->getBodyParam('locale', ''));
 
         Typesense::$plugin->getDictionaries()->saveStopwords($collection, $this->_words(), $locale);
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_DICTIONARY_SAVED, [
+            'collection' => $handle,
+        ]);
 
         return $this->asSuccess(Craft::t('typesense', 'Stopwords saved.'), [], 'typesense/dictionaries/' . $handle);
     }

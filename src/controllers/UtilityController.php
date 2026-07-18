@@ -14,6 +14,7 @@ use Craft;
 use craft\web\Controller;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\jobs\ApplySchema;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -103,11 +104,13 @@ class UtilityController extends Controller
 
         if ($handle !== '') {
             Typesense::$plugin->getSync()->flush($handle);
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_FLUSHED, ['scope' => $handle]);
 
             return $this->asSuccess(Craft::t('typesense', 'Flush queued for {collection}.', ['collection' => $handle]), [], 'utilities/typesense');
         }
 
         Typesense::$plugin->getSync()->flushAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_FLUSHED, ['scope' => 'all']);
 
         return $this->asSuccess(Craft::t('typesense', 'Flush queued.'), [], 'utilities/typesense');
     }
@@ -128,11 +131,13 @@ class UtilityController extends Controller
 
         if ($handle !== '') {
             Typesense::$plugin->getSync()->syncCollection($handle);
+            Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SYNCED, ['scope' => $handle]);
 
             return $this->asSuccess(Craft::t('typesense', 'Sync queued for {collection}.', ['collection' => $handle]), [], 'utilities/typesense');
         }
 
         Typesense::$plugin->getSync()->syncAll();
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_INDEX_SYNCED, ['scope' => 'all']);
 
         return $this->asSuccess(Craft::t('typesense', 'Sync queued.'), [], 'utilities/typesense');
     }

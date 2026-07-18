@@ -101,6 +101,35 @@ Pro control panel:
 - [API key management](docs/pro-keys.md), [A/B testing](docs/pro-ab-testing.md)
 - [Analytics and ops](docs/pro-analytics.md), [Vector and AI](docs/pro-vector-ai.md)
 
+## Audit trail
+
+Typesense emits a native audit event for every security- and governance-relevant
+action, through [craft-audit-kit](https://github.com/craftpulse/craft-audit-kit)
+(a base dependency, installed automatically). A recorder such as Ledger registers
+a sink on the kit bus and lands each event in a tamper-evident log; with no
+recorder installed, emission is a graceful no-op.
+
+Instrumented actions (category `system`, emitter `typesense`):
+
+- **API keys:** `typesense.key.created`, `key.deleted`, `key.scoped_generated`,
+  `key.profile_saved`, `key.profile_deleted`
+- **AI providers and models:** `typesense.ai_provider.saved` / `.deleted`,
+  `ai_model.saved` / `.deleted` / `.pushed`
+- **Collections and schema:** `typesense.collection.saved` / `.deleted` /
+  `.rebuilt`, `mapping.saved`, `schema.applied`, `config.applied`
+- **Index operations:** `typesense.index.flushed`, `index.synced`,
+  `index.suspended`, `index.resumed`, `alias.cloned`
+- **Relevance and content:** `typesense.curation.saved` / `.deleted`,
+  `synonyms.saved` / `.deleted`, `dictionary.saved` / `.deleted`,
+  `relevance.saved`
+- **Ops:** `typesense.snapshot.created`, `cache.cleared`, `settings.saved`
+
+Key values, derived scoped keys, and resolved provider credentials are **never**
+recorded: a per-event detail allowlist limits every payload to ids, handles, and
+scope descriptors. Console commands emit too, attributed to the system (null
+actor). See the `Audit` service (`src/services/Audit.php`) for the event
+definitions.
+
 ## Upgrading from 5.8.x
 
 This is a zero-touch update. Run `craft up` as usual; see

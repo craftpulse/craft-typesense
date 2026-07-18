@@ -14,6 +14,7 @@ use Craft;
 use craftpulse\typesense\controllers\base\ProController;
 use craftpulse\typesense\enums\MultisiteStrategy;
 use craftpulse\typesense\jobs\RebuildCollection;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\NotFoundHttpException;
 use yii\web\Response;
@@ -135,6 +136,11 @@ class AliasesController extends ProController
                 'siteId' => $siteId,
             ]));
         }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_COLLECTION_REBUILT, [
+            'collection' => $handle,
+            'queued' => count($siteIds),
+        ]);
 
         return $this->asSuccess(Craft::t('typesense', 'Rebuild queued. The alias keeps serving the current collection until the swap.'), [], 'typesense/aliases');
     }

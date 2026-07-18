@@ -12,6 +12,7 @@ namespace craftpulse\typesense\controllers;
 
 use Craft;
 use craftpulse\typesense\controllers\base\ProController;
+use craftpulse\typesense\services\Audit;
 use craftpulse\typesense\Typesense;
 use yii\web\Response;
 
@@ -79,6 +80,8 @@ class OpsController extends ProController
             return $this->asFailure(Craft::t('typesense', 'Could not clear the cache.'));
         }
 
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_CACHE_CLEARED);
+
         return $this->asSuccess(Craft::t('typesense', 'Cache cleared.'), [], 'utilities/typesense');
     }
 
@@ -130,6 +133,8 @@ class OpsController extends ProController
         if (($response['success'] ?? false) !== true) {
             return $this->asFailure(Craft::t('typesense', 'Could not start the snapshot.'));
         }
+
+        Typesense::$plugin->getAudit()->record(Audit::EVENT_SNAPSHOT_CREATED);
 
         return $this->asSuccess(Craft::t('typesense', 'Snapshot started to {path}.', ['path' => $path]), [], 'utilities/typesense');
     }
