@@ -48,10 +48,21 @@ jobs:
       # no `command:` key for service containers). A plain `docker run` step
       # is the standard way around that, not a workaround: it starts before
       # Composer/Pest need it and is reachable at TYPESENSE_HOST/PORT above.
+      # Search analytics is enabled here for the same reason it is enabled on
+      # the playground's own Typesense service (see
+      # .ddev/docker-compose.typesense.yaml in the playground): the P11
+      # analytics-loop test (AnalyticsLoopE2ETest) needs a real popular/no-hits
+      # flush to observe within its ~100s poll window, and Typesense's default
+      # analytics-flush-interval is far longer than that. Confirmed empirically
+      # (a container started with the analytics flags omitted never flushed a
+      # query into the destination collection within 105s) - without this flag
+      # the test isn't skipped (the /analytics/rules endpoint always answers
+      # with a `rules` key, flag or not), it just times out and fails.
       - name: Start Typesense
         run: |
           docker run -d --name typesense -p 8108:8108 typesense/typesense:28.0 \
-            --data-dir /tmp --api-key="${{ env.TYPESENSE_API_KEY }}" --listen-port 8108
+            --data-dir /tmp --api-key="${{ env.TYPESENSE_API_KEY }}" --listen-port 8108 \
+            --enable-search-analytics=true --analytics-flush-interval=60
       - name: Wait for Typesense
         run: |
           for i in $(seq 1 30); do
