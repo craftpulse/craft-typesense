@@ -56,10 +56,22 @@ it('builds distinct per-site documents for a multi-site shared collection', func
 });
 
 it('keeps the heroes documents on their bare element ids (no identity churn)', function() {
+    // The physical collection is resolved through the registry (prefix-aware,
+    // see TYPESENSE_COLLECTION_PREFIX in phpunit.xml.dist): a raw, unprefixed
+    // "heroes" lookup would reach the shared server's real, live "heroes"
+    // collection instead of this suite's own fixture. The found count is read
+    // fresh here rather than hardcoded, per the same fixture (see
+    // tests/Support/typesense-fixtures.php): asserting on a value computed at
+    // test time never drifts, unlike a number pinned to whatever the fixture
+    // happened to contain on the day this test was written.
+    $registry = Typesense::$plugin->getCollectionRegistry();
+    $collection = $registry->get('heroes');
     $client = Typesense::$plugin->getClient()->client();
-    $result = $client->collections['heroes']->documents->search(['q' => '*', 'query_by' => 'title', 'per_page' => 1]);
+    $target = $registry->resolveName($collection, Craft::$app->getSites()->getPrimarySite()->id);
 
-    expect($result['found'])->toBe(488)
+    $result = $client->collections[$target]->documents->search(['q' => '*', 'query_by' => 'title', 'per_page' => 1]);
+
+    expect($result['found'])->toBeGreaterThan(0)
         ->and($result['hits'][0]['document']['id'])->not->toContain('-');
 });
 

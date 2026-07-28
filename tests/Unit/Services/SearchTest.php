@@ -25,7 +25,12 @@ function dropSearchCollection(): void
 
     if ($client !== null) {
         try {
-            $client->collections[SEARCH_TEST_COLLECTION]->delete();
+            // Prefix-aware: withSearch() below creates the physical collection
+            // via getCreateSchema(), which already resolves it through the
+            // registry (see TYPESENSE_COLLECTION_PREFIX). A raw, unprefixed
+            // delete here would miss it, leaking the physical collection
+            // across runs.
+            $client->collections[Typesense::$plugin->getClient()->prefixedCollectionName(SEARCH_TEST_COLLECTION)]->delete();
         } catch (Throwable) {
             // already gone
         }

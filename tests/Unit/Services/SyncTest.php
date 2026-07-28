@@ -39,13 +39,27 @@ function syncTestCollection(): Collection
         ]);
 }
 
+/**
+ * Resolves the physical, prefix-aware Typesense collection name behind
+ * SYNC_TEST_COLLECTION. Every `Sync`/`Collections` call in this file already
+ * resolves through the registry (which applies TYPESENSE_COLLECTION_PREFIX);
+ * a raw, unprefixed collection lookup here would silently miss the physical
+ * collection those calls actually created.
+ *
+ * @return string
+ */
+function syncTestTarget(): string
+{
+    return Typesense::$plugin->getClient()->prefixedCollectionName(SYNC_TEST_COLLECTION);
+}
+
 function dropSyncTestCollection(): void
 {
     $client = Typesense::$plugin->getClient()->client();
 
     if ($client !== null) {
         try {
-            $client->collections[SYNC_TEST_COLLECTION]->delete();
+            $client->collections[syncTestTarget()]->delete();
         } catch (Throwable) {
             // already gone
         }
@@ -151,7 +165,15 @@ it('resolves collectionPerSite names with a site handle suffix', function() {
     $collection = syncTestCollection()->multisite(MultisiteStrategy::CollectionPerSite);
     $registry = Typesense::$plugin->getCollectionRegistry();
 
-    expect($registry->resolveName($collection, 2))->toBe(SYNC_TEST_COLLECTION . '_fr');
+    // A real non-primary site, looked up by id rather than hardcoded: this
+    // suite's own fixture site (see tests/Support/typesense-fixtures.php)
+    // gets whatever id/handle the shared db_test's site history happens to
+    // leave free, never a fixed "2" - the same "use handles/ids resolved at
+    // runtime, never a literal" rule that applies to element ids.
+    $secondarySite = Craft::$app->getSites()->getAllSites(true)[1];
+
+    expect($registry->resolveName($collection, $secondarySite->id))
+        ->toBe(Typesense::$plugin->getClient()->prefixedCollectionName(SYNC_TEST_COLLECTION . '_' . $secondarySite->handle));
 });
 
 // =========================================================================
@@ -169,11 +191,11 @@ it('indexes elements and deletes them on status change', function() {
         $ids = Entry::find()->section('heroes')->status('live')->siteId(1)->limit(5)->ids();
         $sync->indexElements($collection, 1, $ids);
 
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids));
 
         $sync->deleteDocuments($collection, 1, [$ids[0]]);
 
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids) - 1);
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids) - 1);
     } finally {
         dropSyncTestCollection();
     }
@@ -190,13 +212,13 @@ it('removes a document end to end when the element leaves active statuses', func
         $id = Entry::find()->section('heroes')->status('live')->siteId(1)->limit(1)->ids()[0];
 
         $sync->indexElements($collection, 1, [$id]);
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(1);
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(1);
 
         // A collection that only treats "pending" as active makes the live entry inactive.
         $strict = syncTestCollection()->activeStatuses(['pending']);
         $sync->indexElements($strict, 1, [$id]);
 
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(0);
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(0);
     } finally {
         dropSyncTestCollection();
     }
@@ -212,12 +234,12 @@ it('does not delete another site\'s documents when reconciling a shared collecti
         $sync->ensureCollectionExists($collection, 1);
         $ids = Entry::find()->section('heroes')->status('live')->siteId(1)->limit(4)->ids();
         $sync->indexElements($collection, 1, $ids);
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids));
 
         // Reconciling a different site must leave site 1's documents intact.
         $sync->reconcileCollection($collection, 2);
 
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids));
     } finally {
         dropSyncTestCollection();
     }
@@ -234,17 +256,17 @@ it('reconciles orphaned documents against the current query', function() {
         $ids = Entry::find()->section('heroes')->status('live')->siteId(1)->limit(3)->ids();
         $sync->indexElements($collection, 1, $ids);
 
-        $client->collections[SYNC_TEST_COLLECTION]->documents->upsert([
+        $client->collections[syncTestTarget()]->documents->upsert([
             'id' => 'orphan',
             'title' => 'orphan',
             'elementId' => 0,
             'siteId' => 1,
         ]);
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids) + 1);
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids) + 1);
 
         $sync->reconcileCollection($collection, 1);
 
-        expect($client->collections[SYNC_TEST_COLLECTION]->retrieve()['num_documents'])->toBe(count($ids));
+        expect($client->collections[syncTestTarget()]->retrieve()['num_documents'])->toBe(count($ids));
     } finally {
         dropSyncTestCollection();
     }

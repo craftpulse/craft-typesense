@@ -14,6 +14,7 @@
             <directory>tests</directory>
             <exclude>tests/Bootstrap.php</exclude>
             <exclude>tests/Pest.php</exclude>
+            <exclude>tests/Support</exclude>
         </testsuite>
     </testsuites>
     <source>
@@ -24,5 +25,56 @@
     <php>
         <ini name="error_reporting" value="-1"/>
         <ini name="display_errors" value="stderr"/>
+
+        <!--
+            DB isolation. DDEV exports CRAFT_DB_DATABASE=db (the playground's
+            live schema) into the container shell, and craft-pest-core's
+            InstallsCraft plugin boots Craft from a fresh vendor/bin/pest
+            process before PHPUnit itself ever applies these env entries.
+            InstallsCraft works around that ordering problem in its own
+            loadPhpunitXmlEnvironmentVariables(), which reads getcwd() slash
+            phpunit.xml or phpunit.xml.dist directly and pins $_SERVER, $_ENV,
+            and putenv() before Craft boots, but only when getcwd() is this
+            file's own directory. Run the suite from Typesense's own root
+            (vendor/bin/pest, or composer test), never via a shared
+            playground's console pest command with a configuration flag
+            pointing at this file, which leaves getcwd() at the playground
+            root and silently defeats this override so Craft boots against
+            the live db instead.
+
+            Only CRAFT_DB_DATABASE and CRAFT_DB_TABLE_PREFIX are forced here:
+            those are the only two values DDEV's ambient environment gets
+            wrong for a suite that needs its own schema (DDEV already exports
+            the correct driver/server/port/user/password for db_test, which
+            lives on the same MySQL instance as the playground's live db).
+            Deliberately NOT declaring driver/server/port/user/password here
+            keeps this file portable to CI, which provisions its own MySQL
+            service on its own host/credentials via ordinary job env: this
+            custom parser applies every entry it finds unconditionally (it
+            does not honor PHPUnit's own default="true"/force="true"
+            semantics at all, unlike PHPUnit's native later pass over the
+            same file), so an entry simply isn't declared here rather than
+            declared with a "default" attribute the parser would ignore.
+        -->
+        <env name="CRAFT_DB_DATABASE" value="db_test" force="true"/>
+        <env name="CRAFT_DB_TABLE_PREFIX" value="" force="true"/>
+
+        <!--
+            Typesense-side isolation. The Typesense server itself is NOT
+            swapped for a test-only instance: this suite talks to the same
+            real, shared Typesense server that TYPESENSE_HOST/PORT/PROTOCOL/
+            API_KEY already point at in the ambient environment (a local
+            gitignored .env at this plugin's own root for DDEV, or the CI
+            job's own env block) - deliberately not declared here, for the
+            identical reason the DB connection coordinates above aren't.
+            TYPESENSE_COLLECTION_PREFIX IS forced, unconditionally: it is this
+            suite's own isolation lever (see tests/Bootstrap.php and
+            Client::prefixedCollectionName()), not an ambient connection
+            detail, so every collection this suite creates or resolves lands
+            under a "typesensefix_" namespace that can never collide with the
+            live "heroes" collection or any other real collection on the
+            shared server, no matter which real host/port/key is in effect.
+        -->
+        <env name="TYPESENSE_COLLECTION_PREFIX" value="typesensefix_" force="true"/>
     </php>
 </phpunit>

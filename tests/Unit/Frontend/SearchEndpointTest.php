@@ -26,12 +26,20 @@ it('returns the results, facets and pagination fragments with real hits', functi
         'perPage' => 5,
     ]);
 
+    // Computed at test time, never hardcoded: the fixture collection's real
+    // document count (see tests/Support/typesense-fixtures.php) is a fact
+    // about the fixture data, not a number pinned to whatever it happened to
+    // contain when this test was written - a hardcoded count is exactly what
+    // drifted against the shared live "heroes" collection before this
+    // suite owned its own Typesense-side fixture.
+    $expectedFound = Typesense::$plugin->getSearch()->search('heroes', ['q' => '*', 'query_by' => 'title,slug'])['found'];
+
     $this->get($url)
         ->assertOk()
         ->assertSee('id="ts-results"', false)
         ->assertSee('id="ts-facets"', false)
         ->assertSee('id="ts-pagination"', false)
-        ->assertSee('Found 488 results', false)
+        ->assertSee("Found {$expectedFound} results", false)
         // Each result is a real anchor to the element (I5) and carries the
         // Datastar click-tracking binding to the event endpoint, sending the CSRF
         // token as a header so the anonymous POST passes Craft's CSRF check (I1).
@@ -53,12 +61,15 @@ it('returns the plain fragment HTML for a non-Datastar request (no-JS and back-c
         'perPage' => 5,
     ]);
 
+    // Computed at test time - see the comment in the previous test.
+    $expectedFound = Typesense::$plugin->getSearch()->search('heroes', ['q' => 'hero', 'query_by' => 'title,slug'])['found'];
+
     $body = (string)$this->get($url)->assertStatus(200)->content;
 
     expect($body)->toContain('id="ts-results"')
         ->and($body)->toContain('id="ts-facets"')
         ->and($body)->toContain('id="ts-pagination"')
-        ->and($body)->toContain('Found 11 results')
+        ->and($body)->toContain("Found {$expectedFound} results")
         ->and($body)->not->toContain('event: datastar-patch-elements');
 });
 

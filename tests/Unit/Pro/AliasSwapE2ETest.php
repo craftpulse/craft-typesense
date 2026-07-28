@@ -22,6 +22,18 @@ const ALIAS_TEST_LOGICAL = 'ts_alias_test';
 
 /**
  * Removes the alias and every physical collection the suite may have created.
+ *
+ * Matches on `str_contains()` against the bare `ALIAS_TEST_LOGICAL` name,
+ * never `str_starts_with()`: every physical collection this test creates
+ * (`getCreateSchema()`, `$aliases->rebuild()`) is resolved through the
+ * registry, which prepends TYPESENSE_COLLECTION_PREFIX (see
+ * phpunit.xml.dist) ahead of the logical name, so a starts-with check
+ * against the bare name would never match and every physical collection
+ * this test creates would leak across runs. The one raw, unprefixed
+ * collection the third test below creates directly still contains the bare
+ * name as a substring, so this also still covers it. Same reasoning for the
+ * alias itself: `rebuild()` manages it under the prefixed logical name, so
+ * both the bare and prefixed alias name are attempted.
  */
 function cleanupAliasTest(): void
 {
@@ -31,16 +43,18 @@ function cleanupAliasTest(): void
         return;
     }
 
-    try {
-        $client->aliases[ALIAS_TEST_LOGICAL]->delete();
-    } catch (Throwable) {
-        // no alias
+    foreach ([ALIAS_TEST_LOGICAL, Typesense::$plugin->getClient()->prefixedCollectionName(ALIAS_TEST_LOGICAL)] as $aliasName) {
+        try {
+            $client->aliases[$aliasName]->delete();
+        } catch (Throwable) {
+            // no alias
+        }
     }
 
     foreach ($client->collections->retrieve() as $collection) {
         $name = (string)($collection['name'] ?? '');
 
-        if (str_starts_with($name, ALIAS_TEST_LOGICAL)) {
+        if (str_contains($name, ALIAS_TEST_LOGICAL)) {
             try {
                 $client->collections[$name]->delete();
             } catch (Throwable) {

@@ -14,6 +14,7 @@
 
 use craft\elements\User;
 use craft\helpers\UrlHelper;
+use craftpulse\typesense\Typesense;
 
 function aPlaygroundAdmin(): User
 {
@@ -27,14 +28,34 @@ function aPlaygroundAdmin(): User
     return $user;
 }
 
+/**
+ * The fixture "heroes" collection's real document count (see
+ * tests/Support/typesense-fixtures.php), read fresh rather than hardcoded -
+ * a hardcoded count is exactly what drifted against the shared live
+ * "heroes" collection before this suite owned its own Typesense-side
+ * fixture.
+ *
+ * @return int
+ */
+function playgroundHeroesDocumentCount(): int
+{
+    $registry = Typesense::$plugin->getCollectionRegistry();
+    $collection = $registry->get('heroes');
+    $target = $registry->resolveName($collection, Craft::$app->getSites()->getPrimarySite()->id);
+
+    return (int)Typesense::$plugin->getClient()->client()->collections[$target]->retrieve()['num_documents'];
+}
+
 it('runs a search-params body and returns ranked hits with scores and timing', function() {
+    $found = playgroundHeroesDocumentCount();
+
     $this->actingAs(aPlaygroundAdmin())
         ->post(UrlHelper::actionUrl('typesense/playground/run'), [
             'collection' => 'heroes',
             'body' => '{"q": "*", "query_by": "title", "per_page": 5}',
         ])
         ->assertOk()
-        ->assertSee('"found":488', false)
+        ->assertSee("\"found\":{$found}", false)
         ->assertSee('"searchTimeMs"', false)
         ->assertSee('"hits"', false)
         ->assertSee('"textMatch"', false);
@@ -56,6 +77,8 @@ it('returns a coherent before/after diff for a pending overlay', function() {
 });
 
 it('pages the real indexed documents for the docs-explorer', function() {
+    $found = playgroundHeroesDocumentCount();
+
     $this->actingAs(aPlaygroundAdmin())
         ->post(UrlHelper::actionUrl('typesense/playground/documents'), [
             'collection' => 'heroes',
@@ -63,9 +86,9 @@ it('pages the real indexed documents for the docs-explorer', function() {
             'perPage' => 5,
         ])
         ->assertOk()
-        ->assertSee('"found":488', false)
+        ->assertSee("\"found\":{$found}", false)
         ->assertSee('"documents"', false)
-        ->assertSee('"numDocuments":488', false);
+        ->assertSee("\"numDocuments\":{$found}", false);
 });
 
 it('returns the live schema for the docs-explorer', function() {

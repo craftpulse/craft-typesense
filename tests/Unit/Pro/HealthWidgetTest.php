@@ -10,6 +10,7 @@
  * @copyright Copyright (c) 2026 CraftPulse
  */
 
+use craftpulse\typesense\Typesense;
 use craftpulse\typesense\widgets\HealthWidget;
 
 it('registers the health widget type on the dashboard', function() {
@@ -22,7 +23,16 @@ it('renders per-collection health in the widget body', function() {
     $widget = new HealthWidget();
     $html = (string)$widget->getBodyHtml();
 
-    // The playground declares the heroes collection with 488 documents.
+    // The fixture "heroes" collection's real document count (see
+    // tests/Support/typesense-fixtures.php), read fresh rather than
+    // hardcoded - a hardcoded count is exactly what drifted against the
+    // shared live "heroes" collection before this suite owned its own
+    // Typesense-side fixture.
+    $registry = Typesense::$plugin->getCollectionRegistry();
+    $collection = $registry->get('heroes');
+    $target = $registry->resolveName($collection, Craft::$app->getSites()->getPrimarySite()->id);
+    $numDocuments = Typesense::$plugin->getClient()->client()->collections[$target]->retrieve()['num_documents'];
+
     expect($html)->toContain('heroes')
-        ->and($html)->toContain('488');
+        ->and($html)->toContain((string)$numDocuments);
 });

@@ -72,6 +72,24 @@ it('applies the configured theme to the rendered search components', function() 
     $settings->frontendTemplatesDir = '';
     $settings->frontendThemeConfig = ['facetItem' => ['class' => 'ts-test-themed-facet']];
 
+    // SearchFormTag::render() reads the CURRENT ambient request's `q` param
+    // (Request::getParam('q', '')) to prefill the no-JS form - unlike every
+    // other test in this suite that exercises it, this one never issues its
+    // own `$this->get()`/`$this->post()` call (which is what actually
+    // replaces craft-pest's request component - see the craft-pest skill's
+    // craft-state.md, "Service caches go stale when craft-pest swaps
+    // components"), so it is reading whatever request an unrelated, earlier
+    // test in the suite happened to leave in place. A `q` value there other
+    // than empty makes the rendered facet list legitimately empty (Typesense
+    // has no matches for an arbitrary leaked query string), which looks like
+    // a missing-theme failure but is really a stale-request one. Reset the
+    // ambient query params before rendering and restore them after, so this
+    // test's own zero-query intent ("what does the fresh, no-JS form look
+    // like") holds regardless of test order.
+    $request = Craft::$app->getRequest();
+    $originalQueryParams = $request->getQueryParams();
+    $request->setQueryParams([]);
+
     try {
         $html = (string)(new SearchFormTag([
             'collection' => 'heroes',
@@ -83,6 +101,7 @@ it('applies the configured theme to the rendered search components', function() 
         expect($html)->toContain('ts-test-themed-facet')
             ->and($html)->toContain('ts-facets__item');
     } finally {
+        $request->setQueryParams($originalQueryParams);
         $settings->frontendThemeConfig = $originalTheme;
         $settings->frontendTemplatesDir = $originalDir;
     }

@@ -25,7 +25,12 @@ function dropCurationCollection(): void
 
     if ($client !== null) {
         try {
-            $client->collections[CURATION_TEST_COLLECTION]->delete();
+            // Prefix-aware: the collection below is created via
+            // getCreateSchema(), which already resolves its physical name
+            // through the registry (see TYPESENSE_COLLECTION_PREFIX). A raw,
+            // unprefixed delete here would silently miss it, leaking the
+            // physical collection across runs.
+            $client->collections[Typesense::$plugin->getClient()->prefixedCollectionName(CURATION_TEST_COLLECTION)]->delete();
         } catch (Throwable) {
             // already gone
         }

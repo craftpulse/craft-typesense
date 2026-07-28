@@ -14,7 +14,7 @@
 
 # RUNTIME JUNK (created when Craft/tests run with this dir as cwd)
 /storage
-/config/license.key
+/config
 
 # BUILD FILES
 bower_components

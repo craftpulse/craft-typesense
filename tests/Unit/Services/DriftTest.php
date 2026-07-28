@@ -19,13 +19,30 @@ use craftpulse\typesense\Typesense;
 
 const DRIFT_TEST_COLLECTION = 'ts_drift_test';
 
+/**
+ * Resolves the physical, prefix-aware Typesense collection name for the
+ * declared drift-test collection. Drift::diff() reads every declared
+ * collection through the same registry resolver (see
+ * Collections::resolveName()), so a raw, unprefixed
+ * `$client->collections[DRIFT_TEST_COLLECTION]` call here would create or
+ * inspect a physical collection Drift never looks at under this suite's
+ * TYPESENSE_COLLECTION_PREFIX isolation - it would report every finding as
+ * "missing" regardless of the live schema this test hands it.
+ *
+ * @return string
+ */
+function driftTestTarget(): string
+{
+    return Typesense::$plugin->getClient()->prefixedCollectionName(DRIFT_TEST_COLLECTION);
+}
+
 function dropDriftCollection(): void
 {
     $client = Typesense::$plugin->getClient()->client();
 
     if ($client !== null) {
         try {
-            $client->collections[DRIFT_TEST_COLLECTION]->delete();
+            $client->collections[driftTestTarget()]->delete();
         } catch (Throwable) {
             // already gone
         }
@@ -49,7 +66,7 @@ function withDrift(Collection $declared, array $liveFields, callable $test): voi
     dropDriftCollection();
 
     try {
-        $client->collections->create(['name' => DRIFT_TEST_COLLECTION, 'fields' => $liveFields]);
+        $client->collections->create(['name' => driftTestTarget(), 'fields' => $liveFields]);
 
         // Select this collection's finding by name rather than assuming it is
         // first: other registry collections (config, control-panel-managed, or
