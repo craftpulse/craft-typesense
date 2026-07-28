@@ -11,6 +11,9 @@
  * @copyright Copyright (c) 2026 CraftPulse
  */
 
+use craft\enums\CmsEdition;
+use craft\web\twig\Extension;
+use craft\web\View;
 use craftpulse\auditkit\AuditKit;
 use craftpulse\typesense\models\ServerCapabilities;
 use craftpulse\typesense\Typesense;
@@ -74,13 +77,47 @@ function muteAuditSurfaces(): void
 uses(TestCase::class, RefreshesDatabase::class)
     ->beforeEach(function() {
         Craft::$app->set('cache', new ArrayCache());
-        Craft::$app->setEdition(craft\enums\CmsEdition::Pro);
+        Craft::$app->setEdition(CmsEdition::Pro);
         Typesense::$plugin->edition = Typesense::EDITION_PRO;
 
         $settings = Typesense::$plugin->getSettings();
         $settings->collections = typesensefixBaselineCollections();
         $settings->frontendTemplatesDir = '';
         $settings->frontendThemeConfig = [];
+
+        // Every test in this file's directory tree runs through the SAME
+        // `craft\web\View` instance and its memoized site-mode Twig
+        // Environment - unlike a real web app, where each request gets a
+        // fresh one. A CP-mode test (any `$this->get()`/`$this->post()`
+        // against a CP path, e.g. Controllers/SettingsControllerTest) calls
+        // craft-pest-core's own `RequestHandler::registerWithCraft()`, which
+        // does two things for that one fake request: switches the view to
+        // 'cp' template mode, and re-registers Twig's globals (the "craft"
+        // variable this plugin's `craft.typesense.*` calls resolve through)
+        // via a fresh `craft\web\twig\Extension`. Neither is undone
+        // afterward - fine in a real app (one mode per request), not fine
+        // here (one process, many tests). A test later in the suite that
+        // renders a *site* template directly (this suite's own
+        // FrontendTemplates::render() calls, direct SearchFormTag
+        // construction) without first making its own `$this->get()`/`$this->post()`
+        // call inherits both the stale 'cp' mode and Twig globals bound to
+        // whatever state existed when they were last registered. The
+        // observed symptom is narrow and easy to misdiagnose: the *outer*
+        // template of a region (results.twig, facets.twig) renders fine, but
+        // every *nested* `craft.typesense.component()`/`card()` call inside
+        // it silently renders empty (Twig resolves "craft" fine at the
+        // top level; nested rendering is where the stale binding bites).
+        // Reset both explicitly before every test, replicating exactly what
+        // `registerWithCraft()` does for the requests this suite doesn't
+        // itself issue.
+        $view = Craft::$app->getView();
+        $view->setTemplateMode(View::TEMPLATE_MODE_SITE);
+
+        $globals = (new Extension($view, $view->getTwig()))->getGlobals();
+
+        foreach ($globals as $key => $value) {
+            $view->getTwig()->addGlobal($key, $value);
+        }
 
         muteAuditSurfaces();
     })
