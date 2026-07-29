@@ -115,7 +115,7 @@
                                     label: 'Apply schema'|t('typesense'),
                                     action: 'typesense/utility/apply-schema',
                                     params: { collection: row.name },
-                                    confirm: 'Apply schema for {name}? This creates the collection if missing and adds any newly declared fields. Changing a field’s type is not applied in place — use Rebuild on the Aliases screen for structural changes.'|t('typesense', { name: row.name }),
+                                    confirm: 'Apply schema for {name}? This creates the collection if missing and adds any newly declared fields. Changing a field’s type is not applied in place. Use Rebuild on the Aliases screen for structural changes.'|t('typesense', { name: row.name }),
                                 },
                                 {
                                     label: row.suspended ? 'Resume sync'|t('typesense') : 'Suspend sync'|t('typesense'),

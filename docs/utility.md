@@ -33,7 +33,7 @@ The per-collection **Apply schema** action queues an additive schema apply: it
 creates the collection if it is missing and adds any newly declared fields. It
 never rewrites documents. Because Typesense re-creates a collection to change a
 field's type (there is no in-place type change), a structural change is not
-applied here — use the zero-downtime **Rebuild** on the
+applied here. Use the zero-downtime **Rebuild** on the
 [Aliases screen](pro-aliases.md) for that.
 
 ## Drift
