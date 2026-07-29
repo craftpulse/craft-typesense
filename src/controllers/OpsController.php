@@ -20,7 +20,7 @@ use yii\web\Response;
  * The Pro ops actions: point-in-time snapshot, database compaction, and cache
  * clear against the Typesense server. Reading the server's metrics and stats is
  * Free (surfaced in the utility); these state-changing operations are Pro and
- * gated by `typesense:manageCollections` (the index-management permission), and
+ * gated by `typesense:manage-collections` (the index-management permission), and
  * edition- and permission-checked server-side.
  *
  * @author    CraftPulse
@@ -37,7 +37,7 @@ class OpsController extends ProController
      * lifecycle: clear cache, compact, snapshot) and the utility's sync, flush,
      * and suspend controls.
      */
-    public const PERMISSION_MANAGE_OPS = 'typesense:manageOps';
+    public const PERMISSION_MANAGE_OPS = 'typesense:manage-ops';
 
     // Public Methods
     // =========================================================================

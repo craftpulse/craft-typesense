@@ -25,7 +25,7 @@ use yii\web\Response;
  * dual-shape synonyms service. It is the Synonyms section of a control-panel-
  * managed collection's edit screen (reached from the collection sidebar nav);
  * a collection that declares its synonyms in config renders read-only with the
- * config notice. Gated by the edition and `typesense:manageSynonyms`.
+ * config notice. Gated by the edition and `typesense:manage-synonyms`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -39,7 +39,7 @@ class SynonymsController extends ProController
     /**
      * @var string The permission that gates the synonyms screens.
      */
-    public const PERMISSION_MANAGE_SYNONYMS = 'typesense:manageSynonyms';
+    public const PERMISSION_MANAGE_SYNONYMS = 'typesense:manage-synonyms';
 
     // Public Methods
     // =========================================================================

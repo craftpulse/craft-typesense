@@ -41,20 +41,20 @@ that family, nothing else.
 
 | Permission | Gates |
 | --- | --- |
-| `typesense:manageSettings` | The settings screen (Free and Pro). |
-| `typesense:manageCollections` | The collections cockpit and the mapping UI (including the per-collection suspend toggle on the collection edit screen). |
-| `typesense:manageRelevance` | The relevance and vector/AI editor, and conversation (RAG) models. |
-| `typesense:manageSynonyms` | The synonyms manager. |
-| `typesense:manageCuration` | The curation manager. |
-| `typesense:manageDictionaries` | The stopwords and stemming-dictionary manager. |
-| `typesense:manageAliases` | The aliases manager, zero-downtime rebuilds, and cloning. |
-| `typesense:manageExperiments` | The A/B experiments composition screen. |
-| `typesense:manageKeys` | The API keys manager and scoped-key profiles. |
-| `typesense:viewAnalytics` | The analytics dashboard. |
-| `typesense:viewDiagnostics` | The search playground (including its docs-explorer document browser) and the element-edit inspector sidebar. |
-| `typesense:manageOps` | The Typesense utility's operational actions (sync, flush, suspend globally or per collection) and the Pro index-lifecycle ops (clear cache, compact, snapshot). |
+| `typesense:manage-settings` | The settings screen (Free and Pro). |
+| `typesense:manage-collections` | The collections cockpit and the mapping UI (including the per-collection suspend toggle on the collection edit screen). |
+| `typesense:manage-relevance` | The relevance and vector/AI editor, and conversation (RAG) models. |
+| `typesense:manage-synonyms` | The synonyms manager. |
+| `typesense:manage-curation` | The curation manager. |
+| `typesense:manage-dictionaries` | The stopwords and stemming-dictionary manager. |
+| `typesense:manage-aliases` | The aliases manager, zero-downtime rebuilds, and cloning. |
+| `typesense:manage-experiments` | The A/B experiments composition screen. |
+| `typesense:manage-keys` | The API keys manager and scoped-key profiles. |
+| `typesense:view-analytics` | The analytics dashboard. |
+| `typesense:view-diagnostics` | The search playground (including its docs-explorer document browser) and the element-edit inspector sidebar. |
+| `typesense:manage-ops` | The Typesense utility's operational actions (sync, flush, suspend globally or per collection) and the Pro index-lifecycle ops (clear cache, compact, snapshot). |
 
-`typesense:manageSettings` is registered in every edition; the rest are Pro-only
+`typesense:manage-settings` is registered in every edition; the rest are Pro-only
 (hidden in Free, never badged). Nav items, routes, and server-side action checks
 all key off both the edition and the matching permission.
 
@@ -88,16 +88,16 @@ New collection, then:
 A new collection shows only the Settings tab. Save it, and the collection edit
 screen gains its remaining tabs (each with its own URL and permission gate):
 
-- **Settings**: the fields above (`typesense:manageCollections`).
-- **Mapping**: the field layout designer (`typesense:manageCollections`). See
+- **Settings**: the fields above (`typesense:manage-collections`).
+- **Mapping**: the field layout designer (`typesense:manage-collections`). See
   [Field mapping](mapping.md).
 - **Relevance**: search preset, boosts, grouping, buckets, diversification
-  (`typesense:manageRelevance`). See [Relevance tuning](pro-relevance.md).
+  (`typesense:manage-relevance`). See [Relevance tuning](pro-relevance.md).
 - **Vector / AI**: auto-embedding and the experimental AI features
-  (`typesense:manageRelevance`). See [Vector and AI](pro-vector-ai.md).
-- **Synonyms**: one-way and multi-way synonyms (`typesense:manageSynonyms`). See
+  (`typesense:manage-relevance`). See [Vector and AI](pro-vector-ai.md).
+- **Synonyms**: one-way and multi-way synonyms (`typesense:manage-synonyms`). See
   [Synonyms manager](pro-synonyms.md).
-- **Curation**: pin, hide, and boost rules (`typesense:manageCuration`). See
+- **Curation**: pin, hide, and boost rules (`typesense:manage-curation`). See
   [Curation manager](pro-curation.md).
 
 Stopwords and stemming dictionaries are server-global resources, so they stay on

@@ -12,7 +12,7 @@ attributed to its variant server-side.
 
 ## Editions and permissions
 
-A/B testing is a Pro feature, gated by `typesense:manageCollections`. In the Free
+A/B testing is a Pro feature, gated by `typesense:manage-collections`. In the Free
 edition the plugin renders none of the Pro control panel. Every action is
 edition-checked server-side.
 

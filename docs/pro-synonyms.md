@@ -13,8 +13,8 @@ levers, and the shared ownership model, see `docs/synonyms.md`.
 ## Editions and permissions
 
 These managers are Pro features, each gated by its own permission: the synonyms
-manager by `typesense:manageSynonyms`, and the stopwords and stemming-dictionary
-managers by `typesense:manageDictionaries`. In the Free edition the plugin renders
+manager by `typesense:manage-synonyms`, and the stopwords and stemming-dictionary
+managers by `typesense:manage-dictionaries`. In the Free edition the plugin renders
 none of the Pro control panel. Every Pro action is edition-checked server-side.
 
 ## Synonyms

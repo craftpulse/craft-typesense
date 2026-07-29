@@ -11,7 +11,7 @@ behind it can be rebuilt and swapped without a search ever seeing downtime.
 
 ## Editions and permissions
 
-The aliases manager is a Pro feature, gated by `typesense:manageCollections`. In
+The aliases manager is a Pro feature, gated by `typesense:manage-collections`. In
 the Free edition the plugin renders none of the Pro control panel. Every action
 is edition-checked server-side.
 

@@ -25,7 +25,7 @@ use yii\web\Response;
  * delete) and manages named scoped-key profiles. A created key's full value is
  * shown EXACTLY ONCE in a copy-this-now modal and is never stored by the plugin.
  * Rotation forces the replacement to be created before the old key can be
- * deleted. Gated by the edition and `typesense:manageKeys`.
+ * deleted. Gated by the edition and `typesense:manage-keys`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -39,7 +39,7 @@ class KeysController extends ProController
     /**
      * @var string The permission that gates the keys manager.
      */
-    public const PERMISSION_MANAGE_KEYS = 'typesense:manageKeys';
+    public const PERMISSION_MANAGE_KEYS = 'typesense:manage-keys';
 
     // Public Methods
     // =========================================================================

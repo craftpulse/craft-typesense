@@ -23,7 +23,7 @@ use yii\web\Response;
  * analytics tag), persisted to project config. Traffic is split by the derived
  * per-variant keys. The click-through / no-result comparison across variants is
  * the analytics dashboard's job (a later phase); this screen defines and
- * orchestrates. Gated by the edition and `typesense:manageCollections`.
+ * orchestrates. Gated by the edition and `typesense:manage-collections`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -37,7 +37,7 @@ class ExperimentsController extends ProController
     /**
      * @var string The permission that gates the A/B experiments screens.
      */
-    public const PERMISSION_MANAGE_EXPERIMENTS = 'typesense:manageExperiments';
+    public const PERMISSION_MANAGE_EXPERIMENTS = 'typesense:manage-experiments';
 
     // Public Methods
     // =========================================================================

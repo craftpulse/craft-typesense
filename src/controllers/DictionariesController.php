@@ -25,7 +25,7 @@ use yii\web\Response;
  * dictionaries. A collection that declares stopwords in config owns them and
  * renders read-only with the config notice; otherwise the set is editable in
  * the control panel. Stemming dictionaries are listed and imported (JSONL of
- * word/root pairs). Gated by the edition and `typesense:manageCollections`.
+ * word/root pairs). Gated by the edition and `typesense:manage-collections`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -39,7 +39,7 @@ class DictionariesController extends ProController
     /**
      * @var string The permission that gates the dictionaries screens.
      */
-    public const PERMISSION_MANAGE_DICTIONARIES = 'typesense:manageDictionaries';
+    public const PERMISSION_MANAGE_DICTIONARIES = 'typesense:manage-dictionaries';
 
     // Public Methods
     // =========================================================================

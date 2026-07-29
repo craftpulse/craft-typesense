@@ -32,7 +32,7 @@ use yii\web\Response;
  * bounded.
  *
  * Gated by the edition (via [[ProController]]) and the
- * `typesense:viewDiagnostics` permission.
+ * `typesense:view-diagnostics` permission.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -52,7 +52,7 @@ class PlaygroundController extends ProController
      * @var string The permission that gates the search playground (a diagnostics
      * surface).
      */
-    public const PERMISSION_VIEW_DIAGNOSTICS = 'typesense:viewDiagnostics';
+    public const PERMISSION_VIEW_DIAGNOSTICS = 'typesense:view-diagnostics';
 
     // Public Methods
     // =========================================================================

@@ -23,7 +23,7 @@ use yii\web\Response;
  * The Pro aliases manager: one table of collections showing each collection's
  * current physical target and when it was last built, with a per-row
  * zero-downtime rebuild, plus a capability-gated clone. Gated by the edition and
- * `typesense:manageAliases`.
+ * `typesense:manage-aliases`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -37,7 +37,7 @@ class AliasesController extends ProController
     /**
      * @var string The permission that gates the aliases screens.
      */
-    public const PERMISSION_MANAGE_ALIASES = 'typesense:manageAliases';
+    public const PERMISSION_MANAGE_ALIASES = 'typesense:manage-aliases';
 
     // Public Methods
     // =========================================================================

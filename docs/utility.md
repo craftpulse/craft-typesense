@@ -16,7 +16,7 @@ a solid button. It shows:
   A per-row action menu (the same `disclosureMenu` row-action idiom as the
   aliases and API-keys screens) queues **Sync**, **Apply schema**, **Suspend /
   Resume sync**, or **Flush** for that single collection.
-- **Global operations** (for users with the `typesense:manageOps` permission):
+- **Global operations** (for users with the `typesense:manage-ops` permission):
   queue a sync of every collection, toggle the global sync-suspend master switch,
   or flush every collection. Every action posts to a control-panel action URL
   (built with `UrlHelper::actionUrl`), so it works regardless of how the site's
@@ -24,7 +24,7 @@ a solid button. It shows:
   Suspend is runtime database state (see
   [the sync engine](sync-engine.md#suspend)), so the toggles work even when
   `allowAdminChanges` is disabled.
-- **Server operations** (Pro, `typesense:manageOps`): the server memory, disk,
+- **Server operations** (Pro, `typesense:manage-ops`): the server memory, disk,
   and CPU readout, plus database compaction, query-cache clearing, and snapshots.
 
 ### Apply schema vs. rebuild

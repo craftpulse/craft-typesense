@@ -23,7 +23,7 @@ use yii\web\Response;
  * Operational actions behind the Typesense CP utility: sync, flush, apply
  * schema, and the suspend toggle, globally or per collection. Each responds to
  * both a full-page form post (the global blocks) and the per-row action menu
- * (AJAX). Gated by typesense:manageOps.
+ * (AJAX). Gated by typesense:manage-ops.
  *
  * @author    CraftPulse
  * @package   Typesense

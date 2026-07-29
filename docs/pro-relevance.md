@@ -11,9 +11,9 @@ builder); the tab is for CP-managed collections.
 
 ## Editions and permissions
 
-Relevance tuning is a Pro feature, gated by `typesense:manageRelevance`. Holding
+Relevance tuning is a Pro feature, gated by `typesense:manage-relevance`. Holding
 that handle also reveals the collection's Vector / AI tab; the Settings and
-Mapping tabs are gated separately by `typesense:manageCollections`. In the Free
+Mapping tabs are gated separately by `typesense:manage-collections`. In the Free
 edition the plugin renders none of the Pro control panel. Every Pro action is
 edition-checked server-side.
 

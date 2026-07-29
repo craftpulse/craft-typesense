@@ -27,7 +27,7 @@ use yii\web\Response;
  * on servers that do not support them. Config-file collections tune relevance in
  * fluent config, so only CP-managed collections are editable here. The Relevance
  * and Vector / AI tabs live on the collection edit screen; gated by the edition
- * and `typesense:manageRelevance`.
+ * and `typesense:manage-relevance`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -41,7 +41,7 @@ class RelevanceController extends ProController
     /**
      * @var string The permission that gates the relevance screens.
      */
-    public const PERMISSION_MANAGE_RELEVANCE = 'typesense:manageRelevance';
+    public const PERMISSION_MANAGE_RELEVANCE = 'typesense:manage-relevance';
 
     // Public Methods
     // =========================================================================

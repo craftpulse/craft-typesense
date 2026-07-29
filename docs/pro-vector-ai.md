@@ -12,10 +12,10 @@ experimental AI features.
 
 Vector and conversation configuration lives on the **Vector / AI** section of a
 control-panel-managed collection's edit screen (Typesense, then Collections, then
-a collection, then Vector / AI), gated by `typesense:manageRelevance`. It has two
+a collection, then Vector / AI), gated by `typesense:manage-relevance`. It has two
 anchor panes: **Embedding** and **Conversation**. The credentials the panes draw
 on are authored separately on the **AI providers** screen (see the
-[AI providers guide](ai-providers.md)), gated by `typesense:manageAiProviders`.
+[AI providers guide](ai-providers.md)), gated by `typesense:manage-ai-providers`.
 The search helpers are Free-callable from Twig once a collection has an embedding
 field.
 

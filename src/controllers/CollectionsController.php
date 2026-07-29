@@ -36,7 +36,7 @@ use yii\web\Response;
  * read-only visibility of config-owned ones, flagged with the override notice),
  * and create, edit, and delete a CP-managed collection. Definitions persist to
  * project config through the ManagedCollections service. Gated by the edition
- * (via [[ProController]]) and the `typesense:manageCollections` permission.
+ * (via [[ProController]]) and the `typesense:manage-collections` permission.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -50,7 +50,7 @@ class CollectionsController extends ProController
     /**
      * @var string The permission that gates the collections cockpit.
      */
-    public const PERMISSION_MANAGE_COLLECTIONS = 'typesense:manageCollections';
+    public const PERMISSION_MANAGE_COLLECTIONS = 'typesense:manage-collections';
 
     // Static Methods
     // =========================================================================
@@ -58,7 +58,7 @@ class CollectionsController extends ProController
     /**
      * The collection edit screen's inner-sidebar nav items, filtered to the
      * sections the current user may access: Settings and Mapping
-     * (manageCollections), Relevance and Vector / AI (manageRelevance). A section
+     * (manage-collections), Relevance and Vector / AI (manage-relevance). A section
      * the viewer cannot access is omitted, so a user holding only one family sees
      * only its sections. A new (unsaved) collection has no nav (single Settings
      * pane). Each item keeps its own URL, controller action, and permission gate,
@@ -262,7 +262,7 @@ class CollectionsController extends ProController
         // The index picker and the read-only config-collection overview are the
         // shared entry points for the collection screens, so they admit any
         // collection-screen permission; every other action keeps its own
-        // manageCollections gate.
+        // manage-collections gate.
         if (in_array($action->id, ['index', 'config-overview'], true)) {
             if ($this->_firstSectionSuffix() === null) {
                 throw new ForbiddenHttpException(Craft::t('typesense', 'User is not permitted to perform this action.'));
@@ -534,7 +534,7 @@ class CollectionsController extends ProController
 
     /**
      * Toggles the runtime sync-suspend state for one collection. Gated by
-     * manageCollections (the cockpit surface); the toggle is database state, so
+     * manage-collections (the cockpit surface); the toggle is database state, so
      * it works even when allowAdminChanges is disabled.
      *
      * @return Response|null

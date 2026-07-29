@@ -10,10 +10,10 @@ per collection the element could belong to, exactly what the sync engine sees.
 
 ## Editions and permissions
 
-The inspector is a Pro feature, gated by `typesense:manageCollections`. In the
+The inspector is a Pro feature, gated by `typesense:manage-collections`. In the
 Free edition the plugin renders none of the Pro control panel. The panel is
 shown only when the plugin is running Pro, the current user holds
-`typesense:manageCollections`, and the element matches at least one collection;
+`typesense:manage-collections`, and the element matches at least one collection;
 otherwise it renders nothing.
 
 ## What it reports

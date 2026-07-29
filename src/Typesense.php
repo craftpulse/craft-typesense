@@ -129,7 +129,7 @@ class Typesense extends Plugin
      *
      * @var string
      */
-    public string $schemaVersion = '5.9.9';
+    public string $schemaVersion = '5.9.10';
 
     /**
      * Set to `true` if the plugin should have its own section (main nav item) in the control panel.
@@ -667,7 +667,7 @@ class Typesense extends Plugin
      * @author CraftPulse
      */
     /**
-     * Registers the entry-edit curation sidebar panel (Pro + manageCuration),
+     * Registers the entry-edit curation sidebar panel (Pro + manage-curation),
      * listing the element's pins and offering a quick-pin. Renders nothing for
      * Free, for users without the permission, or for elements that match no
      * control-panel-managed curation collection.
@@ -787,7 +787,7 @@ class Typesense extends Plugin
     }
 
     /**
-     * Registers the entry-edit inspector sidebar panel (Pro + manageCollections):
+     * Registers the entry-edit inspector sidebar panel (Pro + manage-collections):
      * read-only diagnostics for the element, per collection (membership state,
      * last-indexed timestamp, live document JSON, skip reasons), from the
      * inspector service. Renders nothing for Free, for users without the

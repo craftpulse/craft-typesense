@@ -59,7 +59,7 @@ it('forbids key creation on the Free edition (server-side edition gate)', functi
     });
 });
 
-it('forbids key creation for a user without manageKeys (server-side permission gate)', function() {
+it('forbids key creation for a user without manage-keys (server-side permission gate)', function() {
     $suffix = bin2hex(random_bytes(4));
     $user = new User();
     $user->username = "ts_nokeys_{$suffix}";

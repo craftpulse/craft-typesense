@@ -16,8 +16,8 @@ ownership setting and no per-collection ownership override. Two independent
 questions apply:
 
 - **Permissions decide who can edit.** The synonyms, curation, and dictionaries
-  managers each have their own permission (`typesense:manageSynonyms`,
-  `typesense:manageCuration`, `typesense:manageDictionaries`). See the
+  managers each have their own permission (`typesense:manage-synonyms`,
+  `typesense:manage-curation`, `typesense:manage-dictionaries`). See the
   [permissions table](pro-collections.md#editions-and-permissions).
 - **Config presence decides what is config-owned.** If a collection declares the
   feature in its fluent config, that feature is config-owned: the plugin seeds it

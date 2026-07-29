@@ -5,7 +5,7 @@
  * The Pro AI providers controller: authoring a provider persists it to project
  * config with credentials kept as environment references, and the save/delete
  * path is edition- and permission-gated server-side (a crafted POST fails closed
- * on Free and for a user without manageAiProviders). The edition and permission
+ * on Free and for a user without manage-ai-providers). The edition and permission
  * deny sides across every Pro controller are pinned systematically in
  * GatingMatrixTest; here we pin the happy authoring path and the model gating.
  *

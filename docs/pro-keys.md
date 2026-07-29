@@ -21,7 +21,7 @@ Key handling splits cleanly across the editions:
 
 ## Editions and permissions
 
-The keys screen is a Pro feature, gated by `typesense:manageKeys`. In the Free
+The keys screen is a Pro feature, gated by `typesense:manage-keys`. In the Free
 edition the plugin renders none of the Pro control panel. Every action is
 edition-checked and permission-checked server-side, so a crafted request fails
 closed.

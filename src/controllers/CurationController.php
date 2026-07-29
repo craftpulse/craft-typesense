@@ -26,7 +26,7 @@ use yii\web\Response;
  * sidebar nav); a collection that declares its curation in config renders
  * read-only with the config notice. Every write refreshes the element-to-rule
  * lookup index (through the curation service). Gated by the edition and
- * `typesense:manageCuration`.
+ * `typesense:manage-curation`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -40,7 +40,7 @@ class CurationController extends ProController
     /**
      * @var string The permission that gates the curation manager.
      */
-    public const PERMISSION_MANAGE_CURATION = 'typesense:manageCuration';
+    public const PERMISSION_MANAGE_CURATION = 'typesense:manage-curation';
 
     // Public Methods
     // =========================================================================

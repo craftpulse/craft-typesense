@@ -26,7 +26,7 @@ use yii\web\Response;
  * live in project config keyed by handle; credentials are stored as environment
  * references only and resolved at the moment a config is sent to Typesense.
  * Config-file declarations are read-only here (presence-based ownership). Gated by
- * the edition and `typesense:manageAiProviders`.
+ * the edition and `typesense:manage-ai-providers`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -40,7 +40,7 @@ class AiProvidersController extends ProController
     /**
      * @var string The permission that gates the AI providers screen.
      */
-    public const PERMISSION_MANAGE_AI_PROVIDERS = 'typesense:manageAiProviders';
+    public const PERMISSION_MANAGE_AI_PROVIDERS = 'typesense:manage-ai-providers';
 
     // Public Methods
     // =========================================================================

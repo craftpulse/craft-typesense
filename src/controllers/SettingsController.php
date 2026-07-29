@@ -22,7 +22,7 @@ use yii\web\Response;
 /**
  * Manages the plugin's connection and behaviour settings.
  *
- * Access is gated by the typesense:manageSettings permission (never requireAdmin),
+ * Access is gated by the typesense:manage-settings permission (never requireAdmin),
  * so a site can delegate the screen to a non-admin group. Writability is a
  * separate axis: when allowAdminChanges is false the screen renders read-only and
  * the save action fails closed with a 403.
@@ -39,7 +39,7 @@ class SettingsController extends Controller
     /**
      * @var string The permission that gates the settings screen.
      */
-    public const PERMISSION_MANAGE_SETTINGS = 'typesense:manageSettings';
+    public const PERMISSION_MANAGE_SETTINGS = 'typesense:manage-settings';
 
     // Public Methods
     // =========================================================================

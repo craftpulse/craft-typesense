@@ -5,7 +5,7 @@ description: Connecting Craft to Typesense and configuring plugin behaviour
 # Settings
 
 The settings screen lives in the plugin's own control-panel section at
-**Typesense, then Settings**. Access is gated by the `typesense:manageSettings`
+**Typesense, then Settings**. Access is gated by the `typesense:manage-settings`
 permission, so the screen can be delegated to a non-admin group. When
 `allowAdminChanges` is off (typically production) the screen renders read-only
 and any save is rejected.

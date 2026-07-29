@@ -5,7 +5,7 @@
  * The analytics dashboard's recommended-rules action: an admin can create the
  * popular and no-hit rules for the declared collections, and the action is
  * edition- and permission-checked server-side (a crafted POST fails closed on
- * Free, and for a user without viewAnalytics). The rules and destinations it
+ * Free, and for a user without view-analytics). The rules and destinations it
  * creates are removed afterwards. Skipped when the server lacks analytics.
  *
  * @link      https://craft-pulse.com
@@ -96,7 +96,7 @@ it('forbids the recommended-rules action on the Free edition', function() {
     });
 });
 
-it('forbids the recommended-rules action for a user without viewAnalytics', function() {
+it('forbids the recommended-rules action for a user without view-analytics', function() {
     $suffix = bin2hex(random_bytes(4));
     $user = new User();
     $user->username = "ts_noan_{$suffix}";

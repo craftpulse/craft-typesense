@@ -15,7 +15,7 @@ resources:
   opts into with `->ask('handle')`. It references a conversation provider and adds
   the model name, system prompt, history collection, TTL, and answer byte budget.
 
-Gated by the edition and the `typesense:manageAiProviders` permission.
+Gated by the edition and the `typesense:manage-ai-providers` permission.
 
 ## Credentials are environment references, never secrets
 

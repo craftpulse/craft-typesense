@@ -22,7 +22,7 @@ use yii\web\Response;
  * readouts from the analytics destination collections, plus an A/B comparison by
  * analytics tag (shown only on tag-capable servers). The GDPR posture (opt-in
  * state, user-id association off by default, retention guidance) is surfaced in
- * the screen. Gated by the edition and `typesense:viewAnalytics`.
+ * the screen. Gated by the edition and `typesense:view-analytics`.
  *
  * @author    CraftPulse
  * @package   Typesense
@@ -36,7 +36,7 @@ class AnalyticsController extends ProController
     /**
      * @var string The permission that gates the analytics dashboard.
      */
-    public const PERMISSION_VIEW_ANALYTICS = 'typesense:viewAnalytics';
+    public const PERMISSION_VIEW_ANALYTICS = 'typesense:view-analytics';
 
     // Public Methods
     // =========================================================================

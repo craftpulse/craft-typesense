@@ -11,9 +11,9 @@
    @var status     array {configured, connected, supported, version, flags, unsupportedReason}
    @var collections array {name, target, strategy, documents, drift, suspended, lastSync}
    @var suspended  bool   the global suspend master switch
-   @var canManage  bool   holds typesense:manageOps
+   @var canManage  bool   holds typesense:manage-ops
    @var ops        array  server metrics (Pro), or empty
-   @var canRunOps  bool   Pro and holds typesense:manageOps
+   @var canRunOps  bool   Pro and holds typesense:manage-ops
    ========================================================================= #}
 {% import '_includes/forms.twig' as forms %}
 

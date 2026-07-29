@@ -2,7 +2,7 @@
 /**
  * Typesense plugin for Craft CMS 5.x
  *
- * Covers the settings controller access path: the typesense:manageSettings
+ * Covers the settings controller access path: the typesense:manage-settings
  * permission gate (admins in, unpermitted users out) and the write-axis
  * fail-closed behaviour when allowAdminChanges is disabled.
  *
@@ -26,7 +26,7 @@ it('renders the settings screen for an admin', function() {
         ->assertSee('Server status');
 });
 
-it('forbids a user without the manageSettings permission', function() {
+it('forbids a user without the manage-settings permission', function() {
     $suffix = bin2hex(random_bytes(4));
     $user = new User();
     $user->username = "ts_noperm_{$suffix}";

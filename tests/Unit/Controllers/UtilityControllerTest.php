@@ -3,8 +3,8 @@
  * Typesense plugin for Craft CMS 5.x
  *
  * Covers the utility controller access gate: its operational actions (sync,
- * flush, suspend) require the typesense:manageOps permission, not
- * typesense:manageSettings. A user who holds only manageSettings is still
+ * flush, suspend) require the typesense:manage-ops permission, not
+ * typesense:manage-settings. A user who holds only manage-settings is still
  * forbidden, which pins the Fix-5 move of the gate off the settings handle.
  *
  * @link      https://craft-pulse.com
@@ -27,7 +27,7 @@ function aUtilityUser(): User
     return $user;
 }
 
-it('forbids the sync action for a user without manageOps', function() {
+it('forbids the sync action for a user without manage-ops', function() {
     Craft::$app->edition = CmsEdition::Pro;
 
     $this->actingAs(aUtilityUser())
@@ -36,7 +36,7 @@ it('forbids the sync action for a user without manageOps', function() {
         ->assertForbidden();
 });
 
-it('forbids the sync action for a user who holds only manageSettings (gate moved to manageOps)', function() {
+it('forbids the sync action for a user who holds only manage-settings (gate moved to manage-ops)', function() {
     Craft::$app->edition = CmsEdition::Pro;
     $user = aUtilityUser();
     Craft::$app->getUserPermissions()->saveUserPermissions(

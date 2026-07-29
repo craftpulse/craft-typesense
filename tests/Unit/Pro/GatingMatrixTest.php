@@ -25,18 +25,18 @@ use craftpulse\typesense\Typesense;
  * @return array<string, array{0: string, 1: string, 2: string}>
  */
 dataset('proActions', [
-    'ai-providers' => ['typesense/ai-providers/index', 'get', 'typesense:manageAiProviders'],
-    'aliases' => ['typesense/aliases/index', 'get', 'typesense:manageAliases'],
-    'analytics' => ['typesense/analytics/index', 'get', 'typesense:viewAnalytics'],
-    'collections' => ['typesense/collections/edit', 'get', 'typesense:manageCollections'],
-    'curation' => ['typesense/curation/list', 'get', 'typesense:manageCuration'],
-    'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manageDictionaries'],
-    'experiments' => ['typesense/experiments/index', 'get', 'typesense:manageExperiments'],
-    'keys' => ['typesense/keys/index', 'get', 'typesense:manageKeys'],
-    'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manageOps'],
-    'playground' => ['typesense/playground/index', 'get', 'typesense:viewDiagnostics'],
-    'relevance' => ['typesense/relevance/edit', 'get', 'typesense:manageRelevance'],
-    'synonyms' => ['typesense/synonyms/list', 'get', 'typesense:manageSynonyms'],
+    'ai-providers' => ['typesense/ai-providers/index', 'get', 'typesense:manage-ai-providers'],
+    'aliases' => ['typesense/aliases/index', 'get', 'typesense:manage-aliases'],
+    'analytics' => ['typesense/analytics/index', 'get', 'typesense:view-analytics'],
+    'collections' => ['typesense/collections/edit', 'get', 'typesense:manage-collections'],
+    'curation' => ['typesense/curation/list', 'get', 'typesense:manage-curation'],
+    'dictionaries' => ['typesense/dictionaries/index', 'get', 'typesense:manage-dictionaries'],
+    'experiments' => ['typesense/experiments/index', 'get', 'typesense:manage-experiments'],
+    'keys' => ['typesense/keys/index', 'get', 'typesense:manage-keys'],
+    'ops' => ['typesense/ops/clear-cache', 'post', 'typesense:manage-ops'],
+    'playground' => ['typesense/playground/index', 'get', 'typesense:view-diagnostics'],
+    'relevance' => ['typesense/relevance/edit', 'get', 'typesense:manage-relevance'],
+    'synonyms' => ['typesense/synonyms/list', 'get', 'typesense:manage-synonyms'],
 ]);
 
 function aGatingAdmin(): User
@@ -107,7 +107,7 @@ it('grants nothing beyond its own screen family to a single-permission user (no 
         // Holding exactly one handle grants nothing else: a screen from a
         // different family stays forbidden (the allow side of each handle is
         // covered by the per-feature admin tests).
-        $other = $permission === 'typesense:viewAnalytics'
+        $other = $permission === 'typesense:view-analytics'
             ? 'typesense/keys/index'
             : 'typesense/analytics/index';
 

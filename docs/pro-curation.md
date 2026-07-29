@@ -12,7 +12,7 @@ service the config file uses, so it works identically on Typesense v28/v29
 
 ## Editions and permissions
 
-Curation is a Pro feature, gated by `typesense:manageCuration`. In the Free
+Curation is a Pro feature, gated by `typesense:manage-curation`. In the Free
 edition the plugin renders none of the Pro control panel: no nav items, no
 routes, no permissions. Every Pro action is edition-checked server-side, so a
 crafted request cannot reach a Pro action on Free.
@@ -23,7 +23,7 @@ Ownership is presence-based. A collection that declares `curationRules()` in its
 fluent config owns its curation: the plugin seeds those rules on collection
 creation and the manager renders them read-only with a "declared in config"
 notice. A collection that is silent about curation is control-panel-owned and
-editable by anyone holding `typesense:manageCuration`. There is no ownership
+editable by anyone holding `typesense:manage-curation`. There is no ownership
 setting. See `docs/synonyms.md` for the shared ownership model and the seeding
 workflow.
 
@@ -61,7 +61,7 @@ matches the query), and updates the lookup index.
 The panel is shown only when all of these hold:
 
 - the plugin is running the Pro edition;
-- the current user holds `typesense:manageCuration`;
+- the current user holds `typesense:manage-curation`;
 - the element is a member of at least one control-panel-owned curation collection
   (one that does not declare its curation in config).
 

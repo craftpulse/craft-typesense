@@ -43,7 +43,7 @@ it('serves a paged JSON payload from the curation table-data endpoint for an aut
     });
 });
 
-it('forbids the synonyms table-data endpoint for a user without manageSynonyms', function() {
+it('forbids the synonyms table-data endpoint for a user without manage-synonyms', function() {
     withGatingEdition(Typesense::EDITION_PRO, function() {
         $this->actingAs(aPermissionlessUser())
             ->withExceptionHandling()
@@ -52,7 +52,7 @@ it('forbids the synonyms table-data endpoint for a user without manageSynonyms',
     });
 });
 
-it('forbids the curation table-data endpoint for a user without manageCuration', function() {
+it('forbids the curation table-data endpoint for a user without manage-curation', function() {
     withGatingEdition(Typesense::EDITION_PRO, function() {
         $this->actingAs(aPermissionlessUser())
             ->withExceptionHandling()
@@ -61,10 +61,10 @@ it('forbids the curation table-data endpoint for a user without manageCuration',
     });
 });
 
-it('forbids the synonyms table-data endpoint for a user holding only manageCuration (no umbrella)', function() {
+it('forbids the synonyms table-data endpoint for a user holding only manage-curation (no umbrella)', function() {
     withGatingEdition(Typesense::EDITION_PRO, function() {
         $user = aPermissionlessUser();
-        Craft::$app->getUserPermissions()->saveUserPermissions((int)$user->id, ['typesense:manageCuration']);
+        Craft::$app->getUserPermissions()->saveUserPermissions((int)$user->id, ['typesense:manage-curation']);
 
         $this->actingAs($user)
             ->withExceptionHandling()

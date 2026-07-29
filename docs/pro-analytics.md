@@ -9,8 +9,8 @@ A/B comparison, and an operations cockpit.
 
 ## Editions and permissions
 
-The analytics dashboard is gated by `typesense:viewAnalytics`; the ops actions by
-`typesense:manageCollections`. Reading server metrics is Free (it appears in the
+The analytics dashboard is gated by `typesense:view-analytics`; the ops actions by
+`typesense:manage-collections`. Reading server metrics is Free (it appears in the
 utility). Every Pro action is edition-checked server-side.
 
 ## Enabling analytics
@@ -73,7 +73,7 @@ attribute per variant. On servers without analytics tags the section is hidden.
 ## Ops cockpit
 
 The Typesense utility shows the server's memory, disk, and CPU from
-`/metrics.json` (Free, read-only). In Pro, a user with `typesense:manageCollections`
+`/metrics.json` (Free, read-only). In Pro, a user with `typesense:manage-collections`
 also gets operational actions:
 
 - **Compact database:** compacts the on-disk database (non-blocking).

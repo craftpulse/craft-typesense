@@ -6,7 +6,7 @@ description: One GraphiQL-style query, diff, and document console in the control
 
 The Pro edition adds one search playground: a GraphiQL-style console, the
 analogue of Craft's own GraphQL explorer. It is gated by the edition (hidden, not
-badged, in Free) and by `typesense:viewDiagnostics`. It sits at the bottom of the
+badged, in Free) and by `typesense:view-diagnostics`. It sits at the bottom of the
 Typesense subnav, directly above Settings. Every query runs server-side through
 the search layer, so the admin API key never reaches the browser and the result
 payload is bounded.
