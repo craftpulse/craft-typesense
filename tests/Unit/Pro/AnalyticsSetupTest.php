@@ -52,15 +52,19 @@ function cleanupHeroesAnalyticsRules(): void
     $analytics->deleteRule('heroes_popular');
     $analytics->deleteRule('heroes_nohits');
 
-    $client = Typesense::$plugin->getClient()->client();
+    $clientHelper = Typesense::$plugin->getClient();
+    $client = $clientHelper->client();
 
     if ($client === null) {
         return;
     }
 
+    // AnalyticsController::_ensureRule() -> Analytics::ensureDestination()
+    // resolves these through Client::prefixedCollectionName(), so the physical
+    // collection actually created is the suite's own prefixed name.
     foreach (['heroes_popular', 'heroes_nohits'] as $dest) {
         try {
-            $client->collections[$dest]->delete();
+            $client->collections[$clientHelper->prefixedCollectionName($dest)]->delete();
         } catch (Throwable) {
             // already gone
         }

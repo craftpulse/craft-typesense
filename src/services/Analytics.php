@@ -69,6 +69,8 @@ class Analytics extends Component
      * personalization (hide, never badge). Personalization is undocumented
      * upstream and its rule shape shifts across v30 builds, so the gate is
      * authoritative and the log-rule wiring is best-effort (fail-soft).
+     * `$collection` and `$destination` are logical names; `ensureDestination()`
+     * and `upsertRule()` resolve them to their physical, prefixed names.
      *
      * @param string $collection The source collection handle.
      * @param string $destination The log destination collection.
@@ -106,7 +108,11 @@ class Analytics extends Component
 
     /**
      * Ensures a destination collection exists for an aggregation rule (the
-     * `q`/`count` shape popular and no-hit rules write to).
+     * `q`/`count` shape popular and no-hit rules write to). The name is resolved
+     * through `Client::prefixedCollectionName()` before it touches the server, the
+     * same seam Search and Sync use, so an install with a collection prefix
+     * creates the destination under its physical, prefixed name rather than a
+     * bare logical one.
      *
      * @param string $name
      * @return void
@@ -115,14 +121,16 @@ class Analytics extends Component
      */
     public function ensureDestination(string $name): void
     {
-        $client = Typesense::$plugin->getClient()->client();
+        $client = Typesense::$plugin->getClient();
+        $sdkClient = $client->client();
+        $name = $client->prefixedCollectionName($name);
 
-        if ($client === null) {
+        if ($sdkClient === null) {
             return;
         }
 
         try {
-            $client->collections[$name]->retrieve();
+            $sdkClient->collections[$name]->retrieve();
 
             return;
         } catch (Throwable) {
@@ -130,7 +138,7 @@ class Analytics extends Component
         }
 
         try {
-            $client->collections->create([
+            $sdkClient->collections->create([
                 'name' => $name,
                 'fields' => [
                     ['name' => 'q', 'type' => 'string'],
@@ -245,7 +253,13 @@ class Analytics extends Component
     }
 
     /**
-     * Creates or updates an analytics rule.
+     * Creates or updates an analytics rule. The rule name is an opaque analytics
+     * identifier and is sent as-is, but the collection references embedded in
+     * `$params` (`source.collections` and `destination.collection`) are resolved
+     * through `Client::prefixedCollectionName()` first, the same seam Search and
+     * Sync use, so an install with a collection prefix writes the rule against
+     * its physical, prefixed collections rather than bare logical ones that may
+     * not exist (or belong to another environment sharing the same server).
      *
      * @param string $name
      * @param string $type One of the TYPE_* constants.
@@ -258,7 +272,7 @@ class Analytics extends Component
     {
         $response = Typesense::$plugin->getClient()->request('PUT', '/analytics/rules/' . $name, [
             'type' => $type,
-            'params' => $params,
+            'params' => $this->_prefixRuleCollections($params),
         ]);
 
         return ($response['name'] ?? null) === $name;
@@ -268,7 +282,10 @@ class Analytics extends Component
     // =========================================================================
 
     /**
-     * Reads a `q`/`count` destination collection, most frequent first.
+     * Reads a `q`/`count` destination collection, most frequent first. The
+     * destination is resolved through `Client::prefixedCollectionName()` first,
+     * matching the physical name `ensureDestination()` and `upsertRule()` create
+     * and write to.
      *
      * @param string $destination
      * @param int $limit
@@ -278,14 +295,16 @@ class Analytics extends Component
      */
     private function _readCounts(string $destination, int $limit): array
     {
-        $client = Typesense::$plugin->getClient()->client();
+        $client = Typesense::$plugin->getClient();
+        $sdkClient = $client->client();
+        $destination = $client->prefixedCollectionName($destination);
 
-        if ($client === null) {
+        if ($sdkClient === null) {
             return [];
         }
 
         try {
-            $result = $client->collections[$destination]->documents->search([
+            $result = $sdkClient->collections[$destination]->documents->search([
                 'q' => '*',
                 'query_by' => 'q',
                 'sort_by' => 'count:desc',
@@ -303,6 +322,38 @@ class Analytics extends Component
         }
 
         return $rows;
+    }
+
+    /**
+     * Rewrites the source and destination collection references embedded in a
+     * rule's params to their prefixed, physical Typesense names. Analytics rules
+     * are written over the raw HTTP API and otherwise bypass
+     * `Client::prefixedCollectionName()` entirely, the seam Search and Sync
+     * resolve every collection name through, so on any install using a
+     * collection prefix the rule would target a nonexistent collection (or
+     * another environment's, if it shares the same server).
+     *
+     * @param array<string, mixed> $params
+     * @return array<string, mixed>
+     * @throws \yii\base\InvalidConfigException
+     * @author CraftPulse
+     */
+    private function _prefixRuleCollections(array $params): array
+    {
+        $client = Typesense::$plugin->getClient();
+
+        if (isset($params['source']['collections']) && is_array($params['source']['collections'])) {
+            $params['source']['collections'] = array_map(
+                static fn(mixed $collection): string => $client->prefixedCollectionName((string)$collection),
+                $params['source']['collections'],
+            );
+        }
+
+        if (isset($params['destination']['collection']) && is_string($params['destination']['collection'])) {
+            $params['destination']['collection'] = $client->prefixedCollectionName($params['destination']['collection']);
+        }
+
+        return $params;
     }
 
     /**

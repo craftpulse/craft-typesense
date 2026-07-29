@@ -28,19 +28,23 @@ function analyticsServerEnabled(): bool
 
 function cleanupAnalyticsFixtures(): void
 {
-    $analytics = Typesense::$plugin->getAnalytics();
-    $analytics->deleteRule(ANALYTICS_POPULAR_RULE);
-    $analytics->deleteRule(ANALYTICS_NOHITS_RULE);
+    $analyticsHelper = Typesense::$plugin->getAnalytics();
+    $analyticsHelper->deleteRule(ANALYTICS_POPULAR_RULE);
+    $analyticsHelper->deleteRule(ANALYTICS_NOHITS_RULE);
 
-    $client = Typesense::$plugin->getClient()->client();
+    $clientHelper = Typesense::$plugin->getClient();
+    $sdkClient = $clientHelper->client();
 
-    if ($client === null) {
+    if ($sdkClient === null) {
         return;
     }
 
+    // ensureDestination() resolves these through Client::prefixedCollectionName(),
+    // so the physical collection actually created (and read back from) is the
+    // suite's own prefixed name, not the bare logical one.
     foreach ([ANALYTICS_POPULAR_DEST, ANALYTICS_NOHITS_DEST] as $dest) {
         try {
-            $client->collections[$dest]->delete();
+            $sdkClient->collections[$clientHelper->prefixedCollectionName($dest)]->delete();
         } catch (Throwable) {
             // already gone
         }
@@ -73,27 +77,23 @@ it('completes the query to dashboard loop (popular and no-hit aggregation)', fun
     $analytics = Typesense::$plugin->getAnalytics();
     $search = Typesense::$plugin->getSearch();
 
-    // Analytics::upsertRule() passes `source.collections` straight through to
-    // the raw Typesense API (src/services/Analytics.php - a pre-existing gap,
-    // not resolved through Client::prefixedCollectionName() the way search
-    // and sync are), so the rule must be told the physical, prefixed
-    // collection name that is actually being searched below - the bare
-    // logical "heroes" would register the rule against a collection nothing
-    // in this suite ever queries.
-    $heroesTarget = Typesense::$plugin->getClient()->prefixedCollectionName('heroes');
-
+    // Analytics::upsertRule() resolves `source.collections` and
+    // `destination.collection` through Client::prefixedCollectionName(), the
+    // same seam search() uses below, so the bare logical "heroes" handle
+    // registers the rule against the exact physical collection actually being
+    // searched, with no manual prefixing needed here.
     cleanupAnalyticsFixtures();
 
     try {
         $analytics->ensureDestination(ANALYTICS_POPULAR_DEST);
         $analytics->ensureDestination(ANALYTICS_NOHITS_DEST);
         $analytics->upsertRule(ANALYTICS_POPULAR_RULE, Analytics::TYPE_POPULAR_QUERIES, [
-            'source' => ['collections' => [$heroesTarget]],
+            'source' => ['collections' => ['heroes']],
             'destination' => ['collection' => ANALYTICS_POPULAR_DEST],
             'limit' => 100,
         ]);
         $analytics->upsertRule(ANALYTICS_NOHITS_RULE, Analytics::TYPE_NOHITS_QUERIES, [
-            'source' => ['collections' => [$heroesTarget]],
+            'source' => ['collections' => ['heroes']],
             'destination' => ['collection' => ANALYTICS_NOHITS_DEST],
             'limit' => 100,
         ]);
