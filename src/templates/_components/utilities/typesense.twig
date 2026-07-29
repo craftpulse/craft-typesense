@@ -77,7 +77,7 @@
                         <strong>{{ row.name }}</strong><br>
                         <span class="ts-copytext" data-value="{{ row.target }}"></span>
                     </td>
-                    <td>{{ row.documents is null ? '—' : row.documents|number }}</td>
+                    <td>{{ row.documents is null ? '-' : row.documents|number }}</td>
                     <td>
                         {% if row.drift == 'inSync' %}
                             <span class="status green"></span> {{ 'In sync'|t('typesense') }}
