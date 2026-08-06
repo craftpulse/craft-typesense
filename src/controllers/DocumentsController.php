@@ -3,6 +3,7 @@
 namespace percipiolondon\typesense\controllers;
 
 use Craft;
+use craft\base\ElementInterface;
 use craft\helpers\App;
 use craft\services\Structures;
 use craft\web\Controller;
@@ -12,6 +13,7 @@ use craft\events\ElementEvent;
 use craft\services\Elements;
 use percipiolondon\typesense\events\DocumentEvent;
 use percipiolondon\typesense\helpers\CollectionHelper;
+use percipiolondon\typesense\TypesenseCollectionIndex;
 use percipiolondon\typesense\Typesense;
 
 use craftpulse\cockpit\Cockpit;
@@ -162,57 +164,7 @@ class DocumentsController extends Controller
 
     protected function handleSave(Entry|Job|MatchFieldEntry|Department|Contact $entry): void
     {
-        $sectionHandle = $entry->section->handle ?? null;
-        $type = $entry->type->handle ?? null;
-        $collection = null;
-
-        /* This is very limited - as we always need to have a section named the same, this should go to settings, and mappable!) */
-        if ($sectionHandle) {
-            $section = '';
-
-            if ($type) {
-                $section = $sectionHandle . '.' . $type;
-            }
-
-            $collection = CollectionHelper::getCollectionBySection($section);
-
-            // Get the generic type if specific doesn't exist
-            if (is_null($collection)) {
-                $section = $sectionHandle . '.all';
-                $collection = CollectionHelper::getCollectionBySection($section);
-            }
-
-            // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                Typesense::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection($section);
-            }
-        }
-
-        // Resolve the correct Typesense collection based on the element's site.
-        if ($entry instanceof Job) {
-            $siteHandle = $entry->getSite()->handle;
-            $sectionKey = $siteHandle === 'fiftyfiveplus' ? 'jobs.ffp' : 'jobs.all';
-            $collection = CollectionHelper::getCollectionBySection($sectionKey);
-
-            // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                Typesense::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection($sectionKey);
-            }
-        }
-
-        if ($entry instanceof Department) {
-            $siteHandle = $entry->getSite()->handle;
-            $sectionKey = $siteHandle === 'fiftyfiveplus' ? 'offices.ffp' : 'offices.all';
-            $collection = CollectionHelper::getCollectionBySection($sectionKey);
-
-            // Create collection if it doesn't exist
-            if (!$collection instanceof \percipiolondon\typesense\TypesenseCollectionIndex) {
-                Typesense::$plugin->getCollections()->saveCollections();
-                $collection = CollectionHelper::getCollectionBySection($sectionKey);
-            }
-        }
+        $collection = $this->resolveCollection($entry);
 
         if (is_null($collection)) {
             return;
@@ -253,7 +205,7 @@ class DocumentsController extends Controller
         }
     }
 
-    protected function handleDelete(ElementEvent $event)
+    protected function handleDelete(ElementEvent $event): void
     {
         $element = $event->element;
 
@@ -262,47 +214,108 @@ class DocumentsController extends Controller
             return;
         }
 
+        $elementsService = Craft::$app->getElements();
+
         foreach ($element->getSupportedSites() as $site) {
-            if ($site['siteId'] ?? null) {
+            $siteId = $site['siteId'] ?? null;
 
-                $entry = Entry::find()->id($element->id)->siteId($site['siteId'])->one();
+            if (!$siteId) {
+                continue;
+            }
 
-                if ($entry) {
-                    $section = $entry->section->handle ?? null;
-                    $type = $entry->type->handle ?? null;
-                    $collection = null;
-                    $resolver = null;
+            // Re-fetch as the element's own type. Querying Entry::find() here meant
+            // Cockpit's Job, Department, Contact and MatchFieldEntry elements never
+            // resolved, so their documents were left behind on delete. getElementById()
+            // also ignores status, so disabled elements resolve too.
+            $source = $elementsService->getElementById($element->id, get_class($element), $siteId);
 
-                    if ($section) {
-                        if ($type) {
-                            $section = $section . '.' . $type;
-                        }
+            if (!$source) {
+                continue;
+            }
 
-                        $collection = CollectionHelper::getCollectionBySection($section);
-                    }
+            $collection = $this->resolveCollection($source);
 
-                    // get the generic type if specific doesn't exist
-                    if (is_null($collection)) {
-                        $section = $entry->section->handle . '.all';
-                        $collection = CollectionHelper::getCollectionBySection($section);
-                    }
+            if (is_null($collection)) {
+                continue;
+            }
 
-                    if ($collection) {
-                        $resolver = $collection->schema['resolver']($entry);
-                    }
+            $resolver = $collection->schema['resolver']($source);
 
-                    if ($resolver) {
-                        // Trigger the before delete event
-                        $this->triggerBeforeDelete($collection->indexName, $resolver['id']);
+            if (!$resolver) {
+                continue;
+            }
 
-                        Craft::info('Typesense delete document based on: ' . $entry->title . ' - ' . $entry->getSite()->handle, __METHOD__);
-                        Typesense::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
+            // Trigger the before delete event
+            $this->triggerBeforeDelete($collection->indexName, $resolver['id']);
 
-                        // Trigger the after delete event
-                        $this->triggerAfterDelete($collection->indexName, $resolver['id']);
-                    }
-                }
+            Craft::info('Typesense delete document based on: ' . $source->title . ' - ' . $source->getSite()->handle, __METHOD__);
+            Typesense::$plugin->getClient()->client()->collections[$collection->indexName]->documents->delete(['filter_by' => 'id: ' . $resolver['id']]);
+
+            // Trigger the after delete event
+            $this->triggerAfterDelete($collection->indexName, $resolver['id']);
+        }
+    }
+
+    /**
+     * Resolves the Typesense collection an element belongs to.
+     *
+     * Shared by the save and delete handlers so the two cannot drift apart: the
+     * delete path previously carried its own copy of this logic and missed both
+     * the site-aware Cockpit collections and the `.all` fallback.
+     *
+     * @param ElementInterface $element
+     * @return \percipiolondon\typesense\TypesenseCollectionIndex|null
+     */
+    protected function resolveCollection(ElementInterface $element): ?TypesenseCollectionIndex
+    {
+        // Cockpit elements are site-scoped: each instance indexes into its own
+        // collection, so these resolve from the element's site rather than a section.
+        if ($element instanceof Job) {
+            return $this->collectionBySection($element->getSite()->handle === 'fiftyfiveplus' ? 'jobs.ffp' : 'jobs.all');
+        }
+
+        if ($element instanceof Department) {
+            return $this->collectionBySection($element->getSite()->handle === 'fiftyfiveplus' ? 'offices.ffp' : 'offices.all');
+        }
+
+        /* This is very limited - as we always need to have a section named the same, this should go to settings, and mappable!) */
+        $sectionHandle = $element->section->handle ?? null;
+
+        if (!$sectionHandle) {
+            return null;
+        }
+
+        $type = $element->type->handle ?? null;
+
+        if ($type) {
+            $collection = CollectionHelper::getCollectionBySection($sectionHandle . '.' . $type);
+
+            if ($collection instanceof TypesenseCollectionIndex) {
+                return $collection;
             }
         }
+
+        // Get the generic type if specific doesn't exist
+        return $this->collectionBySection($sectionHandle . '.all');
+    }
+
+    /**
+     * Returns the collection registered for a `section.type` key, creating the
+     * configured collections first if it isn't registered yet.
+     *
+     * @param string $section
+     * @return \percipiolondon\typesense\TypesenseCollectionIndex|null
+     */
+    protected function collectionBySection(string $section): ?TypesenseCollectionIndex
+    {
+        $collection = CollectionHelper::getCollectionBySection($section);
+
+        // Create collection if it doesn't exist
+        if (!$collection instanceof TypesenseCollectionIndex) {
+            Typesense::$plugin->getCollections()->saveCollections();
+            $collection = CollectionHelper::getCollectionBySection($section);
+        }
+
+        return $collection instanceof TypesenseCollectionIndex ? $collection : null;
     }
 }
