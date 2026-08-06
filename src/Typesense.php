@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Typesense plugin for Craft CMS 5.x
  *

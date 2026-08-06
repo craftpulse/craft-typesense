@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/) and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 5.8.4 - 2026-08-06
+> ### Heads up: namespace move in 5.9.0
+> In 5.9.0 the internal PHP namespace moves from `percipiolondon\typesense` to `craftpulse\typesense`. The Composer package name (`craftpulse/craft-typesense`) and the plugin handle (`typesense`) do not change, so project config, permissions, and settings are unaffected. The move is bridged in both directions: on this 5.8.x line a forward-compatibility alias lets you reference the future `craftpulse\typesense\*` class names today, and on 5.9.0 a backwards-compatibility alias keeps the `percipiolondon\typesense\*` names working (with a deprecation notice). Update your imports to `craftpulse\typesense\*` before upgrading.
+
+### Added
+- Forward-compatibility alias for the upcoming `craftpulse\typesense` namespace: reference the future class names (for example in `config/typesense.php`) today and they resolve to the current `percipiolondon\typesense\*` classes.
+- Added an `update-schema` console command (`craft typesense/default/update-schema`) that drops and recreates every configured collection's fields from `config/typesense.php`, useful while iterating on a schema in development. It is destructive (existing field data is removed and must be re-synced), so it prints that in `./craft help` and prompts for confirmation unless `--force` is passed. Thanks to [@jamie-s-white](https://github.com/jamie-s-white) (#61).
+
+### Changed
+- Reworked the document sync queue flow onto Craft's batched job contract (`BaseBatchedJob`), so large indexes progress across spawned jobs while stale-document cleanup stays correct across the whole run (flush/create side effects run once, processed IDs survive queue serialization, the batchable query is cloned and stably ordered). Thanks to [@timkelty](https://github.com/timkelty) (#70). Expected to resolve #69.
+
+### Fixed
+- Guard against a `null` entry when applying a draft: the after-restore / after-move handler could pass a query miss straight to `handleSave()` (a non-nullable signature) and throw a TypeError. Reported by [@mikeymeister](https://github.com/mikeymeister) (#67).
+- Delete documents from collections defined with the `.all` section syntax: the delete handler resolved only the specific `section.type` collection, so documents in an `.all` collection were never removed. It now falls back to `section.all`, matching the save path. Thanks to [@jamie-s-white](https://github.com/jamie-s-white) (#64).
+- Fixed a bug where deleting a Cockpit element left its document in the index: the delete handler looked the element up with a `craft\elements\Entry` query, which never matches `craftpulse\cockpit\elements\Job`, `craftpulse\cockpit\elements\Department`, `craftpulse\cockpit\elements\Contact` or `craftpulse\cockpit\elements\MatchFieldEntry`, so those documents were only ever removed by a later full sync.
+- Fixed a bug where deleting a disabled element left its document in the index, because the delete handler's element lookup applied the default enabled-only status filter.
+- Fixed a bug where deleting a Cockpit element did not resolve the site-aware collection, so a FiftyFivePlus job or department would have been removed from the Go4Jobs collection rather than its own. The save and delete handlers now share one collection resolver.
+- Do not attach the element sync events until an API key is configured, so saving elements on a fresh, not-yet-configured install no longer errors. Thanks to [@jamie-s-white](https://github.com/jamie-s-white) (#63).
+- Confirmed the control-panel Sync/Flush actions build their URLs with `cpUrl()`, so they respect `CRAFT_BASE_CP_URL` and post to the control-panel domain rather than the front-end site URL (the CORS failure reported when the control panel runs on a separate domain). Reported by [@vardumper](https://github.com/vardumper) (#68).
+
+## 5.8.3 - 2026-03-27
+### Fixed
+- Fixed site-aware collection resolution in `DocumentsController` for multi-instance Cockpit elements. Previously, `handleSave` always resolved to the first matching collection (Go4Jobs), causing FiftyFivePlus jobs and departments to never sync to their correct Typesense index on element save.
+
 ## 5.8.2 - 2025-12-08
 ### Fixed
 - Fixed an where the custom elements wouldn't sync - this is cockpit specific, temporary solution until full rework is labelled "done".

@@ -10,6 +10,25 @@ Craft Plugin that synchronises with Typesense.
 
 This plugin requires Craft CMS 5.0.0 or later.
 
+## Upcoming namespace change (5.9.0)
+
+In 5.9.0 the plugin's internal PHP namespace moves from `percipiolondon\typesense`
+to `craftpulse\typesense`. The Composer package name (`craftpulse/craft-typesense`)
+and the plugin handle (`typesense`) do not change, so project config, permissions,
+and settings are unaffected.
+
+The move is bridged in both directions so you can migrate on your own schedule:
+
+- On this 5.8.x line, a forward-compatibility alias lets you reference the future
+  `craftpulse\typesense\*` class names today (for example in `config/typesense.php`
+  or your own code). They resolve to the existing `percipiolondon\typesense\*`
+  classes.
+- On the 5.9.0 line, a backwards-compatibility alias keeps the old
+  `percipiolondon\typesense\*` class names working (with a deprecation notice).
+
+If you reference plugin classes directly, update your imports to
+`craftpulse\typesense\*` before upgrading to 5.9.0.
+
 ## Installation
 
 To install the plugin, follow these instructions.

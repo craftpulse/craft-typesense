@@ -2,7 +2,7 @@
     "name": "craftpulse/craft-typesense",
     "description": "Craft Plugin that synchronises with Typesense",
     "type": "craft-plugin",
-    "version": "5.8.2",
+    "version": "5.8.4",
     "keywords": [
         "craft",
         "cms",
@@ -45,7 +45,10 @@
     "autoload": {
         "psr-4": {
             "percipiolondon\\typesense\\": "src/"
-        }
+        },
+        "files": [
+            "src/bootstrap.php"
+        ]
     },
     "scripts": {
         "phpstan": "phpstan --memory-limit=1G"
